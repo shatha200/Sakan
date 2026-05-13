@@ -18,10 +18,12 @@ services:
       target: nginx
     environment:
       - PHP_HOST=php
+      - NGINX_ENVSUBST_FILTER=PHP_HOST
     ports:
       - "8081:80"
     volumes:
       - .:/var/www/html
+      - ./docker/nginx:/etc/nginx/templates
     depends_on:
       - php
 
