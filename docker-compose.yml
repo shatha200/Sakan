@@ -26,7 +26,7 @@ services:
       - php
 
   db:
-    image: mysql:8.0
+    image: mariadb:10.6
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: sakan
