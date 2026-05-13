@@ -16,6 +16,8 @@ services:
     build:
       context: .
       target: nginx
+    environment:
+      - PHP_HOST=php
     ports:
       - "8080:80"
     volumes:

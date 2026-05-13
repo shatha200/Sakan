@@ -67,8 +67,8 @@ FROM nginx:alpine AS nginx
 
 WORKDIR /var/www/html
 
-# Copy Nginx config
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+# Copy Nginx config as a template for environment variable substitution
+COPY docker/nginx/default.conf /etc/nginx/templates/default.conf.template
 
 # Copy public directory from builder (contains assets and index.php)
 COPY --from=php_builder /var/www/html/public /var/www/html/public
