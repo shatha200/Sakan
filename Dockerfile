@@ -67,6 +67,7 @@ FROM nginx:alpine AS nginx
 
 WORKDIR /var/www/html
 
+ENV PHP_HOST=php
 # Copy Nginx config as a template for environment variable substitution
 COPY docker/nginx/default.conf /etc/nginx/templates/default.conf.template
 
