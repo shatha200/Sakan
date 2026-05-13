@@ -2,11 +2,12 @@
 FROM php:8.2-fpm-alpine AS php_base
 
 # Install the PHP extension installer
-ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
 # Install PHP extensions
 # We install them once in the base image to be shared across stages
-RUN install-php-extensions \
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions \
     intl \
     opcache \
     pdo_mysql \
