@@ -1,0 +1,100 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Réclamations - Admin{% endblock %}
+{% block page_title %}Gestion des réclamations{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+{% endblock %}
+
+
+{% block content %}
+  <section class="admin-kpi-grid admin-kpi-grid-users">
+    <article class="admin-mini-kpi"><span>Total</span><strong>{{ stats.total }}</strong></article>
+    <article class="admin-mini-kpi"><span>En attente</span><strong>{{ stats.open }}</strong></article>
+    <article class="admin-mini-kpi"><span>En cours</span><strong>{{ stats.progress }}</strong></article>
+    <article class="admin-mini-kpi"><span>Résolues</span><strong>{{ stats.resolved }}</strong></article>
+  </section>
+
+  <section class="card admin-soft-card">
+    <form method="get" action="{{ path('admin_reclamations') }}" class="admin-inline-filters">
+
+      <select class="form-input" name="status">
+        {% for option in status_options %}
+          <option value="{{ option }}" {{ filters.status == option ? 'selected' : '' }}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-secondary" type="submit"><i class="fa-solid fa-filter"></i> Filtrer</button>
+      <a class="btn-secondary" href="{{ path('admin_reclamations') }}">Réinitialiser</a>
+    </form>
+
+    <div class="admin-table-wrap">
+      <table class="sakan-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Utilisateur</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Statut</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if reclamations is empty %}
+            <tr><td class="admin-empty" colspan="6">Aucune réclamation trouvée.</td></tr>
+          {% else %}
+            {% for item in reclamations %}
+              <tr style="cursor: pointer;" class="admin-clickable-row" onclick="window.location.href='{{ path('admin_reclamation_show', {'id': item.id}) }}'">
+                <td><a href="{{ path('admin_reclamation_show', {'id': item.id}) }}" class="admin-link fw-bold">#{{ item.id }}</a></td>
+                <td>{{ item.utilisateur }}</td>
+                <td>{{ item.type }}</td>
+                <td>{{ item.date_reclamation }}</td>
+                <td>
+                    <span class="badge-status {{ 
+                        item.statut == 'EN_ATTENTE' ? 'badge-attente' : 
+                        (item.statut == 'EN_COURS' ? 'badge-cours' : 'badge-resolu') 
+                    }}">
+                        {{ item.statut }}
+                    </span>
+
+                </td>
+                <td onclick="event.stopPropagation();">
+                  <div class="admin-row-actions" style="display: flex; gap: 5px; justify-content: flex-end;">
+                    <a href="{{ path('admin_reclamation_show', {'id': item.id}) }}" class="btn-secondary btn-sm" style="text-decoration: none; align-self: flex-start; margin-top: 2px;" title="Afficher les détails">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <a href="{{ path('admin_reclamation_traiter', {'id': item.id}) }}" class="btn-secondary btn-sm" style="text-decoration: none; align-self: flex-start; margin-top: 2px;" title="Traiter la réclamation comme le propriétaire">
+                      <i class="fa-solid fa-play"></i> Traiter
+                    </a>
+
+                    {% if item.statut != 'RESOLU' %}
+                    <form method="post" action="{{ path('admin_reclamations') }}">
+                      <input type="hidden" name="action" value="update_reclamation">
+                      <input type="hidden" name="reclamation_id" value="{{ item.id }}">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_reclamation_' ~ item.id) }}">
+                      <input type="hidden" name="statut" value="RESOLU">
+                      <button class="btn-secondary btn-sm" style="background-color: #10b981; color: white;" type="submit" title="Marquer Resolue"><i class="fa-solid fa-check"></i> Résolu</button>
+                    </form>
+                    {% endif %}
+
+                    <form method="post" action="{{ path('admin_reclamations') }}" onsubmit="return confirm('Supprimer cette réclamation ?');">
+                      <input type="hidden" name="action" value="delete_reclamation">
+                      <input type="hidden" name="reclamation_id" value="{{ item.id }}">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_reclamation_' ~ item.id) }}">
+                      <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div class="navigation d-flex justify-content-center mt-4">
+        {{ knp_pagination_render(reclamations) }}
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,250 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Mes contrats — Sakan{% endblock %}
+
+{% block page_title %}Mes contrats{% endblock %}
+{% block page_subtitle %}Consultez et gérez vos baux de location{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header" style="justify-content: space-between; align-items: center;">
+    <div>
+      <h1 style="display:flex; align-items:center; gap:12px;"><i class="fa-solid fa-file-contract"></i> Mes Contrats</h1>
+      <p class="result-count" style="margin-top: 4px;">{{ contrats|length }} contrat(s) trouvé(s)</p>
+    </div>
+  </div>
+
+  <!-- FLASH MESSAGES -->
+  {% for message in app.flashes('success') %}
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:12px 20px;border-radius:10px;margin-bottom:16px;font-weight:600;">
+      <i class="fa-solid fa-circle-check"></i> {{ message }}
+    </div>
+  {% endfor %}
+  {% for message in app.flashes('error') %}
+    <div style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:12px 20px;border-radius:10px;margin-bottom:16px;font-weight:600;">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+    </div>
+  {% endfor %}
+
+  {# Alerte fin de bail (≤ 7 jours) — message personnalisé par IA (Gemini) ou texte de secours #}
+  {% if contrats_expiration is defined and contrats_expiration|length > 0 %}
+    {% set expiration_text = message_expiration_ia|default(null) ?: message_expiration_fallback|default('') %}
+    <div class="sakan-expiration-alert" style="position:relative;overflow:hidden;border-radius:16px;margin-bottom:24px;border:1px solid rgba(94,23,235,0.25);background:linear-gradient(135deg,rgba(94,23,235,0.08) 0%,rgba(16,185,129,0.12) 100%);box-shadow:0 8px 32px rgba(79,70,229,0.12);">
+      <div style="position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(94,23,235,0.15) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="padding:20px 22px;position:relative;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#4c1d95;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:#7c3aed;"></i>
+            Rappel important — fin de bail proche
+          </span>
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:4px 10px;border-radius:999px;background:rgba(124,58,237,0.15);color:#5b21b6;border:1px solid rgba(124,58,237,0.35);">
+            <i class="fa-solid fa-robot" style="margin-right:4px;opacity:0.9;"></i> IA · Gemini
+          </span>
+        </div>
+        <p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#1e293b;font-weight:500;">
+          {{ expiration_text|nl2br }}
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+          {% for row in contrats_expiration %}
+            {% set c = row.contrat %}
+            <a href="{{ path('contrat_voir', {id: c.id}) }}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;color:#334155;text-decoration:none;transition:transform 0.15s;">
+              <i class="fa-solid fa-file-contract" style="color:#5E17EB;"></i>
+              {% set _t = c.annonce.titre|default('Contrat #' ~ c.id) %}
+              {{ _t|length > 38 ? _t|slice(0, 35) ~ '…' : _t }}
+              <span style="color:#b45309;background:#fffbeb;padding:2px 8px;border-radius:8px;font-size:11px;">{{ row.jours_restants }} j restant{{ row.jours_restants > 1 ? 's' : '' }}</span>
+            </a>
+          {% endfor %}
+        </div>
+        <p style="margin:12px 0 0 0;font-size:12px;color:#64748b;">
+          <i class="fa-solid fa-circle-info"></i>
+          {% if message_expiration_ia %}
+            Texte généré automatiquement par l’intelligence artificielle à partir de vos dates de bail. Vérifiez toujours les détails dans chaque contrat.
+          {% else %}
+            Message d’information SAKAN (IA indisponible ou clé non configurée — affichage du texte standard).
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- STATS RAPIDES -->
+  {% set nb_actif    = contrats|filter(c => c.statut == 'ACTIF')|length %}
+  {% set nb_attente  = contrats|filter(c => c.statut == 'EN_ATTENTE_SIGNATURE')|length %}
+  {% set nb_propose  = contrats|filter(c => c.statut == 'PROPOSE')|length %}
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+    <div class="kpi-card" style="border-left:4px solid #16a34a;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Actifs</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ nb_actif }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #d97706;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-hourglass-half" style="color:#d97706;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">En attente de signature</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ nb_attente }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #4f46e5;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-paper-plane" style="color:#4f46e5;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Proposés</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ nb_propose }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLETS STATUT -->
+  <div class="section-tabs">
+    <button class="tab-btn active" onclick="filterContrats('all', this)">Tous ({{ contrats|length }})</button>
+    <button class="tab-btn" onclick="filterContrats('actif', this)">Actifs ({{ nb_actif }})</button>
+    <button class="tab-btn" onclick="filterContrats('attente', this)">En attente ({{ nb_attente }})</button>
+    <button class="tab-btn" onclick="filterContrats('propose', this)">Proposés ({{ nb_propose }})</button>
+  </div>
+
+  <!-- LISTE DES CONTRATS -->
+  <div class="contrat-list" id="contrat-list">
+
+    {% if contrats is empty %}
+      <div class="card" style="padding:60px;text-align:center;color:var(--text-muted);">
+        <i class="fa-solid fa-file-contract" style="font-size:48px;margin-bottom:16px;opacity:0.3;"></i>
+        <h3 style="margin-bottom:8px;">Aucun contrat pour l'instant</h3>
+        <p style="margin-bottom:24px;">Les contrats apparaîtront ici une fois qu'une réservation est finalisée.</p>
+      </div>
+    {% else %}
+      {% for contrat in contrats %}
+        {% set isActif   = contrat.statut == 'ACTIF' %}
+        {% set isAttente = contrat.statut == 'EN_ATTENTE_SIGNATURE' %}
+        {% set isPropose = contrat.statut == 'PROPOSE' %}
+        {% set isRefuse  = contrat.statut == 'REFUSE' %}
+        {% set isTermine = contrat.statut == 'TERMINE' %}
+
+        {# Calcul pourcentage progression bail #}
+        {% set dateDebut = contrat.dateDebut ? contrat.dateDebut|date('U') : 0 %}
+        {% set dateFin   = contrat.dateFin   ? contrat.dateFin|date('U')   : 0 %}
+        {% set now       = "now"|date('U') %}
+        {% set progression = 0 %}
+        {% if dateDebut > 0 and dateFin > dateDebut %}
+          {% set progression = (((now - dateDebut) / (dateFin - dateDebut)) * 100)|round %}
+          {% if progression < 0 %}{% set progression = 0 %}{% endif %}
+          {% if progression > 100 %}{% set progression = 100 %}{% endif %}
+        {% endif %}
+
+        <div class="contrat-card {{ isActif ? 'contrat-actif' : (isAttente ? 'contrat-attente' : (isPropose ? 'contrat-propose' : 'contrat-expire')) }}"
+             data-statut="{{ isActif ? 'actif' : (isAttente ? 'attente' : (isPropose ? 'propose' : 'expire')) }}">
+
+          <!-- HEADER CARTE -->
+          <div class="contrat-header">
+            <div>
+              <span class="contrat-ref">📄 CTR-{{ '%04d'|format(contrat.id) }}</span>
+              <h3>{{ contrat.annonce.titre ?? 'Bien immobilier #' ~ contrat.annonce.id }}</h3>
+            </div>
+            {% if isActif %}
+              <span class="badge-actif">● ACTIF</span>
+              {% for row in contrats_expiration|default([]) %}
+                {% if row.contrat.id == contrat.id %}
+                  <span style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:800;border:1px solid #fbbf24;margin-left:6px;white-space:nowrap;">
+                    <i class="fa-solid fa-hourglass-end"></i> Fin sous {{ row.jours_restants }} j
+                  </span>
+                {% endif %}
+              {% endfor %}
+            {% elseif isAttente %}
+              <span style="background:#fef3c7;color:#d97706;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;">⏳ EN ATTENTE SIGNATURE</span>
+            {% elseif isPropose %}
+              <span style="background:#e0e7ff;color:#4f46e5;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;">📨 PROPOSÉ</span>
+            {% elseif isRefuse %}
+              <span style="background:#fef2f2;color:#dc2626;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;">✕ REFUSÉ</span>
+            {% else %}
+              <span class="badge-expire">EXPIRÉ</span>
+            {% endif %}
+          </div>
+
+          <!-- INFOS PRINCIPALES -->
+          <div class="contrat-visual">
+            <div class="contrat-body">
+              <div class="contrat-info-item"><label>Propriétaire</label><span>{{ contrat.annonce.proprietaire.nom ?? contrat.annonce.proprietaire.email }}</span></div>
+              <div class="contrat-info-item"><label>Début</label><span>{{ contrat.dateDebut ? contrat.dateDebut|date('d/m/Y') : '—' }}</span></div>
+              <div class="contrat-info-item"><label>Fin</label><span>{{ contrat.dateFin ? contrat.dateFin|date('d/m/Y') : '—' }}</span></div>
+              <div class="contrat-info-item"><label>Loyer</label><span>{{ contrat.montant|number_format(0, ',', ' ') }} TND/mois</span></div>
+              <div class="contrat-info-item"><label>Signé locataire</label>
+                <span style="color:{{ contrat.signeLocataire ? '#16a34a' : '#d97706' }};">
+                  {{ contrat.signeLocataire ? '✓ Oui — ' ~ contrat.dateSignatureLocataire : '⏳ Non' }}
+                </span>
+              </div>
+              <div class="contrat-info-item"><label>Signé propriétaire</label>
+                <span style="color:{{ contrat.signeProprietaire ? '#16a34a' : '#d97706' }};">
+                  {{ contrat.signeProprietaire ? '✓ Oui — ' ~ contrat.dateSignatureProprietaire : '⏳ Non' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BARRE DE PROGRESSION (uniquement si dates définies) -->
+          {% if isActif and contrat.dateDebut and contrat.dateFin %}
+          <div class="contrat-progress">
+            <div class="progress-label">
+              <span>Début : {{ contrat.dateDebut|date('d/m/Y') }}</span>
+              <span>{{ progression }}% écoulé</span>
+              <span>Fin : {{ contrat.dateFin|date('d/m/Y') }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:{{ progression }}%; background:linear-gradient(90deg,#5E17EB,#10b981)"></div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- ACTIONS -->
+          <div class="contrat-actions">
+            <a href="{{ path('contrat_voir', {id: contrat.id}) }}" class="btn-primary">
+              <i class="fa-solid fa-eye"></i> Consulter
+            </a>
+            {% if isAttente and not contrat.signeLocataire %}
+              <a href="{{ path('tenant_contrat_finaliser', {id: contrat.id}) }}" class="btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);">
+                <i class="fa-solid fa-file-signature"></i> Finaliser le contrat
+              </a>
+            {% endif %}
+            {% if isActif %}
+              <a href="{{ path('contrat_pdf', {id: contrat.id}) }}" class="btn-outline">
+                <i class="fa-solid fa-file-arrow-down"></i> Télécharger PDF
+              </a>
+              <a href="{{ path('tenant_finances') }}" class="btn-outline">
+                <i class="fa-solid fa-coins"></i> Voir les paiements
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+  function filterContrats(statut, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.contrat-card').forEach(card => {
+      if (statut === 'all' || card.dataset.statut === statut) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+</script>
+{% endblock %}

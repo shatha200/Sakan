@@ -1,0 +1,355 @@
+{% extends 'layouts/base_admin.html.twig' %}
+{% block title %}Gestion des Loyers — Admin Sakan{% endblock %}
+{% block page_title %}
+  <i class="fa-solid fa-house" ></i> Gestion des Loyers
+{% endblock %}
+
+{% block page_actions %}
+  <div style="display:flex; gap:10px; align-items:center;">
+    <a href="{{ path('admin_finance_rapports') }}" style="display:flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none;">
+      <i class="fa-solid fa-chart-bar"></i> Rapports
+    </a>
+    <button onclick="exportToCSV()" style="display:flex; align-items:center; gap:6px; padding:9px 18px; color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer;">
+      <i class="fa-solid fa-file-excel"></i> Export CSV
+    </button>
+  </div>
+{% endblock %}
+
+{% block content %}
+<style>
+.fin-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:28px; }
+.fin-kpi { background:white; border-radius:16px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.07); border-left:4px solid #e5e7eb; transition:box-shadow 0.2s; }
+.fin-kpi:hover { box-shadow:0 6px 24px rgba(0,0,0,0.12); }
+.fin-kpi-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#6b7280; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.fin-kpi-value { font-size:28px; font-weight:800; }
+.fin-kpi-sub { font-size:12px; color:#9ca3af; margin-top:4px; }
+.fin-kpi.green { border-left-color:#16a34a; } .fin-kpi.green .fin-kpi-value { color:#16a34a; }
+.fin-kpi.yellow { border-left-color:#f59e0b; } .fin-kpi.yellow .fin-kpi-value { color:#f59e0b; }
+.fin-kpi.red { border-left-color:#dc2626; } .fin-kpi.red .fin-kpi-value { color:#dc2626; }
+.fin-kpi.blue { border-left-color:#3b82f6; } .fin-kpi.blue .fin-kpi-value { color:#3b82f6; }
+.fin-kpi.purple { border-left-color:#4f46e5; } .fin-kpi.purple .fin-kpi-value { color:#4f46e5; }
+
+.fin-card { background:white; border-radius:16px; padding:24px; margin-bottom:24px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.fin-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.fin-card-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; display:flex; align-items:center; gap:8px; }
+
+.fin-filter-bar { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:20px; padding:16px; background:#f9fafb; border-radius:12px; }
+.fin-filter-input { padding:9px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; background:white; }
+.fin-filter-input:focus { outline:none; border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,0.1); }
+
+.fin-table { width:100%; border-collapse:collapse; font-size:13px; }
+.fin-table th { padding:12px 10px; text-align:left; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; border-bottom:2px solid #f3f4f6; white-space:nowrap; }
+.fin-table td { padding:12px 10px; border-bottom:1px solid #f9fafb; }
+.fin-table tr:hover td { background:rgba(79,70,229,0.02); }
+
+.badge-paye { background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.badge-attente { background:#fef3c7; color:#d97706; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.badge-retard { background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.badge-partiel { background:#ffedd5; color:#ea580c; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+
+.fin-action-btn { padding:5px 10px; border-radius:6px; font-size:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s; }
+.fin-action-btn.primary { background:rgba(79,70,229,0.1); color:#4f46e5; }
+.fin-action-btn.primary:hover { background:#4f46e5; color:white; }
+.fin-action-btn.danger { background:rgba(220,38,38,0.1); color:#dc2626; }
+</style>
+
+{# ── KPI Grid ───────────────────────────────────────────────── #}
+<div class="fin-kpi-grid">
+  <div class="fin-kpi purple">
+    <div class="fin-kpi-label"><i class="fa-solid fa-list"></i> Total Loyers</div>
+    <div class="fin-kpi-value">{{ kpis.total_loyers ?? 0 }}</div>
+    <div class="fin-kpi-sub">{{ (kpis.total_montant ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="fin-kpi green">
+    <div class="fin-kpi-label"><i class="fa-solid fa-check-circle"></i> Payés</div>
+    <div class="fin-kpi-value">{{ kpis.nb_payes ?? 0 }}</div>
+    <div class="fin-kpi-sub">{{ (kpis.montant_paye ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="fin-kpi yellow">
+    <div class="fin-kpi-label"><i class="fa-solid fa-clock"></i> En Attente</div>
+    <div class="fin-kpi-value">{{ kpis.nb_attente ?? 0 }}</div>
+    <div class="fin-kpi-sub">{{ (kpis.montant_attente ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="fin-kpi red">
+    <div class="fin-kpi-label"><i class="fa-solid fa-triangle-exclamation"></i> En Retard</div>
+    <div class="fin-kpi-value">{{ kpis.nb_retard ?? 0 }}</div>
+    <div class="fin-kpi-sub">{{ (kpis.montant_retard ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="fin-kpi blue">
+    <div class="fin-kpi-label"><i class="fa-solid fa-hourglass"></i> Retard Moyen</div>
+    <div class="fin-kpi-value">{{ (kpis.retard_moyen_jours ?? 0)|round }}</div>
+    <div class="fin-kpi-sub">jours en moyenne</div>
+  </div>
+</div>
+
+{# ── Alertes Retards ─────────────────────────────────────────── #}
+{% if retards|length > 0 %}
+<div class="fin-card" style="border:2px solid #fecaca;">
+  <div class="fin-card-header">
+    <div class="fin-card-title" >
+      <i class="fa-solid fa-circle-exclamation"></i> {{ retards|length }} Loyer(s) En Retard — Action Requise
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="fin-table">
+      <thead><tr>
+        <th>Locataire</th><th>Bien</th><th>Période</th><th>Montant</th><th>Jours retard</th><th>Propriétaire</th><th>Action</th>
+      </tr></thead>
+      <tbody>
+        {% for l in retards %}
+        <tr>
+          <td><strong>{{ l.nom_locataire }}</strong><br><span style="font-size:11px;">{{ l.email_locataire }}</span></td>
+          <td>{{ l.bien_titre ?? '-' }}</td>
+          <td>{{ l.periode }}</td>
+          <td><strong >{{ l.montant|number_format(3,',', ' ') }} TND</strong></td>
+          <td><span style="padding:2px 8px; border-radius:8px; font-weight:700;">{{ l.jours_retard }} j</span></td>
+          <td>{{ l.nom_proprietaire ?? '-' }}</td>
+          <td><a href="{{ path('admin_finance_loyer_detail', {id: l.id}) }}" class="fin-action-btn danger"><i class="fa-solid fa-eye"></i> Voir</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{# ── Liste complète ───────────────────────────────────────────── #}
+<div class="fin-card">
+  <div class="fin-card-header">
+    <div class="fin-card-title" ><i class="fa-solid fa-list"></i> Tous les Loyers</div>
+    <div style="font-size:13px;"><span id="table-count">{{ loyers|length }}</span> résultat(s)</div>
+  </div>
+
+  <div class="fin-filter-bar">
+    <div style="flex:1; min-width:250px; position:relative;">
+      <i class="fa-solid fa-search" style="position:absolute; left:14px; top:12px;"></i>
+      <input type="text" id="f-search" class="fin-filter-input" placeholder="Rechercher locataire, bien, période..." style="width:100%; padding-left:36px;" oninput="filterTable()">
+    </div>
+    
+    <div class="fin-tags-group" id="f-statut-tags">
+      <button class="fin-tag active" data-val="">Tous</button>
+      <button class="fin-tag PAYE" data-val="PAYE">Payés</button>
+      <button class="fin-tag EN_ATTENTE" data-val="EN_ATTENTE">En Attente</button>
+      <button class="fin-tag EN_RETARD" data-val="EN_RETARD">En Retard</button>
+      <button class="fin-tag PARTIEL" data-val="PARTIEL">Partiels</button>
+    </div>
+    
+    <button onclick="resetFilters()" style="padding:9px 14px; border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px;">
+      <i class="fa-solid fa-rotate-left"></i> RàZ
+    </button>
+    
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; padding:8px 12px; border-radius:10px; border:1px solid #e5e7eb;">
+      <i class="fa-solid fa-list-ol"></i> Lignes:
+      <select id="f-limit" onchange="filterTable()" style="border:none; background:transparent; font-weight:600; cursor:pointer; outline:none;">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="fin-table" id="loyers-table">
+      <thead><tr>
+        <th>#ID</th><th>Période</th><th>Locataire</th><th>Propriétaire</th><th>Bien</th>
+        <th>Montant</th><th>Pénalité</th><th>Statut</th><th>Échéance</th><th>Payé le</th><th>Action</th>
+      </tr></thead>
+      <tbody>
+        {% for l in loyers %}
+        <tr data-search="{{ (l.nom_locataire ~ ' ' ~ l.bien_titre ~ ' ' ~ l.periode ~ ' ' ~ l.nom_proprietaire)|lower }}"
+            data-statut="{{ l.statut }}">
+          <td style="font-weight:700;">#{{ l.id }}</td>
+          <td><span style="padding:3px 8px; border-radius:6px; font-weight:600; font-size:12px;">{{ l.periode }}</span></td>
+          <td>
+            <strong>{{ l.nom_locataire }}</strong>
+            <br><span style="font-size:11px;">{{ l.email_locataire }}</span>
+          </td>
+          <td>{{ l.nom_proprietaire ?? '-' }}</td>
+          <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ l.bien_titre }}">{{ l.bien_titre ?? '-' }}</td>
+          <td><strong>{{ l.montant|number_format(3,',', ' ') }} TND</strong></td>
+          <td>
+            {% if l.penalite > 0 %}
+              <span style="font-weight:600; padding:2px 6px; border-radius:4px; font-size:11px;">+{{ l.penalite|number_format(3,',', ' ') }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if l.statut == 'PAYE' %}<span class="badge-paye">PAYÉ</span>
+            {% elseif l.statut == 'EN_ATTENTE' %}<span class="badge-attente">EN ATTENTE</span>
+            {% elseif l.statut == 'EN_RETARD' %}<span class="badge-retard">EN RETARD</span>
+            {% else %}<span class="badge-partiel">{{ l.statut }}</span>{% endif %}
+          </td>
+          <td>{{ l.date_echeance ? l.date_echeance|date('d/m/Y') : '-' }}</td>
+          <td>{{ l.date_paiement ? l.date_paiement|date('d/m/Y') : '—' }}</td>
+          <td><a href="{{ path('admin_finance_loyer_detail', {id: l.id}) }}" class="fin-action-btn primary"><i class="fa-solid fa-arrow-right"></i> Détail</a></td>
+        </tr>
+        {% else %}
+        <tr class="no-data-row"><td colspan="11" style="text-align:center; padding:40px;"><i class="fa-solid fa-folder-open fa-2x mb-2" style="opacity:0.5; display:block;"></i> Aucun loyer.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div id="no-result" style="display:none; text-align:center; padding:40px;">
+      <i class="fa-solid fa-search fa-2x" style="opacity:0.3; display:block; margin-bottom:10px;"></i>
+      Aucun résultat pour ces critères.
+    </div>
+  </div>
+  
+  <div class="fin-pagination-container">
+    <div id="pagination-info" style="font-size:12px; font-weight:600;"></div>
+    <div id="pagination-controls" class="fin-pagination"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<style>
+.fin-tags-group { display:flex; gap:6px; flex-wrap:wrap; }
+.fin-tag { padding:8px 14px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; background:white; border:1px solid #e5e7eb; color:#6b7280; transition:all 0.2s; }
+.fin-tag:hover { background:#f9fafb; border-color:#d1d5db; }
+.fin-tag.active { background:#4f46e5; color:white; border-color:#4f46e5; box-shadow:0 2px 8px rgba(79,70,229,0.3); }
+.fin-tag.active.PAYE { background:#16a34a; border-color:#16a34a; box-shadow:0 2px 8px rgba(22,163,74,0.3); }
+.fin-tag.active.EN_ATTENTE { background:#f59e0b; border-color:#f59e0b; box-shadow:0 2px 8px rgba(245,158,11,0.3); }
+.fin-tag.active.EN_RETARD { background:#dc2626; border-color:#dc2626; box-shadow:0 2px 8px rgba(220,38,38,0.3); }
+.fin-tag.active.PARTIEL { background:#ea580c; border-color:#ea580c; }
+
+.fin-pagination-container { display:flex; justify-content:space-between; align-items:center; padding:16px 0 0 0; margin-top:20px; border-top:1px solid #f3f4f6; flex-wrap:wrap; gap:16px; }
+.fin-pagination { display:flex; gap:6px; }
+.fin-page-btn { width:32px; height:32px; border-radius:8px; border:1px solid #e5e7eb; background:white; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#4b5563; cursor:pointer; transition:all 0.2s; }
+.fin-page-btn:hover:not(:disabled) { background:#f3f4f6; color:#111827; }
+.fin-page-btn.active { background:#4f46e5; color:white; border-color:#4f46e5; }
+.fin-page-btn:disabled { opacity:0.5; cursor:not-allowed; }
+</style>
+<script>
+let currentStatut = '';
+let currentPage = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Tags logic
+  document.querySelectorAll('#f-statut-tags .fin-tag').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('#f-statut-tags .fin-tag').forEach(b => b.classList.remove('active'));
+      const target = e.currentTarget;
+      target.classList.add('active');
+      currentStatut = target.dataset.val;
+      currentPage = 1;
+      filterTable();
+    });
+  });
+  
+  filterTable();
+});
+
+function resetFilters() {
+  document.getElementById('f-search').value = '';
+  document.querySelectorAll('#f-statut-tags .fin-tag').forEach(b => b.classList.remove('active'));
+  document.querySelector('#f-statut-tags .fin-tag[data-val=""]').classList.add('active');
+  currentStatut = '';
+  currentPage = 1;
+  filterTable();
+}
+
+function filterTable() {
+  const search = document.getElementById('f-search').value.toLowerCase();
+  const limit = parseInt(document.getElementById('f-limit').value);
+  const rows = Array.from(document.querySelectorAll('#loyers-table tbody tr[data-search]'));
+  
+  // 1. Filtrer
+  let filteredRows = rows.filter(row => {
+    const matchSearch = !search || row.dataset.search.includes(search);
+    const matchStatut = !currentStatut || row.dataset.statut === currentStatut;
+    return matchSearch && matchStatut;
+  });
+  
+  // 2. Cacher tout
+  rows.forEach(r => r.style.display = 'none');
+  document.querySelector('.no-data-row') && (document.querySelector('.no-data-row').style.display = 'none');
+  
+  const total = filteredRows.length;
+  document.getElementById('table-count').textContent = total;
+  document.getElementById('no-result').style.display = total === 0 ? 'block' : 'none';
+  
+  if (total === 0) {
+    renderPagination(0, limit);
+    document.getElementById('pagination-info').innerText = '';
+    return;
+  }
+  
+  // 3. Paginer
+  const totalPages = Math.ceil(total / limit);
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * limit;
+  const end = start + limit;
+  
+  filteredRows.slice(start, end).forEach(r => r.style.display = '');
+  
+  document.getElementById('pagination-info').innerHTML = `Affichage de <strong >${start + 1}</strong> à <strong >${Math.min(end, total)}</strong> sur <strong >${total}</strong> entrées`;
+  
+  renderPagination(totalPages, limit);
+}
+
+function renderPagination(totalPages, limit) {
+  const container = document.getElementById('pagination-controls');
+  container.innerHTML = '';
+  if (totalPages <= 1) return;
+  
+  // Précédent
+  let prev = document.createElement('button');
+  prev.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+  prev.className = 'fin-page-btn';
+  prev.disabled = currentPage === 1;
+  prev.onclick = () => { currentPage--; filterTable(); };
+  container.appendChild(prev);
+  
+  // Pages (max 5 buttons visible)
+  let startP = Math.max(1, currentPage - 2);
+  let endP = Math.min(totalPages, currentPage + 2);
+  
+  if (startP > 1) {
+    let b = document.createElement('button'); b.className='fin-page-btn'; b.innerText='1'; b.onclick=()=>{currentPage=1; filterTable();}; container.appendChild(b);
+    if (startP > 2) { let dot = document.createElement('span'); dot.style.padding='4px 8px'; dot.innerText='...'; container.appendChild(dot); }
+  }
+  
+  for(let i=startP; i<=endP; i++){
+    let b = document.createElement('button');
+    b.className = 'fin-page-btn' + (i === currentPage ? ' active' : '');
+    b.innerText = i;
+    b.onclick = () => { currentPage = i; filterTable(); };
+    container.appendChild(b);
+  }
+  
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) { let dot = document.createElement('span'); dot.style.padding='4px 8px'; dot.innerText='...'; container.appendChild(dot); }
+    let b = document.createElement('button'); b.className='fin-page-btn'; b.innerText=totalPages; b.onclick=()=>{currentPage=totalPages; filterTable();}; container.appendChild(b);
+  }
+  
+  // Suivant
+  let next = document.createElement('button');
+  next.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+  next.className = 'fin-page-btn';
+  next.disabled = currentPage === totalPages;
+  next.onclick = () => { currentPage++; filterTable(); };
+  container.appendChild(next);
+}
+
+function exportToCSV() {
+  let csv = "ID,Période,Locataire,Propriétaire,Bien,Montant,Pénalité,Statut,Échéance,Payé le\n";
+  // On exporte même les paginées (donc tout le filtre)
+  document.querySelectorAll('#loyers-table tbody tr[data-search]').forEach(row => {
+    const search = document.getElementById('f-search').value.toLowerCase();
+    const matchSearch = !search || row.dataset.search.includes(search);
+    const matchStatut = !currentStatut || row.dataset.statut === currentStatut;
+    if (matchSearch && matchStatut) {
+      const cols = row.querySelectorAll('td');
+      let rowData = [];
+      for(let i=0;i<10;i++) rowData.push('"' + (cols[i]?.innerText.replace(/\n/g,' ').trim().replace(/"/g,'""')) + '"');
+      csv += rowData.join(',') + '\n';
+    }
+  });
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'loyers_sakan_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+</script>
+{% endblock %}

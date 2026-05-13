@@ -1,0 +1,168 @@
+{% extends 'layouts/base_admin.html.twig' %}
+{% block title %}Rapports Financiers — Admin Sakan{% endblock %}
+{% block page_title %}<i class="fa-solid fa-chart-bar" ></i> Rapports & Analytiques{% endblock %}
+
+{% block content %}
+<style>
+.rpt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:32px; }
+.rpt-kpi { background:white; border-radius:16px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.07); border-left:4px solid; text-align:center; }
+.rpt-kpi-val { font-size:28px; font-weight:800; margin:8px 0 4px; }
+.rpt-kpi-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:#6b7280; }
+.rpt-kpi-sub { font-size:12px; color:#9ca3af; margin-top:4px; }
+
+.rpt-card { background:white; border-radius:16px; padding:24px; margin-bottom:24px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.rpt-card-title { font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px; margin-bottom:20px; }
+
+.rpt-report-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+.rpt-report-item { border:2px solid #f3f4f6; border-radius:14px; padding:20px; cursor:pointer; transition:all 0.2s; }
+.rpt-report-item:hover { border-color:#4f46e5; box-shadow:0 4px 20px rgba(79,70,229,0.1); transform:translateY(-2px); }
+.rpt-report-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:12px; }
+.rpt-report-name { font-size:15px; font-weight:700; color:#111827; margin-bottom:4px; }
+.rpt-report-desc { font-size:13px; color:#6b7280; }
+.rpt-export-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#f0f0fe; color:#4f46e5; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; margin-top:12px; transition:all 0.2s; }
+.rpt-export-btn:hover { background:#4f46e5; color:white; }
+</style>
+
+{# ── Vue d'ensemble des KPIs ──────────────────────────────────── #}
+<div class="rpt-grid">
+  <div class="rpt-kpi" style="border-left-color:#4f46e5;">
+    <div class="rpt-kpi-lbl"><i class="fa-solid fa-house"></i> Loyers — Total</div>
+    <div class="rpt-kpi-val" >{{ kpis_loyers.total_loyers ?? 0 }}</div>
+    <div class="rpt-kpi-sub">{{ (kpis_loyers.total_montant ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="rpt-kpi" style="border-left-color:#16a34a;">
+    <div class="rpt-kpi-lbl"><i class="fa-solid fa-check"></i> Loyers Payés</div>
+    <div class="rpt-kpi-val" >{{ kpis_loyers.nb_payes ?? 0 }}</div>
+    <div class="rpt-kpi-sub">{{ (kpis_loyers.montant_paye ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="rpt-kpi" style="border-left-color:#dc2626;">
+    <div class="rpt-kpi-lbl"><i class="fa-solid fa-triangle-exclamation"></i> Loyers en Retard</div>
+    <div class="rpt-kpi-val" >{{ kpis_loyers.nb_retard ?? 0 }}</div>
+    <div class="rpt-kpi-sub">{{ (kpis_loyers.montant_retard ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="rpt-kpi" style="border-left-color:#f59e0b;">
+    <div class="rpt-kpi-lbl"><i class="fa-solid fa-bolt"></i> Charges Impayées</div>
+    <div class="rpt-kpi-val" >{{ kpis_charges.nb_non_paye ?? 0 }}</div>
+    <div class="rpt-kpi-sub">{{ (kpis_charges.montant_non_paye ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+  <div class="rpt-kpi" style="border-left-color:#16a34a;">
+    <div class="rpt-kpi-lbl"><i class="fa-solid fa-shield-halved"></i> Cautions Actives</div>
+    <div class="rpt-kpi-val" >{{ kpis_cautions.nb_actives ?? 0 }}</div>
+    <div class="rpt-kpi-sub">{{ (kpis_cautions.montant_actif ?? 0)|number_format(3,',', ' ') }} TND détenus</div>
+  </div>
+  <div class="rpt-kpi" style="border-left-color:#3b82f6;">
+    <div class="rpt-kpi-lbl"><i class="fa-solid fa-list"></i> Total Charges</div>
+    <div class="rpt-kpi-val" >{{ kpis_charges.total_charges ?? 0 }}</div>
+    <div class="rpt-kpi-sub">{{ (kpis_charges.total_montant ?? 0)|number_format(3,',', ' ') }} TND</div>
+  </div>
+</div>
+
+{# ── Rapports disponibles ─────────────────────────────────────── #}
+<div class="rpt-card">
+  <div class="rpt-card-title" ><i class="fa-solid fa-file-export"></i> Exporter des Rapports CSV</div>
+  <div class="rpt-report-grid">
+
+    <div class="rpt-report-item" onclick="exportReport('loyers')">
+      <div class="rpt-report-icon" ><i class="fa-solid fa-house"></i></div>
+      <div class="rpt-report-name">Journal des Loyers</div>
+      <div class="rpt-report-desc">Tous les paiements de loyers avec statuts, montants, locataires et propriétaires.</div>
+      <button class="rpt-export-btn"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+    </div>
+
+    <div class="rpt-report-item" onclick="exportReport('charges')">
+      <div class="rpt-report-icon" ><i class="fa-solid fa-bolt"></i></div>
+      <div class="rpt-report-name">Journal des Charges</div>
+      <div class="rpt-report-desc">Toutes les charges mensuelles par type, bien, locataire et statut paiement.</div>
+      <button class="rpt-export-btn"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+    </div>
+
+    <div class="rpt-report-item" onclick="exportReport('cautions')">
+      <div class="rpt-report-icon" ><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="rpt-report-name">État des Cautions</div>
+      <div class="rpt-report-desc">Toutes les cautions avec situation financière, retenues et remboursements.</div>
+      <button class="rpt-export-btn"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+    </div>
+
+    <div class="rpt-report-item" onclick="exportReport('retards')">
+      <div class="rpt-report-icon" ><i class="fa-solid fa-circle-exclamation"></i></div>
+      <div class="rpt-report-name">Balance Âgée — Retards</div>
+      <div class="rpt-report-desc">Loyers en retard classés par ancienneté. Idéal pour suivi contentieux.</div>
+      <button class="rpt-export-btn"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+    </div>
+
+  </div>
+</div>
+
+{# ── Raccourcis vers les modules ──────────────────────────────── #}
+<div class="rpt-card">
+  <div class="rpt-card-title" ><i class="fa-solid fa-bolt"></i> Accès Rapide aux Modules</div>
+  <div style="display:flex; gap:12px; flex-wrap:wrap;">
+    <a href="{{ path('admin_finance_loyers') }}" style="display:flex; align-items:center; gap:8px; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:600; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='#7c3aed';this.style.color='white'" onmouseout="this.style.background='#ede9fe';this.style.color='#7c3aed'">
+      <i class="fa-solid fa-house"></i> Gestion Loyers
+    </a>
+    <a href="{{ path('admin_finance_charges') }}" style="display:flex; align-items:center; gap:8px; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:600; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='#f59e0b';this.style.color='white'" onmouseout="this.style.background='#fef3c7';this.style.color='#d97706'">
+      <i class="fa-solid fa-bolt"></i> Gestion Charges
+    </a>
+    <a href="{{ path('admin_finance_cautions') }}" style="display:flex; align-items:center; gap:8px; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:600; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='#16a34a';this.style.color='white'" onmouseout="this.style.background='#dcfce7';this.style.color='#16a34a'">
+      <i class="fa-solid fa-shield-halved"></i> Gestion Cautions
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+{# Data passed from Twig for CSV export #}
+const _kpisLoyers  = {{ kpis_loyers|json_encode|raw }};
+const _kpisCharges = {{ kpis_charges|json_encode|raw }};
+const _kpisCautions= {{ kpis_cautions|json_encode|raw }};
+
+function exportReport(type) {
+  let csv = '', filename = '';
+  const now = new Date().toISOString().slice(0,10);
+
+  if (type === 'loyers') {
+    csv = "Métrique,Valeur\n";
+    csv += `"Total loyers","${_kpisLoyers.total_loyers}"\n`;
+    csv += `"Montant total (TND)","${parseFloat(_kpisLoyers.total_montant||0).toFixed(3)}"\n`;
+    csv += `"Payés","${_kpisLoyers.nb_payes} (${parseFloat(_kpisLoyers.montant_paye||0).toFixed(3)} TND)"\n`;
+    csv += `"En attente","${_kpisLoyers.nb_attente} (${parseFloat(_kpisLoyers.montant_attente||0).toFixed(3)} TND)"\n`;
+    csv += `"En retard","${_kpisLoyers.nb_retard} (${parseFloat(_kpisLoyers.montant_retard||0).toFixed(3)} TND)"\n`;
+    csv += `"Retard moyen (jours)","${Math.round(_kpisLoyers.retard_moyen_jours||0)}"\n`;
+    filename = `rapport_loyers_${now}.csv`;
+  } else if (type === 'charges') {
+    csv = "Métrique,Valeur\n";
+    csv += `"Total charges","${_kpisCharges.total_charges}"\n`;
+    csv += `"Montant total (TND)","${parseFloat(_kpisCharges.total_montant||0).toFixed(3)}"\n`;
+    csv += `"Non payées","${_kpisCharges.nb_non_paye} (${parseFloat(_kpisCharges.montant_non_paye||0).toFixed(3)} TND)"\n`;
+    csv += `"Payées","${_kpisCharges.nb_paye} (${parseFloat(_kpisCharges.montant_paye||0).toFixed(3)} TND)"\n`;
+    csv += `"Électricité","${_kpisCharges.nb_electricite}"\n`;
+    csv += `"Eau","${_kpisCharges.nb_eau}"\n`;
+    csv += `"Internet","${_kpisCharges.nb_internet}"\n`;
+    csv += `"Autre","${_kpisCharges.nb_autre}"\n`;
+    filename = `rapport_charges_${now}.csv`;
+  } else if (type === 'cautions') {
+    csv = "Métrique,Valeur\n";
+    csv += `"Total cautions","${_kpisCautions.total_cautions}"\n`;
+    csv += `"Total détenu (TND)","${parseFloat(_kpisCautions.total_detenu||0).toFixed(3)}"\n`;
+    csv += `"Actives","${_kpisCautions.nb_actives} (${parseFloat(_kpisCautions.montant_actif||0).toFixed(3)} TND)"\n`;
+    csv += `"Totalement remboursées","${_kpisCautions.nb_remboursees}"\n`;
+    csv += `"Partiellement remboursées","${_kpisCautions.nb_partielles}"\n`;
+    csv += `"Avec retenues","${_kpisCautions.nb_retenues}"\n`;
+    filename = `rapport_cautions_${now}.csv`;
+  } else if (type === 'retards') {
+    csv = "Module,Loyers En Retard\n";
+    csv += `"Nombre","${_kpisLoyers.nb_retard}"\n`;
+    csv += `"Montant total (TND)","${parseFloat(_kpisLoyers.montant_retard||0).toFixed(3)}"\n`;
+    csv += `"Retard moyen (jours)","${Math.round(_kpisLoyers.retard_moyen_jours||0)}"\n`;
+    csv += `\nPour le détail complet rendez-vous dans Gestion des Loyers > filtre En Retard\n`;
+    filename = `balance_agee_retards_${now}.csv`;
+  }
+
+  const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+</script>
+{% endblock %}

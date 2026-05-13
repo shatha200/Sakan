@@ -1,0 +1,39 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Notifications - Propriétaire{% endblock %}
+{% block page_title %}Mes notifications{% endblock %}
+
+{% block page_actions %}
+  {% if notifications is not empty %}
+    <form method="post" action="{{ path('owner_notifications_read_all') }}">
+      <input type="hidden" name="_token" value="{{ csrf_token('owner_notifs_read_all') }}">
+      <button class="btn-secondary" type="submit"><i class="fa-solid fa-check-double"></i> Tout marquer lu</button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    {% if notifications is empty %}
+      <p style="text-align:center; color: var(--text-muted); padding: 20px 0;">Aucune notification pour l'instant.</p>
+    {% else %}
+      <ul class="owner-notif-page-list">
+        {% for n in notifications %}
+          <li class="owner-notif-page-item {{ n.is_read ? '' : 'is-unread' }}">
+            <div class="owner-notif-page-icon"><i class="fa-solid fa-eye"></i></div>
+            <div class="owner-notif-page-body">
+              <p>{{ n.message }}</p>
+              <time>{{ n.created_at|date('d/m/Y H:i') }}</time>
+            </div>
+            {% if not n.is_read %}
+              <form method="post" action="{{ path('owner_notification_read', {id: n.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('owner_notif_' ~ n.id) }}">
+                <button class="btn-secondary btn-sm" type="submit" title="Marquer lu"><i class="fa-solid fa-check"></i></button>
+              </form>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+{% endblock %}

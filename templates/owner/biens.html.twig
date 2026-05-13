@@ -1,0 +1,426 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Mes propriétés — Sakan{% endblock %}
+
+{% block page_title %}Mes propriétés{% endblock %}
+{% block page_subtitle %}Gérez votre parc immobilier{% endblock %}
+
+{% block page_actions %}
+<a href="{{ path('owner_ajouter_bien') }}" class="btn-primary">
+    <i class="fa-solid fa-plus"></i> Ajouter un bien
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  {% for label_f, messages in app.flashes(['error', 'success']) %}
+    {% for message in messages %}
+      <div style="padding:12px 16px;border-radius:12px;margin-bottom:16px;background:{{ label_f == 'success' ? '#dcfce7' : '#fee2e2' }};color:{{ label_f == 'success' ? '#166534' : '#991b1b' }};font-weight:600;">{{ message }}</div>
+    {% endfor %}
+  {% endfor %}
+
+  {% set filters = filters|default({'q':'','type':'','statut':'','sort':'recent'}) %}
+  {% set allowed_types = allowed_types|default(['Appartement','Villa','Studio','Maison','Bureau']) %}
+
+  <form method="get" action="{{ path('owner_biens') }}"
+        style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:12px;align-items:end;
+               background:white;padding:18px 20px;border-radius:18px;box-shadow:var(--shadow-card);margin-bottom:20px;">
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">
+        <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+      </label>
+      <input type="text" name="q" value="{{ filters.q }}" placeholder="Titre, description, adresse..." class="sakan-input" style="width:100%;">
+    </div>
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Type</label>
+      <select name="type" class="sakan-input" style="width:100%;">
+        <option value="">Tous</option>
+        {% for t in allowed_types %}
+          <option value="{{ t }}" {{ filters.type == t ? 'selected' : '' }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Trier par</label>
+      <select name="sort" class="sakan-input" style="width:100%;">
+        <option value="recent"    {{ filters.sort == 'recent'    ? 'selected' : '' }}>Plus récent</option>
+        <option value="prix_asc"  {{ filters.sort == 'prix_asc'  ? 'selected' : '' }}>Prix croissant</option>
+        <option value="prix_desc" {{ filters.sort == 'prix_desc' ? 'selected' : '' }}>Prix décroissant</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary"><i class="fa-solid fa-filter"></i> Filtrer</button>
+    <a href="{{ path('owner_biens') }}" class="btn-secondary" title="Réinitialiser"><i class="fa-solid fa-rotate-left"></i></a>
+  </form>
+
+  {% set actives = annonces|filter(a => a.statut != 'occupe') %}
+  {% set archives = annonces|filter(a => a.statut == 'occupe') %}
+  {% set total = actives|length %}
+  {% set nb_dispo = actives|filter(a => a.statut == 'disponible')|length %}
+  {% set nb_bientot = actives|filter(a => a.statut == 'bientot')|length %}
+  {% set nb_archive = archives|length %}
+
+  <!-- ONGLETS ACTIFS / ARCHIVE -->
+  <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid #e2e8f0;">
+    <button id="tab-actifs" onclick="switchTab('actifs')" style="padding:12px 24px;font-weight:700;font-size:14px;border:none;border-bottom:3px solid #5E17EB;background:none;color:#5E17EB;cursor:pointer;transition:all .15s;">
+      <i class="fa-solid fa-house"></i> Mes biens ({{ total }})
+    </button>
+    <button id="tab-archive" onclick="switchTab('archive')" style="padding:12px 24px;font-weight:700;font-size:14px;border:none;border-bottom:3px solid transparent;background:none;color:var(--text-muted);cursor:pointer;transition:all .15s;">
+      <i class="fa-solid fa-box-archive"></i> Archive ({{ nb_archive }})
+    </button>
+  </div>
+
+  <!-- SECTION ACTIVE -->
+  <div id="section-actifs">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header" style="justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+      <p style="color:var(--text-muted); margin-top: 4px;">Gérez votre parc immobilier ({{ total }} bien{{ total > 1 ? 's' : '' }} actif{{ total > 1 ? 's' : '' }})</p>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <!-- TOGGLE VUE -->
+      <button id="btn-grid" onclick="setView('grid')" class="btn-outline btn-sm active-view"><i class="fa-solid fa-grip"></i></button>
+      <button id="btn-list" onclick="setView('list')" class="btn-outline btn-sm"><i class="fa-solid fa-list"></i></button>
+    </div>
+  </div>
+
+  <!-- FILTRES STATUT -->
+  <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+    <button class="filter-chip active" onclick="filterBiens('all')">Tous ({{ total }})</button>
+    <button class="filter-chip" onclick="filterBiens('disponible')"><span style="color:#5E17EB">●</span> Disponibles ({{ nb_dispo }})</button>
+    <button class="filter-chip" onclick="filterBiens('bientot')"><span style="color:#d97706">●</span> Bientôt ({{ nb_bientot }})</button>
+  </div>
+
+  <!-- VUE GRILLE -->
+  <div id="view-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+    {% if actives is empty %}
+      <div style="grid-column:1/-1;padding:40px;text-align:center;background:white;border-radius:20px;box-shadow:var(--shadow-card);">
+        <i class="fa-solid fa-house-circle-xmark" style="font-size:42px;color:var(--text-muted);"></i>
+        <h3 style="margin:12px 0 4px 0;">Aucune annonce active</h3>
+        <p style="color:var(--text-muted);margin:0 0 16px 0;">Vous n'avez pas de biens actifs pour le moment.</p>
+        <a href="{{ path('owner_ajouter_bien') }}" class="btn-primary"><i class="fa-solid fa-plus"></i> Ajouter un bien</a>
+      </div>
+    {% endif %}
+
+    {% for a in actives %}
+      {% set color = a.statut == 'occupe' ? '#10b981' : (a.statut == 'bientot' ? '#d97706' : '#5E17EB') %}
+      {% set label = a.statut == 'occupe' ? 'OCCUPÉ' : (a.statut == 'bientot' ? 'BIENTÔT' : 'DISPONIBLE') %}
+      <div class="bien-owner-card" data-statut="{{ a.statut }}" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);transition:transform .15s ease, box-shadow .15s ease;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 30px rgba(94,23,235,0.15)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+        <div style="height:4px;background:{{ color }};"></div>
+        <a href="{{ a.slug is defined and a.slug ? path('owner_bien_show_slug', {slug: a.slug}) : path('owner_bien_show', {id: a.id}) }}" style="display:block;text-decoration:none;color:inherit;">
+          <div style="position:relative;">
+            {% if a.cover %}
+              <img src="{{ a.cover | imagine_filter('annonce_thumb') }}" style="width:100%;height:200px;object-fit:cover;">
+            {% else %}
+              <div style="width:100%;height:200px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fa-solid fa-image" style="font-size:32px;"></i></div>
+            {% endif %}
+            <span style="position:absolute;top:12px;right:12px;background:{{ color }};color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">● {{ label }}</span>
+          </div>
+        </a>
+        <div style="padding:16px;">
+          <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">{{ a.titre }}</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> {% set _p = (a.adresse ?? '')|split(',')|map(p => p|trim)|filter(p => p != '') %}{{ _p|length > 3 ? (_p|slice(0, 2)|join(', ') ~ ', ' ~ _p|last) : (_p|join(', ') ?: '—') }}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+              <div style="font-size:16px;font-weight:700;color:#5E17EB;">{{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }}</div>
+              <div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+              <div style="font-size:16px;font-weight:700;">{{ a.dateDisponibilite ? a.dateDisponibilite|date('d/m/Y') : 'Imprévue' }}</div>
+              <div style="font-size:10px;color:var(--text-muted);">disponibilité</div>
+            </div>
+          </div>
+          {% if a.statut == 'bientot' and a.total_seconds %}
+            <div class="countdown-timer" data-seconds="{{ a.total_seconds }}" style="padding:8px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;margin-bottom:12px;font-size:12px;font-weight:600;color:#92400e;text-align:center;">
+              <i class="fa-solid fa-clock"></i> Disponible dans <span class="cd-text">{{ a.jours_restants }}j {{ '%02d'|format(a.heures_restantes) }}h {{ '%02d'|format(a.minutes_restantes) }}min</span>
+            </div>
+          {% elseif a.statut == 'bientot' and not a.total_seconds %}
+            <div style="padding:8px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;margin-bottom:12px;font-size:12px;font-weight:600;color:#92400e;text-align:center;">
+              <i class="fa-solid fa-clock"></i> Date de disponibilité imprévue
+            </div>
+          {% endif %}
+          <div style="display:grid;grid-template-columns:1fr 44px 44px;gap:8px;align-items:stretch;">
+            <a href="{{ a.slug is defined and a.slug ? path('owner_bien_show_slug', {slug: a.slug}) : path('owner_bien_show', {id: a.id}) }}"
+               style="display:flex;align-items:center;justify-content:center;gap:8px;height:42px;border-radius:12px;background:linear-gradient(135deg,#5E17EB,#8b5cf6);color:white;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 12px rgba(94,23,235,0.25);transition:all .15s;"
+               onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(94,23,235,0.35)';"
+               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 12px rgba(94,23,235,0.25)';">
+              <i class="fa-solid fa-eye"></i> Voir le détail
+            </a>
+            <a href="{{ path('owner_bien_edit', {id: a.id}) }}" title="Modifier"
+               style="display:flex;align-items:center;justify-content:center;height:42px;border-radius:12px;border:1.5px solid #e2e8f0;background:white;color:#5E17EB;text-decoration:none;font-size:14px;transition:all .15s;"
+               onmouseover="this.style.borderColor='#5E17EB';this.style.background='#faf5ff';"
+               onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white';">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </a>
+            <form method="post" action="{{ path('owner_bien_delete', {id: a.id}) }}" onsubmit="return confirm('Supprimer ce bien ?');" style="display:contents;">
+              <input type="hidden" name="_token" value="{{ csrf_token('owner_bien_delete_' ~ a.id) }}">
+              <button type="submit" title="Supprimer"
+                      style="display:flex;align-items:center;justify-content:center;height:42px;border-radius:12px;border:1.5px solid #fecaca;background:white;color:#dc2626;cursor:pointer;font-size:14px;transition:all .15s;"
+                      onmouseover="this.style.background='#fee2e2';this.style.borderColor='#dc2626';"
+                      onmouseout="this.style.background='white';this.style.borderColor='#fecaca';">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+
+    {% if false %}
+    <!-- BIEN 1: LOUÉ -->
+    <div class="bien-owner-card" data-statut="loue" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+      <div style="height:4px;background:#10b981;"></div>
+      <div style="position:relative;">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600" style="width:100%;height:200px;object-fit:cover;">
+        <span style="position:absolute;top:12px;right:12px; background:#10b981;color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● LOUÉ</span>
+      </div>
+      <div style="padding:16px;">
+        <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Appartement lumineux - Lac 2</h3>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> Lac 2, Tunis</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;color:#5E17EB;">2 200</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;">3</div><div style="font-size:10px;color:var(--text-muted);">chambres</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;">95</div><div style="font-size:10px;color:var(--text-muted);">m²</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#dcfce7;border-radius:12px;margin-bottom:12px;">
+          <img src="https://i.pravatar.cc/32?img=5" style="width:28px;height:28px;border-radius:50%;">
+          <div><div style="font-size:12px;font-weight:600;color:#16a34a;">Fatma Trabelsi</div><div style="font-size:11px;color:#16a34a;">Contrat jusqu'au 31/08/2025</div></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-primary btn-sm" style="flex:1;" onclick="showToast('📋 Détail du bien')"><i class="fa-solid fa-eye"></i> Détail</button>
+          <button class="btn-outline btn-sm" onclick="showToast('✏️ Édition du bien (bientôt)')"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIEN 2: DISPONIBLE -->
+    <div class="bien-owner-card" data-statut="disponible" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+      <div style="height:4px;background:#5E17EB;"></div>
+      <div style="position:relative;">
+        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600" style="width:100%;height:200px;object-fit:cover;">
+        <span style="position:absolute;top:12px;right:12px; background:rgba(94,23,235,0.8);color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● DISPONIBLE</span>
+      </div>
+      <div style="padding:16px;">
+        <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Studio moderne - Menzah 6</h3>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> Menzah 6, Tunis</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;color:#5E17EB;">1 100</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;">1</div><div style="font-size:10px;color:var(--text-muted);">chambre</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;">45</div><div style="font-size:10px;color:var(--text-muted);">m²</div>
+          </div>
+        </div>
+        <div style="padding:8px;background:#f8fafc;border-radius:10px; margin-bottom:12px;font-size:12px;color:var(--text-muted);">
+          <i class="fa-solid fa-magnifying-glass"></i> 3 candidatures en cours
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-primary btn-sm" style="flex:1;" onclick="showToast('📋 Détail du bien')"><i class="fa-solid fa-eye"></i> Détail</button>
+          <button class="btn-outline btn-sm" onclick="showToast('✏️ Édition du bien')"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIEN 3: EN RÉVISION -->
+    <div class="bien-owner-card" data-statut="revision" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+      <div style="height:4px;background:#d97706;"></div>
+      <div style="position:relative;">
+        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600" style="width:100%;height:200px;object-fit:cover;">
+        <span style="position:absolute;top:12px;right:12px; background:#d97706;color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● RÉVISION</span>
+      </div>
+      <div style="padding:16px;">
+        <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Villa avec piscine - La Marsa</h3>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> La Marsa, Tunis</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;color:#5E17EB;">4 500</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;">4</div><div style="font-size:10px;color:var(--text-muted);">chambres</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+            <div style="font-size:16px;font-weight:700;">200</div><div style="font-size:10px;color:var(--text-muted);">m²</div>
+          </div>
+        </div>
+        <div style="padding:8px;background:#fef3c7;border-radius:10px; margin-bottom:12px;font-size:12px;color:#92400e;">
+          <i class="fa-solid fa-clock"></i> En attente de validation admin
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-primary btn-sm" style="flex:1;" onclick="showToast('📋 Détail du bien')"><i class="fa-solid fa-eye"></i> Détail</button>
+          <button class="btn-outline btn-sm" onclick="showToast('✏️ Édition du bien')"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+  </div>{# end section-actifs #}
+
+  <!-- SECTION ARCHIVE -->
+  <div id="section-archive" style="display:none;">
+    <div style="margin-bottom:20px;">
+      <p style="color:var(--text-muted);font-size:14px;"><i class="fa-solid fa-box-archive"></i> Les biens archivés sont occupés et ne sont pas visibles par les locataires. Ils redeviendront visibles automatiquement 7 jours avant leur date de disponibilité.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+      {% if archives is empty %}
+        <div style="grid-column:1/-1;padding:40px;text-align:center;background:white;border-radius:20px;box-shadow:var(--shadow-card);">
+          <i class="fa-solid fa-box-open" style="font-size:42px;color:var(--text-muted);"></i>
+          <h3 style="margin:12px 0 4px 0;">Aucune annonce archivée</h3>
+          <p style="color:var(--text-muted);margin:0;">Tous vos biens sont actifs.</p>
+        </div>
+      {% endif %}
+
+      {% for a in archives %}
+        <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);opacity:0.85;">
+          <div style="height:4px;background:#94a3b8;"></div>
+          <a href="{{ a.slug is defined and a.slug ? path('owner_bien_show_slug', {slug: a.slug}) : path('owner_bien_show', {id: a.id}) }}" style="display:block;text-decoration:none;color:inherit;">
+            <div style="position:relative;">
+              {% if a.cover %}
+                <img src="{{ a.cover | imagine_filter('annonce_thumb') }}" style="width:100%;height:200px;object-fit:cover;filter:grayscale(30%);">
+              {% else %}
+                <div style="width:100%;height:200px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fa-solid fa-image" style="font-size:32px;"></i></div>
+              {% endif %}
+              <span style="position:absolute;top:12px;right:12px;background:#94a3b8;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;"><i class="fa-solid fa-box-archive"></i> ARCHIVÉ</span>
+            </div>
+          </a>
+          <div style="padding:16px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">{{ a.titre }}</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> {% set _p = (a.adresse ?? '')|split(',')|map(p => p|trim)|filter(p => p != '') %}{{ _p|length > 3 ? (_p|slice(0, 2)|join(', ') ~ ', ' ~ _p|last) : (_p|join(', ') ?: '—') }}</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;color:#5E17EB;">{{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }}</div>
+                <div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">{{ a.dateDisponibilite ? a.dateDisponibilite|date('d/m/Y') : '—' }}</div>
+                <div style="font-size:10px;color:var(--text-muted);">disponibilité</div>
+              </div>
+            </div>
+            {% if a.total_seconds %}
+              <div class="countdown-timer" data-seconds="{{ a.total_seconds }}" style="padding:8px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px;font-size:12px;font-weight:600;color:#64748b;text-align:center;">
+                <i class="fa-solid fa-clock"></i> Visible dans <span class="cd-text">{{ a.jours_restants }}j {{ '%02d'|format(a.heures_restantes) }}h {{ '%02d'|format(a.minutes_restantes) }}min</span>
+              </div>
+            {% endif %}
+            <div style="display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:stretch;">
+              <a href="{{ path('owner_bien_edit', {id: a.id}) }}"
+                 style="display:flex;align-items:center;justify-content:center;gap:8px;height:42px;border-radius:12px;border:1.5px solid #e2e8f0;background:white;color:#5E17EB;font-weight:700;font-size:13px;text-decoration:none;transition:all .15s;"
+                 onmouseover="this.style.borderColor='#5E17EB';this.style.background='#faf5ff';"
+                 onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white';">
+                <i class="fa-solid fa-pen-to-square"></i> Modifier
+              </a>
+              <form method="post" action="{{ path('owner_bien_delete', {id: a.id}) }}" onsubmit="return confirm('Supprimer ce bien ?');" style="display:contents;">
+                <input type="hidden" name="_token" value="{{ csrf_token('owner_bien_delete_' ~ a.id) }}">
+                <button type="submit" title="Supprimer"
+                        style="display:flex;align-items:center;justify-content:center;height:42px;border-radius:12px;border:1.5px solid #fecaca;background:white;color:#dc2626;cursor:pointer;font-size:14px;transition:all .15s;"
+                        onmouseover="this.style.background='#fee2e2';this.style.borderColor='#dc2626';"
+                        onmouseout="this.style.background='white';this.style.borderColor='#fecaca';">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>{# end section-archive #}
+
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+  function switchTab(tab) {
+    const actifs = document.getElementById('section-actifs');
+    const archive = document.getElementById('section-archive');
+    const tabActifs = document.getElementById('tab-actifs');
+    const tabArchive = document.getElementById('tab-archive');
+    if (tab === 'archive') {
+      actifs.style.display = 'none';
+      archive.style.display = 'block';
+      tabActifs.style.borderBottomColor = 'transparent';
+      tabActifs.style.color = 'var(--text-muted)';
+      tabArchive.style.borderBottomColor = '#5E17EB';
+      tabArchive.style.color = '#5E17EB';
+    } else {
+      actifs.style.display = 'block';
+      archive.style.display = 'none';
+      tabActifs.style.borderBottomColor = '#5E17EB';
+      tabActifs.style.color = '#5E17EB';
+      tabArchive.style.borderBottomColor = 'transparent';
+      tabArchive.style.color = 'var(--text-muted)';
+    }
+  }
+  function filterBiens(statut) {
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.bien-owner-card').forEach(card => {
+      if (statut === 'all' || card.dataset.statut === statut) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+  // Minuteur temps réel (chaque seconde)
+  function startCountdowns() {
+    document.querySelectorAll('.countdown-timer').forEach(el => {
+      let sec = parseInt(el.dataset.seconds) || 0;
+      const span = el.querySelector('.cd-text');
+      if (!span || sec <= 0) {
+        if (span) span.textContent = 'Disponible !';
+        return;
+      }
+      function pad(n) { return String(n).padStart(2, '0'); }
+      const timer = setInterval(function() {
+        sec--;
+        if (sec <= 0) {
+          clearInterval(timer);
+          el.style.background = '#dcfce7';
+          el.style.borderColor = '#86efac';
+          el.style.color = '#166534';
+          el.innerHTML = '<i class="fa-solid fa-check-circle"></i> Disponible ! <a href="" style="color:#166534;font-weight:700;text-decoration:underline;margin-left:8px;">Rafraîchir</a>';
+          return;
+        }
+        const d = Math.floor(sec / 86400);
+        const h = Math.floor((sec % 86400) / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        span.textContent = d + 'j ' + pad(h) + 'h ' + pad(m) + 'min ' + pad(s) + 's';
+      }, 1000);
+    });
+  }
+  startCountdowns();
+
+  function setView(view) {
+    document.getElementById('btn-grid').classList.toggle('active-view', view === 'grid');
+    document.getElementById('btn-list').classList.toggle('active-view', view === 'list');
+    const grid = document.getElementById('view-grid');
+    if (view === 'list') {
+      grid.style.gridTemplateColumns = '1fr';
+    } else {
+      grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    }
+  }
+</script>
+{% endblock %}

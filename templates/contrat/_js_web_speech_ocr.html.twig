@@ -1,0 +1,244 @@
+{# OCR CIN : Tesseract.js uniquement (navigateur) — plus d'appel serveur #}
+{# Variables : cin_input_id, cin_verified_id, verified_ok_value (ex: '1') #}
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+(function () {
+    var cinInputId = {{ (cin_input_id|default('cin-input'))|json_encode|raw }};
+    var cinVerifiedId = {{ (cin_verified_id|default('cin-verified'))|json_encode|raw }};
+    var verifiedOk = {{ (verified_ok_value|default('1'))|json_encode|raw }};
+
+    function extractCin8(text) {
+        if (!text) return null;
+        var m = text.match(/\b\d{8}\b/g);
+        if (m && m.length) return m[0];
+        var d = text.replace(/\D/g, '');
+        return d.length >= 8 ? d.substring(0, 8) : null;
+    }
+
+    /** Une seule session vocale à la fois (évite InvalidStateError + conflits micro). */
+    var sakanActiveSpeechRecognition = null;
+
+    function sakanAbortSpeechRecognition() {
+        if (!sakanActiveSpeechRecognition) return;
+        try {
+            sakanActiveSpeechRecognition.abort();
+        } catch (e) {}
+        sakanActiveSpeechRecognition = null;
+    }
+
+    /** Texte montant : chiffres dictés ou collés (virgule décimale). */
+    function sakanParseNumberTranscript(t) {
+        if (!t) return '';
+        var s = t.replace(/,/g, '.').replace(/\s+/g, '');
+        var digits = s.replace(/[^\d.]/g, '');
+        if (digits.indexOf('.') !== digits.lastIndexOf('.')) {
+            digits = digits.replace(/\./g, '');
+        }
+        return digits;
+    }
+
+    window.sakanBindSpeech = function (buttonId, inputId, mode) {
+        var btn = document.getElementById(buttonId);
+        var inp = document.getElementById(inputId);
+        if (!btn || !inp) return;
+        if (btn.getAttribute('data-sakan-speech-bound') === '1') return;
+        btn.setAttribute('data-sakan-speech-bound', '1');
+
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+            btn.disabled = true;
+            btn.title = 'Reconnaissance vocale non disponible sur ce navigateur';
+            return;
+        }
+
+        var defaultTitle = btn.getAttribute('title') || 'Dictée vocale';
+
+        btn.addEventListener('click', function () {
+            sakanAbortSpeechRecognition();
+
+            var rec = new SR();
+            rec.lang = 'fr-FR';
+            rec.interimResults = false;
+            rec.continuous = false;
+            try {
+                rec.maxAlternatives = 1;
+            } catch (e) {}
+
+            sakanActiveSpeechRecognition = rec;
+
+            rec.onstart = function () {
+                btn.classList.add('is-recording');
+                btn.title = 'Écoute… parlez maintenant';
+            };
+
+            rec.onend = function () {
+                btn.classList.remove('is-recording');
+                btn.title = defaultTitle;
+                if (sakanActiveSpeechRecognition === rec) {
+                    sakanActiveSpeechRecognition = null;
+                }
+            };
+
+            rec.onerror = function (ev) {
+                btn.classList.remove('is-recording');
+                btn.title = defaultTitle;
+                if (sakanActiveSpeechRecognition === rec) {
+                    sakanActiveSpeechRecognition = null;
+                }
+                var code = ev && ev.error ? ev.error : '';
+                if (code === 'not-allowed' || code === 'service-not-allowed') {
+                    alert('Microphone refusé. Autorisez le micro pour ce site (icône à gauche de la barre d’adresse).');
+                } else if (code === 'no-speech') {
+                    btn.title = 'Aucune voix détectée — réessayez en parlant plus fort';
+                    setTimeout(function () { btn.title = defaultTitle; }, 4500);
+                } else if (code === 'network') {
+                    btn.title = 'Erreur réseau (Chrome utilise la reco en ligne). Vérifiez la connexion.';
+                    setTimeout(function () { btn.title = defaultTitle; }, 5000);
+                } else if (code === 'audio-capture') {
+                    btn.title = 'Micro indisponible ou occupé par une autre application';
+                    setTimeout(function () { btn.title = defaultTitle; }, 4500);
+                } else if (code !== 'aborted') {
+                    btn.title = 'Erreur reconnaissance : ' + code;
+                    setTimeout(function () { btn.title = defaultTitle; }, 4000);
+                }
+            };
+
+            rec.onresult = function (e) {
+                var t = '';
+                if (e.results && e.results.length && e.results[0].length) {
+                    t = e.results[0][0].transcript || '';
+                }
+                t = t.trim();
+                if (mode === 'cin8') {
+                    inp.value = t.replace(/\D/g, '').slice(0, 8);
+                } else if (mode === 'number') {
+                    inp.value = sakanParseNumberTranscript(t);
+                } else {
+                    inp.value = t;
+                }
+            };
+
+            try {
+                rec.start();
+            } catch (err) {
+                if (sakanActiveSpeechRecognition === rec) {
+                    sakanActiveSpeechRecognition = null;
+                }
+                btn.classList.remove('is-recording');
+                btn.title = 'Réessayez dans une seconde';
+                setTimeout(function () { btn.title = defaultTitle; }, 2500);
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('sakanBindSpeech start', err);
+                }
+            }
+        });
+    };
+
+    window.sakanHandleCINUpload = function (fileInput) {
+        var file = fileInput.files[0];
+        if (!file) return;
+
+        if (file.type === 'application/pdf') {
+            alert('Pour l’OCR dans le navigateur, utilisez une photo JPG ou PNG du CIN (pas un PDF).');
+            return;
+        }
+
+        if (typeof Tesseract === 'undefined') {
+            alert('OCR : chargement de la bibliothèque en cours. Réessayez dans une seconde.');
+            return;
+        }
+
+        var cinInput = document.getElementById(cinInputId);
+        var cinVerified = document.getElementById(cinVerifiedId);
+        var fnEl = document.getElementById(fileInput.id + '-label') || document.getElementById('ocr-filename');
+        if (fnEl) fnEl.textContent = file.name;
+        var ocrZone = document.getElementById('ocr-zone');
+        if (ocrZone) ocrZone.classList.add('has-file');
+
+        var resultDiv = document.getElementById('ocr-result');
+        var messageBox = document.getElementById('ocr-message-box');
+        var icon = document.getElementById('ocr-icon');
+        var message = document.getElementById('ocr-message');
+        var cinDetected = document.getElementById('ocr-cin-detected');
+
+        if (resultDiv) resultDiv.style.display = 'block';
+        if (icon) {
+            icon.className = 'fa-solid fa-circle-notch fa-spin';
+            icon.style.color = '#f59e0b';
+        }
+        if (message) {
+            message.textContent = 'Analyse OCR en cours…';
+            message.style.color = '';
+        }
+        if (messageBox) messageBox.style.background = '#fffbeb';
+        if (cinDetected) cinDetected.textContent = '';
+        if (cinVerified) cinVerified.value = '0';
+
+        Tesseract.recognize(file, 'ara+fra', {
+            logger: function (m) {
+                if (m.status === 'recognizing text' && message) {
+                    var pct = Math.round((m.progress || 0) * 100);
+                    message.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyse : ' + pct + ' %';
+                }
+            }
+        }).then(function (result) {
+            var text = (result && result.data && result.data.text) ? result.data.text : '';
+            var cinOCR = extractCin8(text);
+            var cinSaisi = cinInput ? cinInput.value.replace(/\D/g, '').substring(0, 8) : '';
+
+            if (!cinOCR) {
+                if (icon) icon.className = 'fa-solid fa-triangle-exclamation';
+                if (icon) icon.style.color = '#f59e0b';
+                if (message) {
+                    message.innerHTML = 'Aucun numéro à 8 chiffres détecté. Essayez une photo plus nette.';
+                    message.style.color = '#92400e';
+                }
+                if (messageBox) messageBox.style.background = '#fef9c3';
+                if (cinDetected) cinDetected.textContent = (text ? text.substring(0, 100) + (text.length > 100 ? '…' : '') : '');
+                return;
+            }
+
+            if (cinDetected) cinDetected.textContent = 'Lu : ' + cinOCR;
+
+            if (cinSaisi && cinOCR === cinSaisi) {
+                if (icon) icon.className = 'fa-solid fa-check-circle';
+                if (icon) icon.style.color = '#10b981';
+                if (message) {
+                    message.innerHTML = '<strong>CIN conforme ✓</strong> — ' + cinOCR;
+                    message.style.color = '#16a34a';
+                }
+                if (messageBox) messageBox.style.background = '#dcfce7';
+                if (cinVerified) cinVerified.value = verifiedOk;
+            } else if (cinSaisi) {
+                if (icon) icon.className = 'fa-solid fa-circle-xmark';
+                if (icon) icon.style.color = '#dc2626';
+                if (message) {
+                    message.innerHTML = '<strong>Non conforme</strong> — Saisi : ' + cinSaisi + ' | Image : ' + cinOCR;
+                    message.style.color = '#dc2626';
+                }
+                if (messageBox) messageBox.style.background = '#fee2e2';
+                if (cinVerified) cinVerified.value = '0';
+            } else {
+                if (cinInput) cinInput.value = cinOCR;
+                if (icon) icon.className = 'fa-solid fa-check-circle';
+                if (icon) icon.style.color = '#10b981';
+                if (message) {
+                    message.innerHTML = '<strong>CIN détecté :</strong> ' + cinOCR + ' — champ rempli';
+                    message.style.color = '#16a34a';
+                }
+                if (messageBox) messageBox.style.background = '#dcfce7';
+                if (cinVerified) cinVerified.value = verifiedOk;
+            }
+        }).catch(function (err) {
+            if (icon) icon.className = 'fa-solid fa-circle-xmark';
+            if (icon) icon.style.color = '#dc2626';
+            if (message) {
+                message.innerHTML = 'Erreur OCR : ' + (err && err.message ? err.message : String(err));
+                message.style.color = '#dc2626';
+            }
+            if (messageBox) messageBox.style.background = '#fee2e2';
+            if (cinVerified) cinVerified.value = '0';
+        });
+    };
+})();
+</script>

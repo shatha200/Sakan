@@ -1,0 +1,161 @@
+{% extends 'layouts/base_revenus_owner.html.twig' %}
+{% block revenus_content %}
+
+<!-- Summary Bar -->
+<div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; color: white;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Paiements en attente ce mois</div>
+            <div style="font-size: 28px; font-weight: 700;">{{ count }} <span style="font-size: 16px; font-weight: 500;">loyer(s)</span></div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Total attendu</div>
+            <div style="font-size: 28px; font-weight: 700;">{{ total|number_format(3, ',', ' ') }} <span style="font-size: 16px; font-weight: 500;">TND</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- État Vide -->
+{% if loyers is empty %}
+<div style="background: white; border-radius: 16px; padding: 48px; text-align: center; box-shadow: var(--shadow-card);">
+    <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <i class="fa-solid fa-check-circle" style="font-size: 32px; color: #22c55e;"></i>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 12px;">Aucun paiement en attente</h3>
+    <p style="font-size: 15px; color: #6b7280; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Tous les loyers du mois en cours ont été payés ou vous n'avez pas encore de contrats actifs.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ path('owner_biens') }}" style="padding: 12px 24px; background: var(--primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-plus"></i> Ajouter un bien
+        </a>
+        <a href="{{ path('owner_revenus_journal') }}" style="padding: 12px 24px; background: #f3f4f6; color: #374151; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-book"></i> Voir le journal
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- Paiements List -->
+<div style="background: white; border-radius: 20px; padding: 24px; box-shadow: var(--shadow-card);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="font-size: 16px; font-weight: 700; margin: 0;">
+            <i class="fa-solid fa-clock" style="color: var(--primary); margin-right: 8px;"></i> Paiements attendus
+        </h3>
+        {% if count > 0 %}
+        <button onclick="relancerTout()" style="padding: 8px 16px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-paper-plane"></i> Relancer tout
+        </button>
+        {% endif %}
+    </div>
+
+    <table class="table-paiements" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e5e7eb;">
+                <th style="text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Locataire</th>
+                <th style="text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Bien</th>
+                <th style="text-align: right; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Montant</th>
+                <th style="text-align: center; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Échéance</th>
+                <th style="text-align: center; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Jours restants</th>
+                <th style="text-align: center; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for loyer in loyers %}
+            <tr data-id="{{ loyer.paiement_id }}" style="border-bottom: 1px solid #f3f4f6;">
+                <td style="padding: 16px 12px;">
+                    <div style="font-weight: 600; color: #1f2937;">{{ loyer.nom_locataire }}</div>
+                    <div style="font-size: 12px; color: #6b7280;">{{ loyer.email }}</div>
+                </td>
+                <td style="padding: 16px 12px;">
+                    <div style="font-weight: 500; color: #374151;">{{ loyer.nom_bien }}</div>
+                    <div style="font-size: 12px; color: #6b7280;">{{ loyer.telephone }}</div>
+                </td>
+                <td style="padding: 16px 12px; text-align: right;">
+                    <div style="font-weight: 700; color: #1f2937;">{{ loyer.montant|number_format(3, ',', ' ') }} TND</div>
+                </td>
+                <td style="padding: 16px 12px; text-align: center;">
+                    <div style="font-weight: 500; color: #374151;">{{ loyer.date_echeance|date('d/m/Y') }}</div>
+                </td>
+                <td style="padding: 16px 12px; text-align: center;">
+                    {% if loyer.jours_restants < 0 %}
+                        <span style="padding: 6px 12px; background: #fef2f2; color: #dc2626; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            {{ loyer.jours_restants|abs }}j retard
+                        </span>
+                    {% elseif loyer.jours_restants <= 5 %}
+                        <span style="padding: 6px 12px; background: #fffbeb; color: #d97706; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            {{ loyer.jours_restants }}j restants
+                        </span>
+                    {% else %}
+                        <span style="padding: 6px 12px; background: #f0fdf4; color: #16a34a; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            {{ loyer.jours_restants }}j restants
+                        </span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px 12px; text-align: center;">
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="relancer({{ loyer.paiement_id }}, '{{ loyer.nom_locataire }}')" 
+                                style="padding: 8px 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-paper-plane"></i> Relancer
+                        </button>
+                        <button onclick="marquerPaye({{ loyer.paiement_id }})" 
+                                style="padding: 8px 14px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-check"></i> Payé
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+
+<!-- Toast Notification -->
+<div id="toast" style="display: none; position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; background: #1f2937; color: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 1000; font-weight: 500;"></div>
+
+<script>
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        t.style.background = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#1f2937';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function relancer(id, nom) {
+        // Simulation - à remplacer par appel API réel
+        showToast('📧 Relance envoyée à ' + nom, 'success');
+    }
+
+    function relancerTout() {
+        showToast('📧 Relances envoyées à tous les locataires', 'success');
+    }
+
+    function marquerPaye(id) {
+        if (!confirm('Confirmer le paiement de ce loyer ?')) return;
+        
+        fetch('/api/loyers/' + id + '/payer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ methode: 'MANUEL', reference: 'PAYEMENT-' + Date.now() })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Paiement enregistré', 'success');
+                // Supprimer la ligne ou recharger
+                document.querySelector('tr[data-id="' + id + '"]').style.opacity = '0.5';
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ ' + (data.error || 'Erreur'), 'error');
+            }
+        })
+        .catch(e => {
+            showToast('❌ Erreur: ' + e.message, 'error');
+        });
+    }
+</script>
+
+{% endblock %}

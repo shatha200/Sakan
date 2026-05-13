@@ -1,0 +1,520 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Modifier le bien — Sakan{% endblock %}
+{% block page_title %}Modifier le bien{% endblock %}
+{% block page_subtitle %}Mettez à jour les informations de votre annonce{% endblock %}
+
+{% macro err(errors, field) %}
+  {% if errors[field] is defined %}
+    <small style="display:block;margin-top:6px;color:#dc2626;font-size:12.5px;font-weight:600;">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ errors[field] }}
+    </small>
+  {% endif %}
+{% endmacro %}
+{% set errStyle = 'border:1.5px solid #dc2626 !important;background:#fef2f2;' %}
+
+{% block content %}
+{% import _self as f %}
+{% set old = old|default({}) %}
+{% set errors = errors|default({}) %}
+{% set existing_images = existing_images|default([]) %}
+<div class="sakan-content">
+
+  <div style="margin-bottom:16px;">
+    <a href="{{ old.slug is defined and old.slug ? path('owner_bien_show_slug', {slug: old.slug}) : path('owner_bien_show', {id: id}) }}" style="color:var(--text-muted);font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+      <i class="fa-solid fa-arrow-left"></i> Retour au détail
+    </a>
+  </div>
+
+  {% if errors|length > 0 %}
+    <div style="padding:14px 18px;border-radius:12px;margin-bottom:16px;background:#fee2e2;color:#991b1b;font-weight:600;">
+      <i class="fa-solid fa-triangle-exclamation"></i> Veuillez corriger les champs en rouge ci-dessous.
+    </div>
+  {% endif %}
+
+  {% for label_f, messages in app.flashes(['error', 'success']) %}
+    {% for message in messages %}
+      <div style="padding:12px 16px;border-radius:12px;margin-bottom:16px;background:{{ label_f == 'success' ? '#dcfce7' : '#fee2e2' }};color:{{ label_f == 'success' ? '#166534' : '#991b1b' }};font-weight:600;">{{ message }}</div>
+    {% endfor %}
+  {% endfor %}
+
+  <form method="post" enctype="multipart/form-data" action="{{ path('owner_bien_edit', {id: id}) }}" novalidate>
+    <input type="hidden" name="_token" value="{{ csrf_token('owner_bien_edit_' ~ id) }}">
+
+    <div style="background:white;border-radius:20px;padding:32px;box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-circle-info"></i> Informations générales</h2>
+
+      <div class="sakan-form-group">
+        <label>Titre de l'annonce *</label>
+        <input type="text" name="titre" value="{{ old.titre|default('') }}" class="sakan-input" style="width:100%;{{ errors.titre is defined ? errStyle : '' }}" required minlength="3" maxlength="150">
+        {{ f.err(errors, 'titre') }}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="sakan-form-group">
+          <label>Type de bien *</label>
+          <select name="type" class="sakan-input" style="width:100%;{{ errors.type is defined ? errStyle : '' }}" required>
+            <option value="">-- Sélectionner --</option>
+            {% for opt in ['Appartement', 'Villa', 'Studio', 'Maison', 'Bureau'] %}
+              <option value="{{ opt }}" {{ old.type|default('') == opt ? 'selected' : '' }}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+          {{ f.err(errors, 'type') }}
+        </div>
+        <div class="sakan-form-group">
+          <label>Meublé</label>
+          <select name="meuble" class="sakan-input" style="width:100%;{{ errors.meuble is defined ? errStyle : '' }}">
+            <option value="">—</option>
+            {% for opt in ['Oui, entièrement meublé', 'Partiellement meublé', 'Non meublé'] %}
+              <option value="{{ opt }}" {{ old.meuble|default('') == opt ? 'selected' : '' }}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+          {{ f.err(errors, 'meuble') }}
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div class="sakan-form-group">
+          <label>Surface (m²) * <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(min 70)</span></label>
+          <input type="number" step="0.01" min="70" max="10000" name="superficie" value="{{ old.superficie|default('') }}" class="sakan-input" style="width:100%;{{ errors.superficie is defined ? errStyle : '' }}" required>
+          {{ f.err(errors, 'superficie') }}
+        </div>
+        <div class="sakan-form-group">
+          <label>Chambres *</label>
+          <input type="number" min="0" max="50" step="1" name="nombreChambres" value="{{ old.nombreChambres|default('') }}" class="sakan-input" style="width:100%;{{ errors.nombreChambres is defined ? errStyle : '' }}" required>
+          {{ f.err(errors, 'nombreChambres') }}
+        </div>
+        <div class="sakan-form-group">
+          <label>Salles de bain</label>
+          <input type="number" min="0" max="20" step="1" name="sallesBain" value="{{ old.sallesBain|default('') }}" class="sakan-input" style="width:100%;{{ errors.sallesBain is defined ? errStyle : '' }}">
+          {{ f.err(errors, 'sallesBain') }}
+        </div>
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Gouvernorat *</label>
+        <select id="gouvernorat-select" class="sakan-input" style="width:100%;">
+          <option value="">Chargement des gouvernorats…</option>
+        </select>
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Rechercher une adresse *</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="address-search" autocomplete="off" class="sakan-input" style="flex:1;" placeholder="Ex: Avenue Habib Bourguiba">
+          <button type="button" id="address-search-btn" class="btn-primary" style="white-space:nowrap;">
+            <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+          </button>
+        </div>
+        <ul id="address-results" style="list-style:none;padding:0;margin:8px 0 0 0;max-height:180px;overflow-y:auto;border-radius:10px;"></ul>
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Sélectionnez l'emplacement sur la carte</label>
+        <div id="map-picker" style="height:400px; border-radius:8px; margin-top:1rem;"></div>
+        <div id="adresse-apercu" style="margin-top:10px;padding:10px 14px;background:#f1f5f9;border-radius:10px;font-size:13px;color:#334155;display:{{ old.adresse_text|default('') ? 'block' : 'none' }};">
+          <i class="fa-solid fa-location-dot" style="color:#5E17EB;"></i>
+          <strong>Adresse actuelle :</strong> <span id="adresse-apercu-text">{{ old.adresse_text|default('—') }}</span>
+        </div>
+        <input type="hidden" name="adresse_text" id="adresse-hidden" value="{{ old.adresse_text|default('') }}">
+        {{ f.err(errors, 'adresse_text') }}
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Description détaillée *</label>
+        <textarea name="description" class="sakan-input" rows="4" style="width:100%;{{ errors.description is defined ? errStyle : '' }}" required minlength="10" maxlength="5000">{{ old.description|default('') }}</textarea>
+        {{ f.err(errors, 'description') }}
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:20px;padding:32px;box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-camera"></i> Photos *</h2>
+
+      {% if existing_images|length > 0 %}
+        <div style="margin-bottom:16px;">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Cochez pour supprimer&nbsp;:</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            {% for img in existing_images %}
+              <label style="position:relative;display:block;cursor:pointer;">
+                <img src="/{{ img }}" style="width:100%;height:110px;object-fit:cover;border-radius:10px;">
+                <input type="checkbox" name="remove_images[]" value="{{ img }}" style="position:absolute;top:8px;right:8px;width:20px;height:20px;">
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="sakan-form-group">
+        <label>Ajouter de nouvelles photos — <strong>au moins une photo doit rester</strong></label>
+        <input type="file" name="photos[]" class="sakan-input" style="width:100%;{{ errors.photos is defined ? errStyle : '' }}" multiple accept="image/*">
+        {{ f.err(errors, 'photos') }}
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:20px;padding:32px;box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-tag"></i> Tarification & disponibilité</h2>
+
+      <div class="sakan-form-group" style="margin-bottom:16px;">
+        <label>Prix (TND) * <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(min 100)</span></label>
+        <input type="number" step="0.01" min="100" max="1000000" name="prix" value="{{ old.prix|default('') }}" class="sakan-input" style="width:100%;max-width:300px;{{ errors.prix is defined ? errStyle : '' }}" required>
+        {{ f.err(errors, 'prix') }}
+      </div>
+
+      <div class="sakan-form-group" style="margin-bottom:16px;">
+        <label>Caution *</label>
+        <select name="caution_mois" class="sakan-input" style="width:100%;max-width:300px;{{ errors.caution_mois is defined ? errStyle : '' }}" required>
+          <option value="">-- Sélectionner --</option>
+          {% for m in [1, 2, 3] %}
+            <option value="{{ m }}" {{ old.caution_mois|default('') == m ? 'selected' : '' }}>{{ m }} mois</option>
+          {% endfor %}
+        </select>
+        {{ f.err(errors, 'caution_mois') }}
+      </div>
+
+      <div class="sakan-form-group" style="margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" id="dateImprevu" name="dateImprevu" value="1" {{ old.dateImprevu|default(false) ? 'checked' : '' }}
+                 style="width:18px;height:18px;accent-color:#5E17EB;">
+          <span style="font-weight:600;">Date de disponibilité imprévue</span>
+          <span style="color:var(--text-muted);font-size:12.5px;">(l'annonce sera visible avec mention "date imprévue")</span>
+        </label>
+      </div>
+
+      <div id="dateFields" style="{{ old.dateImprevu|default(false) ? 'display:none;' : '' }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div class="sakan-form-group">
+            <label>Date de disponibilité *</label>
+            <input type="date" id="dateDisponibilite" name="dateDisponibilite" value="{{ old.dateVal|default('') }}" class="sakan-input" style="width:100%;{{ errors.dateDisponibilite is defined ? errStyle : '' }}">
+            <span id="dateError" class="sakan-field-error" style="color:#e74c3c;font-size:13px;display:none;"></span>
+            {{ f.err(errors, 'dateDisponibilite') }}
+          </div>
+          <div class="sakan-form-group">
+            <label>Heure <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(optionnel)</span></label>
+            <input type="time" id="heureDisponibilite" name="heureDisponibilite" value="{{ old.heureVal|default('') }}" class="sakan-input" style="width:100%;">
+          </div>
+          <div class="sakan-form-group">
+            <label>Statut <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(automatique)</span></label>
+            <div id="statutPreview" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;font-weight:600;font-size:14px;color:var(--text-muted);">
+              <i class="fa-solid fa-circle-info"></i> Choisissez une date
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="imprevuInfo" style="{{ old.dateImprevu|default(false) ? '' : 'display:none;' }}padding:14px 18px;border-radius:14px;background:#fffbeb;border:1.5px solid #fcd34d;display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-clock" style="font-size:20px;color:#d97706;"></i>
+        <div>
+          <div style="font-weight:700;color:#92400e;font-size:14px;">Statut : Bientôt disponible</div>
+          <div style="font-size:12.5px;color:#a16207;">L'annonce sera visible avec la mention "date de disponibilité imprévue".</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;">
+      <a href="{{ old.slug is defined and old.slug ? path('owner_bien_show_slug', {slug: old.slug}) : path('owner_bien_show', {id: id}) }}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Enregistrer</button>
+    </div>
+  </form>
+
+  <form method="post" action="{{ path('owner_bien_delete', {id: id}) }}" onsubmit="return confirm('Supprimer définitivement ce bien ?');" style="margin-top:16px;">
+    <input type="hidden" name="_token" value="{{ csrf_token('owner_bien_delete_' ~ id) }}">
+    <button type="submit" class="btn-outline" style="color:#dc2626;border-color:#fecaca;">
+      <i class="fa-solid fa-trash"></i> Supprimer définitivement ce bien
+    </button>
+  </form>
+</div>
+
+<script>
+(function() {
+    const form = document.querySelector('form[action*="bien/edit"]');
+    const dateInput = document.getElementById('dateDisponibilite');
+    const timeInput = document.getElementById('heureDisponibilite');
+    const dateError = document.getElementById('dateError');
+    const statutPreview = document.getElementById('statutPreview');
+    const imprevuCheck = document.getElementById('dateImprevu');
+    const dateFields = document.getElementById('dateFields');
+    const imprevuInfo = document.getElementById('imprevuInfo');
+
+    function getNowString() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    function hoursDiff(dateStr, timeStr) {
+        const now = new Date();
+        const t = timeStr || '00:00';
+        const target = new Date(dateStr + 'T' + t + ':00');
+        return Math.max(0, (target - now) / 3600000);
+    }
+
+    function updateStatutPreview() {
+        const val = dateInput.value.trim();
+        const time = timeInput.value.trim();
+        if (!val) {
+            statutPreview.innerHTML = '<i class="fa-solid fa-circle-info"></i> Choisissez une date';
+            statutPreview.style.borderColor = '#e2e8f0';
+            statutPreview.style.background = '#f8fafc';
+            statutPreview.style.color = 'var(--text-muted)';
+            return;
+        }
+        const h = hoursDiff(val, time);
+        const days = Math.floor(h / 24);
+        const hrs = Math.floor(h % 24);
+        if (h <= 0) {
+            statutPreview.innerHTML = '<span style="color:#10b981;">●</span> Disponible';
+            statutPreview.style.borderColor = '#10b981';
+            statutPreview.style.background = '#ecfdf5';
+            statutPreview.style.color = '#065f46';
+        } else if (h <= 7 * 24) {
+            let label = days > 0 ? days + ' j' : '';
+            if (hrs > 0) label += (label ? ' ' : '') + hrs + ' h';
+            statutPreview.innerHTML = '<span style="color:#d97706;">●</span> Bientôt (dans ' + label + ')';
+            statutPreview.style.borderColor = '#d97706';
+            statutPreview.style.background = '#fffbeb';
+            statutPreview.style.color = '#92400e';
+        } else {
+            statutPreview.innerHTML = '<span style="color:#ef4444;">●</span> Occupé (archivé)';
+            statutPreview.style.borderColor = '#ef4444';
+            statutPreview.style.background = '#fef2f2';
+            statutPreview.style.color = '#991b1b';
+        }
+    }
+
+    function toggleImprevu() {
+        if (imprevuCheck.checked) {
+            dateFields.style.display = 'none';
+            imprevuInfo.style.display = 'flex';
+        } else {
+            dateFields.style.display = '';
+            imprevuInfo.style.display = 'none';
+            updateStatutPreview();
+        }
+    }
+
+    function validateDate() {
+        if (imprevuCheck.checked) return true;
+        const val = dateInput.value.trim();
+        const today = getNowString();
+        if (val === '') {
+            dateError.textContent = "La date de disponibilité est requise.";
+            dateError.style.display = 'block';
+            dateInput.style.borderColor = '#e74c3c';
+            return false;
+        }
+        if (val < today) {
+            dateError.textContent = "La date doit être supérieure ou égale à aujourd'hui.";
+            dateError.style.display = 'block';
+            dateInput.style.borderColor = '#e74c3c';
+            return false;
+        }
+        dateError.style.display = 'none';
+        dateInput.style.borderColor = '';
+        return true;
+    }
+
+    imprevuCheck.addEventListener('change', toggleImprevu);
+    dateInput.addEventListener('change', function() { validateDate(); updateStatutPreview(); });
+    timeInput.addEventListener('change', function() { validateDate(); updateStatutPreview(); });
+    toggleImprevu();
+    if (!imprevuCheck.checked) updateStatutPreview();
+
+    form.addEventListener('submit', function(e) {
+        if (!validateDate()) { e.preventDefault(); dateInput.focus(); }
+    });
+})();
+</script>
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function() {
+    var adresseHidden = document.getElementById('adresse-hidden');
+    var apercu        = document.getElementById('adresse-apercu');
+    var apercuText    = document.getElementById('adresse-apercu-text');
+    var govSelect     = document.getElementById('gouvernorat-select');
+    var searchInput   = document.getElementById('address-search');
+    var searchBtn     = document.getElementById('address-search-btn');
+    var resultsList   = document.getElementById('address-results');
+    var mapDiv        = document.getElementById('map-picker');
+    if (!mapDiv || typeof L === 'undefined') return;
+
+    var map = L.map('map-picker').setView([33.8869, 9.5375], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker = null;
+
+    function updateAdresse(precise) {
+        var gov = govSelect.value || '';
+        var parts = [];
+        if (precise) parts.push(precise);
+        if (gov) parts.push(gov);
+        var full = parts.join(', ');
+        adresseHidden.value = full;
+        if (full) {
+            apercu.style.display = 'block';
+            apercuText.textContent = full;
+        } else {
+            apercu.style.display = 'none';
+        }
+    }
+
+    function placeMarker(lat, lng, fly) {
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            marker.on('dragend', function() {
+                var p = marker.getLatLng();
+                reverseGeocode(p.lat, p.lng);
+            });
+        }
+        if (fly !== false) map.flyTo([lat, lng], 14);
+    }
+
+    function reverseGeocode(lat, lng) {
+        fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json', {
+            headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data && data.display_name) {
+                updateAdresse(data.display_name);
+            }
+        })
+        .catch(function() {});
+    }
+
+    map.on('click', function(e) {
+        placeMarker(e.latlng.lat, e.latlng.lng, false);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+
+    fetch('https://secure.geonames.org/childrenJSON?geonameId=2464461&username=jerbi.sara')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            govSelect.innerHTML = '<option value="">— Sélectionnez un gouvernorat —</option>';
+            if (data && data.geonames) {
+                data.geonames.forEach(function(g) {
+                    var opt = document.createElement('option');
+                    opt.value = g.name;
+                    opt.textContent = g.name;
+                    opt.dataset.lat = g.lat;
+                    opt.dataset.lng = g.lng;
+                    govSelect.appendChild(opt);
+                });
+            }
+        })
+        .catch(function() {
+            govSelect.innerHTML = '<option value="">(Gouvernorats indisponibles)</option>';
+        });
+
+    govSelect.addEventListener('change', function() {
+        var opt = govSelect.options[govSelect.selectedIndex];
+        if (opt && opt.dataset && opt.dataset.lat) {
+            map.flyTo([parseFloat(opt.dataset.lat), parseFloat(opt.dataset.lng)], 10);
+        }
+        if (adresseHidden.value) {
+            var currentPrecise = adresseHidden.value.split(',').slice(0, -1).join(',').trim() || adresseHidden.value;
+            updateAdresse(currentPrecise);
+        }
+    });
+
+    var debounceTimer = null;
+    function runSearch() {
+        var q = searchInput.value.trim();
+        if (q.length < 3) { resultsList.innerHTML = ''; return; }
+        var gov = govSelect.value;
+        var full = gov ? (q + ', ' + gov + ', Tunisia') : (q + ', Tunisia');
+        resultsList.innerHTML = '<li style="padding:10px;color:#64748b;font-size:13px;">Recherche en cours…</li>';
+        fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(full) + '&countrycodes=tn&format=json&limit=10', {
+            headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(results) {
+            resultsList.innerHTML = '';
+            if (!Array.isArray(results) || results.length === 0) {
+                resultsList.innerHTML = '<li style="padding:10px;color:#64748b;font-size:13px;">Aucun résultat</li>';
+                return;
+            }
+            results.forEach(function(r) {
+                var li = document.createElement('li');
+                li.textContent = r.display_name;
+                li.style.cssText = 'padding:10px 12px;background:#f8fafc;margin-bottom:4px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #e2e8f0;';
+                li.addEventListener('mouseover', function() { li.style.background = '#eef2ff'; });
+                li.addEventListener('mouseout', function() { li.style.background = '#f8fafc'; });
+                li.addEventListener('click', function() {
+                    updateAdresse(r.display_name);
+                    placeMarker(parseFloat(r.lat), parseFloat(r.lon), true);
+                    resultsList.innerHTML = '';
+                    searchInput.value = '';
+                });
+                resultsList.appendChild(li);
+            });
+        })
+        .catch(function() {
+            resultsList.innerHTML = '<li style="padding:10px;color:#dc2626;font-size:13px;">Erreur de recherche</li>';
+        });
+    }
+
+    searchBtn.addEventListener('click', runSearch);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
+    });
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(runSearch, 500);
+    });
+
+    // Pre-fill from existing adresse_text (edit mode) — cascade fallback
+    if (adresseHidden.value.trim().length > 3) {
+        apercu.style.display = 'block';
+        apercuText.textContent = adresseHidden.value;
+        var _addr = adresseHidden.value;
+        var _parts = _addr.split(',').map(function(p){ return p.trim(); }).filter(function(p){ return p.length > 0; });
+        var _queries = [_addr];
+        if (_parts.length > 3) _queries.push(_parts[0] + ', ' + _parts[_parts.length - 1]);
+        if (_parts.length > 0) { _queries.push(_parts[0]); _queries.push(_parts[_parts.length - 1]); }
+
+        function _tryPrefill(i) {
+            if (i >= _queries.length) return;
+            fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(_queries[i]) + '&countrycodes=tn&format=json&limit=1', {
+                headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(results) {
+                if (results && results.length > 0) {
+                    placeMarker(parseFloat(results[0].lat), parseFloat(results[0].lon), true);
+                } else {
+                    _tryPrefill(i + 1);
+                }
+            })
+            .catch(function() { _tryPrefill(i + 1); });
+        }
+        _tryPrefill(0);
+
+        // Try to pre-select the governorate in dropdown (after it loads)
+        var _gov = _parts[_parts.length - 1];
+        var _checkGov = setInterval(function() {
+            if (govSelect.options.length > 1) {
+                clearInterval(_checkGov);
+                for (var i = 0; i < govSelect.options.length; i++) {
+                    if (govSelect.options[i].value === _gov) {
+                        govSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }, 200);
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Mes Contrats</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-locataire.css">
+  <link rel="stylesheet" href="../../css_web/sakan-components.css">
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sakan-sidebar" id="sidebar-locataire">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="catalogue.html"><i class="fa-solid fa-magnifying-glass"></i> Explorer les biens</a></li>
+      <li><a href="mes_visites.html"><i class="fa-solid fa-calendar-check"></i> Mes visites</a></li>
+      <li><a href="mes_reservations.html"><i class="fa-solid fa-check"></i> Mes réservations</a></li>
+      <li><a href="mes_contrats.html" class="active"><i class="fa-solid fa-file-contract"></i> Mes contrats</a></li>
+      <li><a href="../paiement/finances.html"><i class="fa-solid fa-coins"></i> Espace financier</a></li>
+      <li><a href="../reclamations/reclamations_locataire.html"><i class="fa-solid fa-shield-halved"></i> Service client</a></li>
+      <li><a href="mon_profil.html"><i class="fa-solid fa-user"></i> Mon profil</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="../auth/login.html">
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <main class="sakan-main">
+    <div class="sakan-content">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header" style="justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="display:flex; align-items:center; gap:12px;"><i class="fa-solid fa-file-contract"></i> Mes Contrats</h1>
+          <p class="result-count" style="margin-top: 4px;">Consultez et gérez vos baux de location</p>
+        </div>
+      </div>
+
+      <!-- ONGLETS STATUT -->
+      <div class="section-tabs">
+        <button class="tab-btn active" onclick="filterContrats('actif')">Actifs (1)</button>
+        <button class="tab-btn" onclick="filterContrats('expire')">Expirés (1)</button>
+        <button class="tab-btn" onclick="filterContrats('all')">Tous (2)</button>
+      </div>
+
+      <!-- LISTE DES CONTRATS -->
+      <div class="contrat-list">
+
+        <!-- CONTRAT ACTIF — carte complète -->
+        <div class="contrat-card contrat-actif" data-statut="actif">
+          <div class="contrat-header">
+            <div>
+              <span class="contrat-ref">📄 CTR-2024-0892</span>
+              <h3>Appartement lumineux - Lac 2, Tunis</h3>
+            </div>
+            <span class="badge-actif">● ACTIF</span>
+          </div>
+
+          <div class="contrat-visual">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" class="contrat-img" alt="Appartement">
+            <div class="contrat-body">
+              <div class="contrat-info-item"><label>Propriétaire</label><span>Karim Mezghani</span></div>
+              <div class="contrat-info-item"><label>Début</label><span>01/09/2024</span></div>
+              <div class="contrat-info-item"><label>Fin</label><span>31/08/2025</span></div>
+              <div class="contrat-info-item"><label>Loyer</label><span>2 200 TND/mois</span></div>
+              <div class="contrat-info-item"><label>Charges</label><span>150 TND/mois</span></div>
+              <div class="contrat-info-item"><label>Caution</label><span style="color:var(--success);">4 400 TND ✓ payée</span></div>
+              <div class="contrat-info-item"><label>Signé le</label><span>28/08/2024</span></div>
+              <div class="contrat-info-item" style="grid-column: span 2;"><label>Adresse</label><span>Lac 2, Tunis 1053</span></div>
+            </div>
+          </div>
+
+          <div class="contrat-progress">
+            <div class="progress-label">
+              <span>Début : 01/09/2024</span>
+              <span>11 mois sur 12 écoulés (92%)</span>
+              <span>Fin : 31/08/2025</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:92%; background:linear-gradient(90deg,#5E17EB,#10b981)"></div>
+            </div>
+          </div>
+
+          <div class="signature-preview">
+            <span class="signature-label"><i class="fa-solid fa-pen-to-square"></i> Signature Fatma Trabelsi</span>
+            <div class="signature-canvas">
+              <svg width="200" height="60" viewBox="0 0 200 60">
+                <path d="M10,45 Q30,10 50,40 Q70,60 90,30 Q110,10 130,35 Q150,55 170,25 Q185,10 195,30" stroke="#5E17EB" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <span class="signature-date">Signé le 28/08/2024</span>
+          </div>
+
+          <div class="contrat-actions">
+            <button class="btn-primary" onclick="showModal('modal-contrat-viewer')"><i class="fa-solid fa-eye"></i> Lire le contrat</button>
+            <button class="btn-outline" onclick="showToast('📄 Contrat téléchargé en PDF !')"><i class="fa-solid fa-file-arrow-down"></i> Télécharger PDF</button>
+            <button class="btn-outline" onclick="showToast('🖨 Impression en cours...')"><i class="fa-solid fa-print"></i> Imprimer</button>
+            <button class="btn-outline" onclick="window.location.href='../paiement/finances.html'"><i class="fa-solid fa-coins"></i> Voir les paiements</button>
+          </div>
+        </div>
+
+        <!-- CONTRAT EXPIRÉ — carte simplifiée -->
+        <div class="contrat-card contrat-expire" data-statut="expire" style="display:none;">
+          <div class="contrat-header">
+            <div>
+              <span class="contrat-ref">📄 CTR-2023-0341</span>
+              <h3>Studio moderne - Menzah 6, Tunis</h3>
+            </div>
+            <span class="badge-expire">EXPIRÉ</span>
+          </div>
+          <div class="contrat-body" style="padding: 24px; display:flex; flex-direction:column; gap:8px;">
+            <div><strong>Période :</strong> 01/09/2023 → 31/08/2024</div>
+            <div><strong>Loyer :</strong> 1 100 TND/mois</div>
+            <div><strong>Caution :</strong> 2 200 TND — <span style="color:var(--success);">Remboursée intégralement ✓</span></div>
+          </div>
+          <div class="contrat-actions">
+            <button class="btn-outline btn-sm" onclick="showModal('modal-contrat-viewer')"><i class="fa-solid fa-eye"></i> Consulter</button>
+            <button class="btn-outline btn-sm" onclick="showToast('📄 Contrat archivé téléchargé !')"><i class="fa-solid fa-file-arrow-down"></i> PDF</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL LECTEUR CONTRAT -->
+<div id="modal-contrat-viewer" class="modal-overlay" style="display:none">
+  <div class="modal-card modal-lg">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-file-contract"></i> Contrat de Location — CTR-2024-0892</h3>
+      <button style="border:none;background:none;font-size:24px;cursor:pointer" onclick="closeModal('modal-contrat-viewer')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="contrat-document" style="font-family: serif; color: #111827; background: white; padding: 16px;">
+        <div class="doc-header" style="text-align:center; border-bottom:2px solid #5E17EB; padding-bottom:20px; margin-bottom:24px;">
+          <h2 style="color:#5E17EB; margin-bottom:8px;">🏠 SAKAN</h2>
+          <h3 style="margin-bottom:8px;">CONTRAT DE LOCATION</h3>
+          <p>Référence : CTR-2024-0892</p>
+        </div>
+
+        <div class="doc-parties" style="margin-bottom:24px;">
+          <h4 style="margin-bottom:12px;">ENTRE LES SOUSSIGNÉS :</h4>
+          <p style="margin-bottom:8px;"><strong>Le Bailleur :</strong> M. Karim Mezghani, résidant à Tunis, Tunisie, ci-après désigné "le Propriétaire"</p>
+          <p><strong>Le Preneur :</strong> Mme Fatma Trabelsi, résidant à Tunis, Tunisie, ci-après désignée "le Locataire"</p>
+        </div>
+
+        <div class="doc-bien" style="margin-bottom:24px;">
+          <h4 style="margin-bottom:12px;">Article 1 — DÉSIGNATION DU BIEN</h4>
+          <p>Le Propriétaire loue à titre d'habitation principale un appartement de type F3 situé au Lac 2, Tunis 1053, d'une superficie de 95 m², comprenant 3 chambres, 2 salles de bain, un salon, une cuisine équipée et un balcon.</p>
+        </div>
+
+        <div class="doc-duree" style="margin-bottom:24px;">
+          <h4 style="margin-bottom:12px;">Article 2 — DURÉE</h4>
+          <p>Le présent contrat est conclu pour une durée de 12 mois, prenant effet le 1er septembre 2024 et se terminant le 31 août 2025.</p>
+        </div>
+
+        <div class="doc-loyer" style="margin-bottom:24px;">
+          <h4 style="margin-bottom:12px;">Article 3 — LOYER ET CHARGES</h4>
+          <p>Le loyer mensuel est fixé à <strong>2 200 TND</strong>, payable le 1er de chaque mois. Les charges forfaitaires s'élèvent à <strong>150 TND/mois</strong>.</p>
+        </div>
+
+        <div class="doc-caution" style="margin-bottom:24px;">
+          <h4 style="margin-bottom:12px;">Article 4 — DÉPÔT DE GARANTIE</h4>
+          <p>Un dépôt de garantie de <strong>4 400 TND</strong> (équivalent à 2 mois de loyer) a été versé à la signature du présent contrat.</p>
+        </div>
+
+        <div class="doc-signatures" style="display:grid;grid-template-columns:1fr 1fr; gap:40px;margin-top:40px; border-top:1px solid #e5e7eb;padding-top:24px;">
+          <div>
+            <p><strong>Signature du Propriétaire</strong></p>
+            <svg width="160" height="50" viewBox="0 0 160 50">
+              <path d="M10,35 Q25,5 45,30 Q60,50 80,20 Q100,5 120,28 Q140,45 155,20" stroke="#070435" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </svg>
+            <p style="font-size:12px;color:#6b7280;">Karim Mezghani — 28/08/2024</p>
+          </div>
+          <div>
+            <p><strong>Signature du Locataire</strong></p>
+            <svg width="160" height="50" viewBox="0 0 160 50">
+              <path d="M10,40 Q30,8 50,35 Q70,55 90,25 Q110,8 130,32 Q145,50 155,28" stroke="#5E17EB" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </svg>
+            <p style="font-size:12px;color:#6b7280;">Fatma Trabelsi — 28/08/2024</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="showToast('📄 Contrat téléchargé !')"><i class="fa-solid fa-file-arrow-down"></i> Télécharger PDF</button>
+      <button class="btn-primary" onclick="closeModal('modal-contrat-viewer')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+  function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+  function filterContrats(statut) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.contrat-card').forEach(card => {
+      if (statut === 'all' || card.dataset.statut === statut) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
+</body>
+</html>

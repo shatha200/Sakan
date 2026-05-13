@@ -1,0 +1,227 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Espace financier — Sakan{% endblock %}
+{% block page_title %}Espace financier{% endblock %}
+{% block page_subtitle %}Gérez vos paiements et suivez votre historique{% endblock %}
+
+{% block content %}
+    <!-- RÉCAP CONTRAT ACTIF -->
+    <div class="card-contrat-recap">
+        <div class="recap-image">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" alt="Appartement">
+        </div>
+        <div class="recap-infos">
+            <h3>Appartement lumineux - Lac 2, Tunis</h3>
+            <p><i class="fa-solid fa-file-contract"></i> Contrat : 01/09/2024 → 31/08/2025</p>
+            <p><i class="fa-solid fa-user"></i> Propriétaire : Karim Mezghani</p>
+        </div>
+        <div class="recap-montants">
+            <div class="montant-chip">
+                <span>Loyer</span>
+                <strong>2 200 TND</strong>
+            </div>
+            <div class="montant-chip">
+                <span>Charges</span>
+                <strong>150 TND</strong>
+            </div>
+            <div class="montant-chip caution">
+                <span>Caution</span>
+                <strong>4 400 TND ✓</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 KPI CARDS -->
+    <div class="kpi-grid">
+
+        <div class="kpi-card kpi-attente">
+            <div class="kpi-icon"><i class="fa-solid fa-clock"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Loyer du mois</div>
+                <div class="kpi-montant">2 200 TND</div>
+                <div class="kpi-sub">Échéance : 01/08/2025</div>
+            </div>
+            <button class="btn-payer">
+                <i class="fa-solid fa-credit-card"></i> Payer maintenant
+            </button>
+        </div>
+
+        <div class="kpi-card kpi-paye">
+            <div class="kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Charges du mois</div>
+                <div class="kpi-montant">150 TND</div>
+                <div class="kpi-sub">Payé le 05/07/2025</div>
+            </div>
+            <button class="btn-telecharger" onclick="showToast('📄 Reçu téléchargé !')" style="width: 100%;">
+                <i class="fa-solid fa-download"></i> Reçu
+            </button>
+        </div>
+
+        <div class="kpi-card kpi-caution">
+            <div class="kpi-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Caution versée</div>
+                <div class="kpi-montant">4 400 TND</div>
+                <div class="kpi-sub">Statut : Bloquée chez propriétaire</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-total">
+            <div class="kpi-icon"><i class="fa-solid fa-coins"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Total payé (2024-2025)</div>
+                <div class="kpi-montant">24 350 TND</div>
+                <div class="kpi-sub">11 transactions</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ONGLETS HISTORIQUE -->
+    <div class="section-tabs">
+        <button class="tab-btn active" onclick="showTab('tab-historique', this)">
+            <i class="fa-solid fa-clock-rotate-left"></i> Historique complet
+        </button>
+        <button class="tab-btn" onclick="showTab('tab-loyer', this)">
+            <i class="fa-solid fa-money-bill-wave"></i> Loyers
+        </button>
+        <button class="tab-btn" onclick="showTab('tab-charges', this)">
+            <i class="fa-solid fa-receipt"></i> Charges
+        </button>
+    </div>
+
+    <!-- TABLE HISTORIQUE -->
+    <div id="tab-historique" class="tab-content active">
+        <table class="table-paiements">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Période</th>
+                    <th>Montant</th>
+                    <th>Méthode</th>
+                    <th>Référence</th>
+                    <th class="col-statut">Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>01/08/2025</td>
+                    <td class="col-type">Loyer</td>
+                    <td>Août 2025</td>
+                    <td><strong>2 200 TND</strong></td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="col-statut"><span class="badge badge-attente"><i class="fa-solid fa-clock"></i> EN ATTENTE</span></td>
+                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 13px;">Payer</button></td>
+                </tr>
+                <tr>
+                    <td>01/07/2025</td>
+                    <td class="col-type">Loyer</td>
+                    <td>Juillet 2025</td>
+                    <td><strong>2 200 TND</strong></td>
+                    <td>Stripe</td>
+                    <td>PAY-20250701</td>
+                    <td class="col-statut"><span class="badge badge-paye"><i class="fa-solid fa-circle-check"></i> PAYÉ</span></td>
+                    <td><button class="btn-telecharger" style="padding: 6px 12px; border:none; background: transparent; color: var(--primary);" onclick="showToast('Téléchargement...')"><i class="fa-solid fa-download"></i></button></td>
+                </tr>
+                <tr>
+                    <td>05/07/2025</td>
+                    <td class="col-type">Charges</td>
+                    <td>Juillet 2025</td>
+                    <td><strong>150 TND</strong></td>
+                    <td>Stripe</td>
+                    <td>CHG-20250701</td>
+                    <td class="col-statut"><span class="badge badge-paye"><i class="fa-solid fa-circle-check"></i> PAYÉ</span></td>
+                    <td><button class="btn-telecharger" style="padding: 6px 12px; border:none; background: transparent; color: var(--primary);" onclick="showToast('Téléchargement...')"><i class="fa-solid fa-download"></i></button></td>
+                </tr>
+                <tr>
+                    <td>01/09/2024</td>
+                    <td class="col-type">Caution</td>
+                    <td>Sept 2024</td>
+                    <td><strong>4 400 TND</strong></td>
+                    <td>Stripe</td>
+                    <td>CAU-20240901</td>
+                    <td class="col-statut"><span class="badge badge-paye"><i class="fa-solid fa-circle-check"></i> PAYÉ</span></td>
+                    <td><button class="btn-telecharger" style="padding: 6px 12px; border:none; background: transparent; color: var(--primary);" onclick="showToast('Téléchargement...')"><i class="fa-solid fa-download"></i></button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB LOYERS -->
+    <div id="tab-loyer" class="tab-content">
+        <table class="table-paiements">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Période</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>01/08/2025</td>
+                    <td class="col-type">Loyer</td>
+                    <td>Août 2025</td>
+                    <td><strong>2 200 TND</strong></td>
+                    <td class="col-statut"><span class="badge badge-attente"><i class="fa-solid fa-clock"></i> EN ATTENTE</span></td>
+                </tr>
+                <tr>
+                    <td>01/07/2025</td>
+                    <td class="col-type">Loyer</td>
+                    <td>Juillet 2025</td>
+                    <td><strong>2 200 TND</strong></td>
+                    <td class="col-statut"><span class="badge badge-paye"><i class="fa-solid fa-circle-check"></i> PAYÉ</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB CHARGES -->
+    <div id="tab-charges" class="tab-content">
+        <table class="table-paiements">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Période</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>05/07/2025</td>
+                    <td class="col-type">Charges</td>
+                    <td>Juillet 2025</td>
+                    <td><strong>150 TND</strong></td>
+                    <td class="col-statut"><span class="badge badge-paye"><i class="fa-solid fa-circle-check"></i> PAYÉ</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    function showTab(id, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).style.display = 'block';
+        el.classList.add('active');
+    }
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+</script>
+{% endblock %}

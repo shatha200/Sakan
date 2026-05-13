@@ -1,0 +1,46 @@
+{% extends 'layouts/base_owner.html.twig' %}
+{% block page_title %}Charges{% endblock %}
+{% block page_subtitle %}Gestion des frais et charges{% endblock %}
+
+{% block content %}
+{# ── Navbar à onglets ──────────────────────────────────────── #}
+<div style="
+    display:flex; gap:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:6px;
+    margin-bottom:28px;
+    width:fit-content;">
+
+    <a href="{{ path('charge_frais_gestion') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') in ['charge_frais_gestion', 'owner_charges', 'owner_charges_gestion'] %}
+            background:var(--primary);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-gears" style="margin-right:6px"></i>
+        Frais de gestion
+    </a>
+
+    <a href="{{ path('charge_frais_annuels') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') in ['charge_frais_annuels', 'owner_charges_annuels'] %}
+            background:var(--primary);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-calendar" style="margin-right:6px"></i>
+        Frais annuels
+    </a>
+
+</div>
+{% block charges_content %}{% endblock %}
+{% endblock %}

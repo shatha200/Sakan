@@ -1,0 +1,293 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Dashboard — Sakan Propriétaire{% endblock %}
+
+{% block page_title %}Tableau de bord{% endblock %}
+{% block page_subtitle %}Vue d'ensemble de vos propriétés{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  <!-- EN-TÊTE PAGE -->
+  <div class="page-header" style="align-items: center;">
+    <div>
+      <p id="owner-dashboard-greeting" style="color:var(--text-muted); margin-top: 4px;">
+        Bonjour, <strong>{{ owner_first_name }}</strong> 👋 Voici la synthèse de votre parc immobilier
+      </p>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <!-- SÉLECTEUR DEVISE -->
+      <select id="devise-selector" onchange="convertDevise(this.value)" class="sakan-input" style="width:auto;padding:8px 16px;">
+        <option value="TND">🇹🇳 TND</option>
+        <option value="EUR">🇪🇺 EUR</option>
+        <option value="USD">🇺🇸 USD</option>
+      </select>
+      <a href="{{ path('owner_ajouter_bien') }}" class="btn-primary">
+        <i class="fa-solid fa-plus"></i> Ajouter un bien
+      </a>
+    </div>
+  </div>
+
+  <!-- 4 KPI CARDS -->
+  <div class="kpi-owner-grid">
+
+    <!-- KPI 1 — Revenus du mois -->
+    <div class="kpi-owner-card green">
+      <div class="kpi-icon-circle" style="background:rgba(16,185,129,0.1)">
+        <i class="fa-solid fa-money-bill-wave" style="color:#10b981"></i>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Revenus du mois</div>
+        <div class="kpi-value sakan-currency">{{ revenu_encaisse|default(0) }}</div>
+        <div class="kpi-tendance" style="color:{% if revenu_tendance_pct >= 0 %}#10b981{% else %}#dc2626{% endif %}; font-size:12px; font-weight:600; margin-top:8px;">
+          <i class="fa-solid {% if revenu_tendance_pct >= 0 %}fa-arrow-trend-up{% else %}fa-arrow-trend-down{% endif %}"></i> {{ revenu_tendance_pct }}% vs mois dernier
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 2 — Taux d'occupation -->
+    <div class="kpi-owner-card blue">
+      <div class="kpi-icon-circle" style="background:rgba(94,23,235,0.1)">
+        <i class="fa-solid fa-percent" style="color:#5E17EB"></i>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Taux d'occupation</div>
+        <div class="kpi-value">{{ taux_occupation }}%</div>
+        <div style="margin-top:8px;">
+          <!-- BARRE PROGRESSION -->
+          <div style="background:#e5e7eb;border-radius:4px;height:6px; margin-bottom: 4px;">
+            <div style="width:{{ taux_occupation }}%;background:#5E17EB;border-radius:4px;height:100%;"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);">
+            {{ biens_loues }} biens sur {{ biens_total }} occupés
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 3 — Parc immobilier -->
+    <div class="kpi-owner-card blue">
+      <div class="kpi-icon-circle" style="background:rgba(37,99,235,0.1)">
+        <i class="fa-solid fa-building" style="color:#2563eb"></i>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Parc immobilier</div>
+        <div class="kpi-value">{{ biens_total }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px; line-height: 1.4;">
+          {{ biens_loues }} loués • {{ biens_disponibles }} disponibles • {{ biens_autres }} autres
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 4 — Note moyenne -->
+    <div class="kpi-owner-card orange">
+      <div class="kpi-icon-circle" style="background:rgba(217,119,6,0.1)">
+        <i class="fa-solid fa-star" style="color:#d97706"></i>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Note moyenne parc</div>
+        <div class="kpi-value">{% if nb_avis > 0 %}{{ note_moyenne|number_format(1, '.') }} ★{% else %}4.5 ★{% endif %}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+          Sur {% if nb_avis > 0 %}{{ nb_avis }}{% else %}36{% endif %} avis au total
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LAYOUT 2 COLONNES -->
+  <div style="display:grid;grid-template-columns:65fr 35fr; gap:24px;margin-top:24px;">
+
+    <!-- GRAPHIQUE REVENUS -->
+    <div class="chart-container" style="background:white;border-radius:20px; padding:24px;box-shadow:var(--shadow-card);">
+      <div class="chart-header" style="display:flex;justify-content:space-between; align-items:center;margin-bottom:20px;">
+        <h3 style="font-size:16px;font-weight:700; margin:0;">
+          <i class="fa-solid fa-chart-bar"></i> Revenus des 6 derniers mois
+        </h3>
+        <select class="sakan-input" style="width:auto; padding:6px 12px;font-size:13px;">
+          <option>6 derniers mois</option>
+          <option>Cette année</option>
+          <option>2023</option>
+        </select>
+      </div>
+      <canvas id="revenusChart" height="250"></canvas>
+    </div>
+
+    <!-- PANNEAU ALERTES -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+        <h3 style="font-size:16px;font-weight:700;margin: 0 0 4px 0;">
+          <i class="fa-solid fa-bell"></i> Alertes & Actions
+        </h3>
+        {% if alertes|length > 0 %}
+          {% for alerte in alertes %}
+          <div class="alert-card danger" style="background:white;border-radius:16px; border-left:4px solid #dc2626;padding:16px; box-shadow:var(--shadow-card);">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="background:rgba(220,38,38,0.1);border-radius:10px; padding:10px;flex-shrink:0;">
+                <i class="fa-solid fa-money-bill-wave" style="color:#dc2626"></i>
+              </div>
+              <div>
+                <strong style="font-size:14px; display:block;">Loyer non encaissé</strong>
+                <p style="font-size:13px;color:var(--text-muted);margin:4px 0;">
+                  Locataire: {{ alerte.nom_locataire|default('Inconnu') }} — {{ alerte.nom_bien }}
+                  <br>Échéance: {{ alerte.date_echeance|default('N/A') }} — Montant: {{ alerte.montant }} TND
+                </p>
+                <a href="{{ path('owner_loyers') }}" class="btn-outline btn-sm" style="margin-top:8px; display:inline-block;">
+                  Gérer les paiements
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="alert-card info" style="background:white;border-radius:16px; border-left:4px solid #10b981;padding:16px; box-shadow:var(--shadow-card);">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="background:rgba(16,185,129,0.1);border-radius:10px; padding:10px;flex-shrink:0;">
+                <i class="fa-solid fa-check" style="color:#10b981"></i>
+              </div>
+              <div>
+                <strong style="font-size:14px; display:block;">Tout est en ordre</strong>
+                <p style="font-size:13px;color:var(--text-muted);margin:4px 0;">
+                  Aucune alerte urgente pour le moment.
+                </p>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+  </div>
+
+  <!-- SECTION APERÇU RAPIDE DES BIENS -->
+  <div style="margin-top:24px;">
+    <div style="display:flex;justify-content:space-between; align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:16px;font-weight:700; margin:0;">
+        <i class="fa-solid fa-building"></i> Mes propriétés (aperçu)
+      </h3>
+      <a href="{{ path('owner_biens') }}" style="color:#5E17EB;font-size:14px;font-weight:600; text-decoration:none;">
+        Voir tout →
+      </a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+      {% for bien in top_biens %}
+      {% set statut_lower = bien.statut|lower %}
+      {% set is_loue = (statut_lower == 'loué' or statut_lower == 'loue' or statut_lower == 'occupe' or statut_lower == 'occupé') %}
+      {% set is_dispo = (statut_lower == 'disponible' or statut_lower == 'libre') %}
+      
+      <div class="bien-owner-card" style="background:white;border-radius:20px;overflow:hidden; box-shadow:var(--shadow-card);">
+        <div style="height:5px;background:{% if is_loue %}#10b981{% elseif is_dispo %}#5E17EB{% else %}#f59e0b{% endif %};"></div>
+        <img src="{% if bien.cover %}{{ bien.cover | imagine_filter('annonce_thumb') }}{% else %}https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600{% endif %}" style="width:100%;height:180px;object-fit:cover;" alt="{{ bien.titre }}">
+        <div style="padding:16px;">
+          <div style="display:flex;justify-content:space-between; align-items:flex-start;margin-bottom:8px; gap:8px;">
+            <div style="flex:1; min-width:0;">
+                <h4 style="font-size:14px;font-weight:700;line-height:1.3; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ bien.titre }}</h4>
+                <div style="font-weight:400; font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><i class="fa-solid fa-location-dot"></i> {{ bien.adresse }}</div>
+            </div>
+            <span style="{% if is_loue %}background:#dcfce7;color:#16a34a;{% elseif is_dispo %}background:rgba(94,23,235,0.1);color:#5E17EB;{% else %}background:#fef3c7;color:#d97706;{% endif %}padding:3px 10px; border-radius:20px;font-size:11px;font-weight:600; white-space:nowrap; text-transform: uppercase; flex-shrink:0;">
+              ● {{ bien.statut }}
+            </span>
+          </div>
+          <div style="display:flex;gap:16px;margin-bottom:12px;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-muted);"><i class="fa-solid fa-coins" style="color:#5E17EB"></i> {{ bien.prix }} TND/mois</span>
+          </div>
+          
+          {% if is_loue and bien.locataire_nom %}
+          <div style="display:flex;align-items:center;gap:8px; padding:8px;background:#f8fafc;border-radius:10px; margin-bottom:12px;">
+            <img src="https://ui-avatars.com/api/?name={{ bien.locataire_nom|url_encode }}&background=random" style="width:28px;height:28px;border-radius:50%;" alt="{{ bien.locataire_nom }}">
+            <span style="font-size:12px;color:var(--text-muted);">{{ bien.locataire_nom }} · fin: {{ bien.date_fin_contrat|default('-') }}</span>
+          </div>
+          {% elseif is_dispo %}
+          <div style="padding:8px;background:#f8fafc;border-radius:10px; margin-bottom:12px;font-size:12px;color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-magnifying-glass" style="color:#5E17EB;"></i> En recherche de locataire
+          </div>
+          {% else %}
+          <div style="padding:8px;background:#f8fafc;border-radius:10px; margin-bottom:12px;font-size:12px;color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-circle-info" style="color:#64748b;"></i> En attente / Autre
+          </div>
+          {% endif %}
+          
+          <a href="{{ path('owner_biens') }}" class="{% if is_dispo %}btn-primary{% else %}btn-outline{% endif %} btn-sm" style="width:100%; display:block; text-align:center;">
+            <i class="fa-solid fa-eye"></i> Gérer ce bien
+          </a>
+        </div>
+      </div>
+      {% else %}
+        <p style="grid-column: span 3; text-align: center; color: var(--text-muted);">Aucun bien trouvé. Ajoutez-en un !</p>
+      {% endfor %}
+
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Graphique revenus
+  const ctx = document.getElementById('revenusChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: [{% for item in evolution %}'{{ item.mois_label }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+        label: 'Revenus (TND)',
+        data: [{% for item in evolution %}{{ item.loyers }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        backgroundColor: 'rgba(94,23,235,0.15)',
+        borderColor: '#5E17EB',
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw.toLocaleString('fr-FR') + ' TND'
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) { return value + ' TND'; }
+          }
+        }
+      }
+    }
+  });
+
+  // FORMATTAGE DEVISE
+  function convertDevise(devise) {
+    const symbols = {'TND':'TND', 'EUR':'€', 'USD':'$'};
+    const rates = {'TND':1, 'EUR':0.30, 'USD':0.32}; 
+    
+    document.querySelectorAll('.sakan-currency').forEach(el => {
+      if(!el.dataset.base) el.dataset.base = el.innerText.replace(/[^0-9.]/g,'');
+      let baseVal = parseFloat(el.dataset.base);
+      let converted = baseVal * rates[devise];
+      el.innerText = converted.toLocaleString('fr-FR', {maximumFractionDigits:0}) + ' ' + symbols[devise];
+    });
+  }
+  convertDevise('TND');
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  const dashboardGreeting = document.getElementById('owner-dashboard-greeting');
+  if (dashboardGreeting) {
+    dashboardGreeting.innerHTML = "Bonjour, <strong>{{ owner_first_name|default('Propriétaire')|e('js') }}</strong> Voici la synthèse de votre parc immobilier";
+  }
+</script>
+{% endblock %}

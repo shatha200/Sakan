@@ -1,0 +1,1306 @@
+{% extends 'layouts/base_finances_locataire.html.twig' %}
+{% block title %}Mes Charges — Sakan{% endblock %}
+
+{% block finances_content %}
+
+<style>
+/* ═══════════════════════════════════════════════
+   MES CHARGES — PREMIUM SaaS UI 2026
+   ═══════════════════════════════════════════════ */
+:root {
+    --charge-elec: #f59e0b;
+    --charge-eau:  #3b82f6;
+
+    --charge-net:  #8b5cf6;
+    --charge-gaz:  #ef4444;
+    --charge-autre:#6b7280;
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 40px rgba(79,70,229,0.15);
+    --red-alert: #fef2f2;
+    --red-border: #fecaca;
+    --green-bg: #f0fdf4;
+    --green-border: #bbf7d0;
+}
+
+/* Glass Cards */
+.gc {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.2s;
+}
+.gc:hover { box-shadow: var(--shadow-hover); }
+
+/* Section Label */
+.sec-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sec-label.primary { color: var(--primary); }
+.sec-label.danger   { color: #dc2626; }
+.sec-label.success  { color: #16a34a; }
+.sec-label.purple   { color: #8b5cf6; }
+
+/* Housing Switcher */
+.housing-switcher {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.h-tab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    background: rgba(79,70,229,0.08);
+    color: var(--primary);
+}
+.h-tab:hover { background: rgba(79,70,229,0.16); }
+.h-tab.active { background: var(--primary); color: #fff; }
+
+/* Hero Amount */
+.hero-amount {
+    display: inline-block;
+    padding: 16px 24px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+}
+.hero-amount.danger  { background: linear-gradient(135deg,#fef2f2,#fee2e2); border-left: 4px solid #dc2626; }
+.hero-amount.success { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-left: 4px solid #16a34a; }
+.hero-amount .amount-label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+.hero-amount .amount-value { font-size: 36px; font-weight: 800; line-height: 1; }
+.hero-amount.danger  .amount-label { color: #dc2626; }
+.hero-amount.danger  .amount-value { color: #dc2626; }
+.hero-amount.success .amount-label { color: #16a34a; }
+.hero-amount.success .amount-value { color: #16a34a; }
+
+/* Alert badge */
+.alert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(220,38,38,0.1);
+    border: 1px solid rgba(220,38,38,0.2);
+    border-radius: 10px;
+    font-size: 13px;
+    color: #dc2626;
+    font-weight: 600;
+    margin-top: 10px;
+    animation: pulseAlert 2s infinite;
+}
+@keyframes pulseAlert {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* Upload Cards */
+.upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+.upload-card {
+    border: 2px dashed #d1d5db;
+    border-radius: 16px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    overflow: hidden;
+}
+.upload-card::before {
+    content:'';
+    position:absolute; inset:0;
+    opacity:0;
+    transition:opacity 0.25s;
+}
+.upload-card:hover { transform: translateY(-4px); }
+.upload-card.elec  { border-color: var(--charge-elec); }
+.upload-card.eau   { border-color: var(--charge-eau);  }
+.upload-card.net   { border-color: var(--charge-net);  }
+.upload-card.gaz   { border-color: var(--charge-gaz);  }
+.upload-card.autre { border-color: var(--charge-autre);}
+.upload-card.elec:hover  { background: #fffbeb; box-shadow: 0 4px 20px rgba(245,158,11,0.2); }
+.upload-card.eau:hover   { background: #eff6ff; box-shadow: 0 4px 20px rgba(59,130,246,0.2); }
+.upload-card.net:hover   { background: #f5f3ff; box-shadow: 0 4px 20px rgba(139,92,246,0.2); }
+.upload-card.gaz:hover   { background: #fef2f2; box-shadow: 0 4px 20px rgba(239,68,68,0.2); }
+.upload-card.autre:hover { background: #f9fafb; box-shadow: 0 4px 20px rgba(107,114,128,0.2); }
+.upload-card.drag-over { opacity: 0.6; transform: scale(0.97); }
+.upload-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+.upload-label { font-weight: 700; font-size: 12px; letter-spacing: 0.5px; }
+.upload-sub   { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+/* Gemini AI Section */
+.gemini-section {
+    background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(99,102,241,0.06));
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.gemini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Charge Cards */
+.charge-card {
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    border: 1px solid;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+.charge-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+}
+.charge-card.unpaid  { background: #fef2f2; border-color: #fecaca; }
+.charge-card.unpaid::before  { background: #dc2626; }
+.charge-card.paid    { background: #f0fdf4; border-color: #bbf7d0; }
+.charge-card.paid::before    { background: #16a34a; }
+.charge-card.partial { background: #fffbeb; border-color: #fde68a; }
+.charge-card.partial::before { background: #d97706; }
+.charge-card:hover { transform: translateX(4px); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+
+/* Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.badge-paye    { background: #dcfce7; color: #16a34a; }
+.badge-impaye  { background: #fee2e2; color: #dc2626; }
+.badge-partiel { background: #fef3c7; color: #d97706; }
+
+/* Action Buttons */
+.btn-action {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 10px; border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; text-decoration: none;
+}
+.btn-pay    { background: linear-gradient(135deg,#4f46e5,#7c3aed); color: #fff; }
+.btn-pay:hover { transform:translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.4); }
+.btn-stripe { background: linear-gradient(135deg,#635bff,#0a2540); color: #fff; }
+.btn-stripe:hover { transform:translateY(-1px); box-shadow: 0 4px 12px rgba(99,91,255,0.4); }
+.btn-edit   { background: rgba(107,114,128,0.1); color: #374151; }
+.btn-edit:hover { background: rgba(107,114,128,0.2); }
+.btn-del    { background: rgba(220,38,38,0.08); color: #dc2626; }
+.btn-del:hover { background: rgba(220,38,38,0.15); }
+.btn-view   { background: rgba(59,130,246,0.08); color: #3b82f6; }
+.btn-view:hover { background: rgba(59,130,246,0.15); }
+
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,17,26,0.6);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s;
+}
+.modal-overlay.open { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-box {
+    background: white;
+    border-radius: 24px;
+    width: 100%; max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.25);
+    animation: slideUp 0.3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+
+.modal-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.modal-title { font-size: 18px; font-weight: 700; color: #111827; margin: 0; }
+.modal-close {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+}
+.modal-close:hover { background: #e5e7eb; }
+.modal-body { padding: 24px 28px; }
+.modal-footer { padding: 16px 28px 24px; display: flex; gap: 12px; justify-content: flex-end; }
+
+/* Form Elements */
+.form-group { margin-bottom: 18px; }
+.form-label {
+    display: block;
+    font-size: 12px; font-weight: 700;
+    color: #374151;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.form-control {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #111827;
+    background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+    background: white;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.type-btn {
+    padding: 10px 6px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fafafa;
+    cursor: pointer;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+}
+.type-btn:hover { border-color: var(--primary); background: rgba(79,70,229,0.04); }
+.type-btn.selected { border-color: var(--primary); background: rgba(79,70,229,0.08); color: var(--primary); }
+.type-btn .t-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+/* Drop Zone in modal */
+.drop-zone-modal {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
+}
+.drop-zone-modal:hover, .drop-zone-modal.drag-over {
+    border-color: var(--primary);
+    background: rgba(79,70,229,0.03);
+}
+.drop-zone-modal.has-file {
+    border-color: #16a34a;
+    background: rgba(22,163,74,0.04);
+}
+
+/* Btns modal */
+.btn-modal-primary {
+    padding: 11px 22px;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-modal-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,70,229,0.4); }
+.btn-modal-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-modal-secondary {
+    padding: 11px 22px;
+    background: #f3f4f6;
+    color: #374151;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-modal-secondary:hover { background: #e5e7eb; }
+
+.btn-modal-danger {
+    padding: 11px 22px;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1.5px solid #fecaca;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-modal-danger:hover { background: #fee2e2; border-color: #dc2626; }
+
+/* Spinner */
+.spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Gemini Result Preview */
+.gemini-result {
+    background: linear-gradient(135deg,rgba(139,92,246,0.06),rgba(99,102,241,0.06));
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+    display: none;
+}
+.gemini-result.visible { display: block; }
+.gemini-field { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(139,92,246,0.1); font-size: 13px; }
+.gemini-field:last-child { border-bottom: none; }
+.gemini-field-key { color: #6b7280; font-weight: 500; }
+.gemini-field-val { font-weight: 600; color: #1f2937; }
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+.toast {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 260px;
+    max-width: 420px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    animation: toastIn 0.3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes toastIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
+.toast.success { background: #1f2937; color: #fff; border-left: 4px solid #10b981; }
+.toast.error   { background: #1f2937; color: #fff; border-left: 4px solid #ef4444; }
+.toast.info    { background: #1f2937; color: #fff; border-left: 4px solid #3b82f6; }
+
+/* Progress bar */
+.progress-bar { height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #7c3aed); border-radius: 2px; transition: width 0.4s; }
+
+/* Hero grid */
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+}
+@media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+
+/* Stats mini bar */
+.stats-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 14px 0 0;
+}
+.stat-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Stripe button visual */
+.stripe-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    background: #635bff;
+    color: white;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+</style>
+
+{# ═══ TOAST CONTAINER ═══ #}
+<div id="toast-container"></div>
+
+{# ═══ Flash Messages ═══ #}
+{% for message in app.flashes('success') %}
+<div style="background:#dcfce7;border:1px solid #16a34a;border-radius:10px;padding:12px 16px;margin-bottom:14px;color:#166534;display:flex;align-items:center;gap:8px;font-size:14px;">
+    <i class="fa-solid fa-check-circle"></i> {{ message }}
+</div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+<div style="background:#fef2f2;border:1px solid #dc2626;border-radius:10px;padding:12px 16px;margin-bottom:14px;color:#991b1b;display:flex;align-items:center;gap:8px;font-size:14px;">
+    <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+</div>
+{% endfor %}
+
+
+{# ═══ EXCLUSIF SAKAN : BANNERS ALERTES SURCONSOMMATION (FUITE POTENTIELLE) ══════════════ #}
+{% if anomaly_alerts is defined and anomaly_alerts|length > 0 %}
+<div class="gc" style="background:linear-gradient(135deg, #fff7ed, #ffedd5); border:2px solid #fdba74; box-shadow:0 8px 30px rgba(249,115,22,0.15);">
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+        <div style="background:linear-gradient(135deg, #f97316, #ea580c); width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; color:white; font-size:22px; box-shadow:0 8px 20px rgba(249,115,22,0.4);">
+            <i class="fa-solid fa-triangle-exclamation fa-beat-fade"></i>
+        </div>
+        <div>
+            <h3 style="margin:0; font-size:18px; font-weight:900; color:#9a3412;">Alerte de Surconsommation (Risque de Fuite)</h3>
+            <p style="margin:4px 0 0; font-size:14px; color:#c2410c; font-weight:600;">L'intelligence de Sakan a détecté des hausses anormales (supérieures à 40%) sur vos charges fluides.</p>
+        </div>
+    </div>
+    
+    <div style="display:flex; flex-wrap:wrap; gap:16px;">
+        {% for alert in anomaly_alerts %}
+        <div style="flex:1; min-width:280px; background:rgba(255,255,255,0.8); backdrop-filter:blur(10px); border-radius:12px; padding:16px; border:1px solid #fed7aa; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <span style="font-size:32px;">{{ alert.emoji }}</span>
+                <div>
+                    <div style="font-weight:900; font-size:15px; color:#1f2937;">{{ alert.label }}</div>
+                    <div style="font-size:12px; color:#6b7280; font-weight:600; margin-top:2px;">{{ alert.periode }}</div>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:18px; font-weight:900; color:#dc2626;">{{ alert.montant }} <span style="font-size:12px;">TND</span></div>
+                <div style="font-size:11px; font-weight:800; color:#ea580c; margin-top:4px; display:inline-block; background:#ffedd5; padding:4px 8px; border-radius:8px;">
+                    <i class="fa-solid fa-arrow-trend-up"></i> +{{ alert.pct }}% (Moy: {{ alert.moyenne }})
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+{# ═══ 1. HERO HEADER 2026 ═══════════════════════════════════════════════ #}
+<div class="gc" style="background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6)); border: 1px solid rgba(255,255,255,0.8);">
+    <div style="display:flex; flex-direction:column; gap:28px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+            <div style="display:flex;align-items:center;gap:18px;">
+                <div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,#0a2540,#635bff);display:flex;align-items:center;justify-content:center;color:white;font-size:32px;box-shadow:0 12px 30px rgba(99,91,255,0.25);">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div>
+                    <h1 style="font-size:36px;font-weight:900;margin:0;color:#0a2540;letter-spacing:-1px;">Espace Finances</h1>
+                    <p style="margin:4px 0 0;font-size:15px;color:{{ stats.charges_impayees > 0 ? '#d97706' : '#10b981' }};font-weight:600;">
+                        {% if stats.charges_impayees > 0 %}
+                            <i class="fa-solid fa-bell fa-shake"></i> Vous avez <strong>{{ stats.charges_impayees }} charge(s)</strong> nécessitant votre attention.
+                        {% else %}
+                            <i class="fa-solid fa-shield-check"></i> Votre compte est parfaitement à jour.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {# Hero Amount Premium #}
+            <div style="background: {{ stats.montant_restant > 0 ? 'linear-gradient(135deg, #fff1f2, #ffe4e6)' : 'linear-gradient(135deg, #f0fdf4, #dcfce7)' }}; padding: 20px 28px; border-radius: 24px; box-shadow: 0 8px 24px {{ stats.montant_restant > 0 ? 'rgba(225,29,72,0.1)' : 'rgba(16,185,129,0.1)' }}; border: 1px solid {{ stats.montant_restant > 0 ? 'rgba(225,29,72,0.15)' : 'rgba(16,185,129,0.15)' }}; transform: translateY(-5px);">
+                <div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:{{ stats.montant_restant > 0 ? '#e11d48' : '#059669' }};display:flex;align-items:center;gap:6px;">
+                    <i class="fa-solid fa-{{ stats.montant_restant > 0 ? 'file-invoice-dollar' : 'check-double' }}"></i> Total Dû
+                </div>
+                <div style="font-size:42px;font-weight:900;color:{{ stats.montant_restant > 0 ? '#be123c' : '#047857' }};line-height:1.1;margin-top:4px;">
+                    {{ stats.montant_restant|number_format(3, ',', ' ') }} <span style="font-size:22px;opacity:0.8;">TND</span>
+                </div>
+            </div>
+        </div>
+
+        {# Housing switcher / Navigation #}
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+            <div class="housing-switcher" style="margin:0;">
+                <a href="{{ path('tenant_finances_charges') }}"
+                   class="h-tab {{ selectedContratId is null ? 'active' : '' }}" style="border-radius:12px; font-size:14px; padding: 10px 20px;">
+                    <i class="fa-solid fa-briefcase"></i> Vue Globale
+                </a>
+                {% for log in logements %}
+                    <a href="{{ path('tenant_finances_charges', {logement: log.contrat_id}) }}"
+                       class="h-tab {{ selectedContratId == log.contrat_id ? 'active' : '' }}"
+                       title="{{ log.description }}" style="border-radius:12px; font-size:14px; padding: 10px 20px;">
+                        <i class="fa-solid fa-house"></i> {{ log.titre }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            {# Stats mini chips #}
+            <div class="stats-bar" style="margin:0;">
+                <div class="stat-chip" style="background:#f8fafc; color:#475569; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:10px 16px; border-radius:12px;">
+                    <i class="fa-solid fa-receipt"></i> <b>{{ stats.total_charges }}</b> Opérations
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# ═══ 2. SAKAN AI + UPLOAD SECTION ═══════════════════════════════ #}
+<div class="gc" style="border:none; box-shadow:0 10px 30px rgba(0,0,0,0.04); position:relative; overflow:hidden;">
+    <div style="position:absolute; top:-20px; right:-20px; width:150px; height:150px; background:radial-gradient(circle, rgba(99,91,255,0.1) 0%, transparent 70%);"></div>
+    <div class="sec-label" style="color:#0a2540;">
+        <i class="fa-solid fa-arrow-up-from-bracket"></i> Ajouter un justificatif / Facture
+    </div>
+
+    <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:center;">
+        {# Sakan AI Analyzer #}
+        <div class="gemini-section" style="flex:1; min-width:300px; margin-bottom:0; background:linear-gradient(135deg, rgba(99,91,255,0.05), rgba(79,70,229,0.03)); border:1px solid rgba(99,91,255,0.15); border-radius:20px; padding:24px;">
+            <div style="display:flex; align-items:flex-start; gap:16px;">
+                <div style="width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 8px 20px rgba(79,70,229,0.3);">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-weight:800;font-size:16px;color:#0a2540;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+                        SAKAN AI SCAN <span style="background:linear-gradient(90deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; color:transparent; font-size:10px; font-weight:900; background-color:rgba(139,92,246,0.1); padding:2px 8px; border-radius:10px;">BETA</span>
+                    </div>
+                    <div style="font-size:13px;color:#64748b;line-height:1.4;">Notre Intelligence Artificielle lit automatiquement vos factures (Montant, type, période) pour vous faire gagner du temps.</div>
+                </div>
+            </div>
+            
+            <div style="margin-top:20px;">
+                <label for="gemini-file-input" style="cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 20px; border-radius:14px; background:linear-gradient(135deg, #0a2540, #111827); color:white; font-size:14px; font-weight:700; transition:all 0.2s; box-shadow:0 6px 16px rgba(10,37,64,0.2);">
+                    <i class="fa-solid fa-camera"></i> Prendre en photo ou PDF
+                </label>
+                <input type="file" id="gemini-file-input" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;" onchange="analyzeWithGemini(this)">
+            </div>
+            
+            <div id="gemini-spinner" style="display:none; margin-top:16px; text-align:center;">
+                <div class="spinner" style="border-top-color:#635bff;border-color:rgba(99,91,255,0.2);"></div>
+                <span style="font-size:13px;font-weight:600;color:#635bff;">SAKAN AI analyse en cours...</span>
+            </div>
+        </div>
+
+        {# Manual Upload shortcuts #}
+        <div style="flex:2; min-width:300px;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:0.5px;color:#64748b;margin-bottom:12px;text-transform:uppercase;">Ou saisie manuelle</div>
+            <div class="upload-grid" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));">
+                {% set upload_types = [
+                    {key:'ELECTRICITE', label:'ÉLEC', emoji:'⚡', cls:'elec'},
+                    {key:'EAU',         label:'EAU',  emoji:'💧', cls:'eau'},
+                    {key:'INTERNET',    label:'WEB',  emoji:'📶', cls:'net'},
+                    {key:'AUTRE',       label:'AUTRE',emoji:'📎', cls:'autre'}
+                ] %}
+                {% for ut in upload_types %}
+                <div class="upload-card {{ ut.cls }}"
+                     ondragover="handleDragOver(event)"
+                     ondragleave="handleDragLeave(event)"
+                     ondrop="handleDrop(event, '{{ ut.key }}')"
+                     onclick="openCreateModal('{{ ut.key }}')" style="padding:16px 12px; border-radius:18px;">
+                    <span class="upload-icon" style="font-size:28px;">{{ ut.emoji }}</span>
+                    <div class="upload-label" style="color: var(--charge-{{ ut.cls }}); font-size:11px;">{{ ut.label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# ═══ 3. GRAPHIQUE EVOLUTION ═══════════════════════════════════════ #}
+<div class="gc">
+    <div class="sec-label primary">
+        <i class="fa-solid fa-chart-line"></i> Évolution des Charges
+        <span style="margin-left:auto;font-size:11px;font-weight:500;color:#9ca3af;text-transform:none;letter-spacing:0;">24 derniers mois</span>
+    </div>
+    <div style="height:260px;position:relative;">
+        <canvas id="evolutionChart"></canvas>
+    </div>
+</div>
+
+
+{# ═══ 4. GESTION DES PAIEMENTS (RETARD & À VENIR) ════════════════════════════════════ #}
+{% if unpaid|length > 0 %}
+    {% set current_month = "now"|date("Y-m") %}
+    {% set charges_en_retard = [] %}
+    {% set charges_a_venir = [] %}
+
+    {% for charge in unpaid %}
+        {% if charge.periode < current_month %}
+            {% set charges_en_retard = charges_en_retard|merge([charge]) %}
+        {% else %}
+            {% set charges_a_venir = charges_a_venir|merge([charge]) %}
+        {% endif %}
+    {% endfor %}
+
+    <div style="display:grid; grid-template-columns: 1fr; gap:24px;">
+
+        {# 🔴 SECTION EN RETARD 🔴 #}
+        {% if charges_en_retard|length > 0 %}
+        <div class="gc" style="border:1px solid #fecaca; box-shadow:0 10px 40px rgba(220,38,38,0.06); background:linear-gradient(180deg, #fff5f5, #ffffff);">
+            <div class="sec-label" style="color:#b91c1c; font-size:14px; margin-bottom:20px;">
+                <i class="fa-solid fa-triangle-exclamation fa-beat-fade"></i> Action Requise : Charges en Retard
+                <span style="background:#fee2e2; color:#b91c1c; padding:4px 12px; border-radius:20px; font-size:12px; margin-left:12px;">{{ charges_en_retard|length }} impayé(s)</span>
+            </div>
+
+            <div style="display:grid; gap:16px;">
+            {% for charge in charges_en_retard %}
+                <div class="charge-card {{ charge.statut_paiement == 'PARTIEL' ? 'partial' : 'unpaid' }}" id="charge-card-{{ charge.id }}" style="border-radius:20px; padding:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                    <div style="display:flex;align-items:center;gap:16px;flex:1;">
+                        <div style="width:54px;height:54px;border-radius:16px;background:{{ charge.statut_paiement == 'PARTIEL' ? '#fef3c7' : '#fee2e2' }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fa-solid {{ charge.icon }}" style="font-size:24px;color:{{ charge.statut_paiement == 'PARTIEL' ? '#d97706' : '#dc2626' }};"></i>
+                        </div>
+                        <div>
+                            {% set chargeLabel = charge.label_type ? charge.label_type : charge.type_charge %}
+                            <div style="font-weight:800;font-size:16px;color:#111827;">{{ chargeLabel }}</div>
+                            <div style="font-size:13px;color:#64748b;margin-top:4px;">
+                                <i class="fa-regular fa-calendar" style="color:#94a3b8;"></i> <b>{{ charge.periode|format_periode }}</b>
+                                {% if charge.logement_titre %} <span style="margin:0 6px;">|</span> <i class="fa-solid fa-house-user"></i> {{ charge.logement_titre }}{% endif %}
+                            </div>
+                            {% if charge.statut_paiement == 'PARTIEL' %}
+                            <div style="margin-top:8px;">
+                                <div class="progress-bar" style="height:6px; border-radius:3px;">
+                                    {% set pct = charge.montant_paye_total > 0 ? (charge.montant_paye_total / charge.montant * 100)|round : 0 %}
+                                    <div class="progress-fill" style="width:{{ pct }}%;background:linear-gradient(90deg,#d97706,#f59e0b);border-radius:3px;"></div>
+                                </div>
+                                <div style="font-size:12px;font-weight:600;color:#d97706;margin-top:4px;">{{ pct }}% payé — reste {{ charge.montant_restant|number_format(3,',') }} TND</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; align-items:center; gap:24px;">
+                        <div style="text-align:right;">
+                            <div style="font-size:24px;font-weight:900;color:{{ charge.statut_paiement == 'PARTIEL' ? '#d97706' : '#dc2626' }};letter-spacing:-0.5px;">
+                                {{ charge.montant_a_payer|number_format(3, ',', ' ') }} TND
+                            </div>
+                            <div style="font-size:12px;font-weight:700;color:#ef4444;margin-top:2px;">EN RETARD</div>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <button class="btn-action btn-pay" style="padding:10px 20px; font-size:13px; font-weight:700;"
+                                    onclick="openPayModal({{ charge.id }}, '{{ chargeLabel|e('js') }}', {{ charge.montant_a_payer }}, '{{ charge.periode|format_periode }}')">  
+                                <i class="fa-solid fa-credit-card"></i> Payer via RIB
+                            </button>
+                            <div style="display:flex;gap:4px;justify-content:flex-end;">
+                                <button class="btn-action btn-edit" title="Modifier" style="padding:6px 12px;" onclick='openEditModal({{ charge|json_encode|raw }})'><i class="fa-solid fa-pen"></i></button>
+                                {% if charge.fichier_facture %}
+                                <a class="btn-action btn-view" title="Voir Facture" style="padding:6px 12px;" href="/uploads/factures/{{ charge.fichier_facture|split('/')|last }}" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>
+                                {% endif %}
+                                <button class="btn-action btn-del" title="Supprimer" style="padding:6px 12px;" onclick="openDeleteModal({{ charge.id }}, '{{ chargeLabel|e('js') }}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# 🔵 SECTION À VENIR / EN COURS 🔵 #}
+        {% if charges_a_venir|length > 0 %}
+        <div class="gc" style="border:1px solid #bfdbfe; box-shadow:0 10px 40px rgba(59,130,246,0.04); background:linear-gradient(180deg, #eff6ff, #ffffff);">
+            <div class="sec-label" style="color:#1d4ed8; font-size:14px; margin-bottom:20px;">
+                <i class="fa-regular fa-calendar-check"></i> Mois courtant & À Venir
+                <span style="background:#dbeafe; color:#1d4ed8; padding:4px 12px; border-radius:20px; font-size:12px; margin-left:12px;">{{ charges_a_venir|length }} en cours</span>
+            </div>
+
+            <div style="display:grid; gap:16px;">
+            {% for charge in charges_a_venir %}
+                <div class="charge-card" id="charge-card-{{ charge.id }}" style="background:white; border-color:#e2e8f0; border-radius:20px; padding:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                    <div style="display:flex;align-items:center;gap:16px;flex:1;">
+                        <div style="width:48px;height:48px;border-radius:14px;background:#f8fafc;border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fa-solid {{ charge.icon }}" style="font-size:20px;color:#64748b;"></i>
+                        </div>
+                        <div>
+                            {% set chargeLabel = charge.label_type ? charge.label_type : charge.type_charge %}
+                            <div style="font-weight:700;font-size:15px;color:#334155;">{{ chargeLabel }}</div>
+                            <div style="font-size:13px;color:#64748b;margin-top:2px;">
+                                {{ charge.periode|format_periode }}
+                                {% if charge.logement_titre %} <span style="margin:0 6px;">|</span> {{ charge.logement_titre }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; align-items:center; gap:24px;">
+                        <div style="text-align:right;">
+                            <div style="font-size:20px;font-weight:800;color:#3b82f6;">
+                                {{ charge.montant_a_payer|number_format(3, ',', ' ') }} TND
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-action" style="padding:8px 16px; background:#eff6ff; color:#3b82f6; border:1px solid #bfdbfe;"
+                                    onclick="openPayModal({{ charge.id }}, '{{ chargeLabel|e('js') }}', {{ charge.montant_a_payer }}, '{{ charge.periode|format_periode }}')">  
+                                <i class="fa-solid fa-check"></i> Régler
+                            </button>
+                            <button class="btn-action btn-edit" title="Modifier" onclick='openEditModal({{ charge|json_encode|raw }})'><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-action btn-del" title="Supprimer" onclick="openDeleteModal({{ charge.id }}, '{{ chargeLabel|e('js') }}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+{% endif %}
+
+
+{# ═══ 5. HISTORIQUE PAIEMENTS AVEC FILTRAGE ET PAGINATION ══════════════════════════════════════ #}
+<div class="gc" style="border:none; box-shadow:0 10px 40px rgba(0,0,0,0.03);">
+    {# Header avec titre et stats #}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div class="sec-label success" style="margin-bottom:0; font-size:14px;">
+            <i class="fa-solid fa-clock-rotate-left"></i> Historique des Paiements
+            {% if nbFiltered > 0 %}
+            <span style="margin-left:12px;background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:20px;font-size:12px;">{{ nbFiltered }} factures</span>
+            {% endif %}
+        </div>
+        <div style="font-size: 13px; font-weight: 600; color: #4b5563; background: rgba(79,70,229,0.08); padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(79,70,229,0.15);">
+            Total: <span style="color: var(--primary); font-size: 15px; font-weight: 800;">
+                {% set totalPaye = 0 %}
+                {% for c in paidAll %}
+                    {% set totalPaye = totalPaye + (c.montant ?? 0) %}
+                {% endfor %}
+                {{ totalPaye|number_format(3, ',', ' ') }} TND
+            </span>
+        </div>
+    </div>
+
+    {# Barre de filtres #}
+    <form method="get" action="{{ path('tenant_finances_charges') }}" style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        {% if selectedContratId %}
+            <input type="hidden" name="logement" value="{{ selectedContratId }}">
+        {% endif %}
+        
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+            {# Filtre Type #}
+            <div style="min-width: 140px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Type</label>
+                <select name="type" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;">
+                    <option value="TOUS" {{ typeFilter == 'TOUS' ? 'selected' }}>Tous les types</option>
+                    <option value="ELECTRICITE" {{ typeFilter == 'ELECTRICITE' ? 'selected' }}>⚡ Électricité</option>
+                    <option value="EAU" {{ typeFilter == 'EAU' ? 'selected' }}>💧 Eau</option>
+                    <option value="INTERNET" {{ typeFilter == 'INTERNET' ? 'selected' }}>📶 Internet</option>
+                    <option value="AUTRE" {{ typeFilter == 'AUTRE' ? 'selected' }}>📎 Autre</option>
+                </select>
+            </div>
+            
+            {# Filtre Période #}
+            <div style="min-width: 140px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Période</label>
+                <input type="month" name="periode" value="{{ periodeFilter }}" 
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Filtre Montant Min #}
+            <div style="min-width: 100px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Min (TND)</label>
+                <input type="number" name="min" value="{{ min }}" step="0.001" placeholder="0.000"
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Filtre Montant Max #}
+            <div style="min-width: 100px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Max (TND)</label>
+                <input type="number" name="max" value="{{ max }}" step="0.001" placeholder="∞"
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Lignes par page #}
+            <div style="min-width: 80px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Lignes</label>
+                <select name="limit" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;">
+                    <option value="5" {{ limit == 5 ? 'selected' }}>5</option>
+                    <option value="10" {{ limit == 10 ? 'selected' }}>10</option>
+                    <option value="20" {{ limit == 20 ? 'selected' }}>20</option>
+                    <option value="50" {{ limit == 50 ? 'selected' }}>50</option>
+                </select>
+            </div>
+            
+            {# Boutons #}
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" style="padding: 8px 16px; background: linear-gradient(135deg,var(--primary),#7c3aed); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                    <i class="fa-solid fa-filter"></i> Filtrer
+                </button>
+                <a href="{{ path('tenant_finances_charges', selectedContratId ? {logement: selectedContratId} : {}) }}"
+                   style="padding: 8px 12px; background: rgba(107,114,128,0.1); color: #374151; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+            </div>
+        </div>
+        
+        {# Tags de filtres actifs #}
+        {% set hasFilters = typeFilter != 'TOUS' or periodeFilter or min or max %}
+        {% if hasFilters %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; padding: 4px 0;">Filtres actifs:</span>
+            
+            {% if typeFilter != 'TOUS' %}
+                <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({type: 'TOUS'})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Type: {{ typeFilter }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if periodeFilter %}
+                <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({periode: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Période: {{ periodeFilter }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if min %}
+                <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({min: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Min: {{ min }} TND <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if max %}
+                <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({max: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Max: {{ max }} TND <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </form>
+
+    {# Liste des charges payées #}
+    {% if paid|length > 0 %}
+    <div style="display:grid; gap:12px;">
+    {% for charge in paid %}
+    <div class="charge-card paid" id="charge-card-paid-{{ charge.id }}" style="border-radius:18px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div style="display:flex;align-items:center;gap:16px;flex:1;">
+            <div style="width:46px;height:46px;border-radius:14px;background:{{ charge.color }}10;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid {{ charge.icon }}" style="font-size:20px;color:{{ charge.color }};"></i>
+            </div>
+            <div>
+                {% set paidLabel = charge.label_type ? charge.label_type : charge.type_charge %}
+                <div style="font-weight:700;font-size:15px;color:#334155;">{{ paidLabel }}</div>
+                <div style="font-size:13px;color:#64748b;margin-top:2px;">
+                    {{ charge.periode|format_periode }}
+                    {% if charge.derniere_date_paiement %}
+                        • Payé le {{ charge.derniere_date_paiement|date('d/m/Y') }}
+                    {% endif %}
+                    {% if charge.logement_titre %} • {{ charge.logement_titre }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:24px;">
+            <div style="text-align:right;">
+                <div style="font-size:18px;font-weight:800;color:#10b981;letter-spacing:-0.5px;">{{ charge.montant|number_format(3, ',', ' ') }} TND</div>
+                <span class="status-badge badge-paye" style="margin-top:4px;"><i class="fa-solid fa-check"></i> PAYÉ</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <button class="btn-action btn-edit" title="Modifier" style="background:#f8fafc; border:1px solid #e2e8f0; color:#64748b; padding:8px 12px; border-radius:10px;"
+                        onclick='openEditModal({{ charge|json_encode|raw }})'>
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                {% if charge.fichier_facture %}
+                <a class="btn-action btn-view" title="Facture" style="background:#f0fdfa; border:1px solid #ccfbf1; color:#0d9488; padding:8px 12px; border-radius:10px;"
+                   href="/uploads/factures/{{ charge.fichier_facture|split('/')|last }}" target="_blank">
+                    <i class="fa-solid fa-check-double"></i>
+                </a>
+                {% endif %}
+                <button class="btn-action btn-del" title="Supprimer" style="background:#fff1f2; border:1px solid #ffe4e6; color:#e11d48; padding:8px 12px; border-radius:10px;"
+                        onclick="openDeleteModal({{ charge.id }}, '{{ paidLabel|e('js') }}')">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    
+    {# Pagination Pagerfanta #}
+    {% if pager.nbPages > 1 %}
+    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; flex-wrap: wrap;">
+        {% if pager.currentPage > 1 %}
+            <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({page: pager.currentPage - 1})) }}"
+               style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+        {% else %}
+            <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </span>
+        {% endif %}
+
+        {% for page in 1..pager.nbPages %}
+            {% if page == pager.currentPage %}
+                <span style="padding: 8px 14px; background: var(--primary); color: white; border-radius: 6px; font-weight: 600; font-size: 13px;">
+                    {{ page }}
+                </span>
+            {% elseif page >= pager.currentPage - 2 and page <= pager.currentPage + 2 %}
+                <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({page: page})) }}"
+                   style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    {{ page }}
+                </a>
+            {% elseif page == 1 or page == pager.nbPages %}
+                <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({page: page})) }}"
+                   style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    {{ page }}
+                </a>
+            {% elseif page == pager.currentPage - 3 or page == pager.currentPage + 3 %}
+                <span style="padding: 8px; color: #94a3b8; font-size: 13px;">...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if pager.currentPage < pager.nbPages %}
+            <a href="{{ path('tenant_finances_charges', app.request.query.all|merge({page: pager.currentPage + 1})) }}"
+               style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        {% else %}
+            <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+        {% endif %}
+
+        <span style="font-size: 12px; color: #64748b; margin-left: 12px;">
+            Page {{ pager.currentPage }} / {{ pager.nbPages }} ({{ pager.nbResults }} résultats)
+        </span>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div style="text-align:center;padding:50px;color:#9ca3af;">
+        <i class="fa-solid fa-inbox" style="font-size:36px;margin-bottom:12px;display:block;"></i>
+        <p style="margin:0;font-size:14px;">Aucune charge payée trouvée</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Export Excel pour charges
+function exportChargesToExcel() {
+    const form = document.querySelector('form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+    
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'limit' && key !== 'page') {
+            params.append(key, value);
+        }
+    }
+    
+    window.location.href = '{{ path('tenant_finances_charges_export') }}?' + params.toString();
+}
+</script>
+
+
+{# ══════════════════════════════════════════════════════════════════ #}
+{# ═══ MODAUX ══════════════════════════════════════════════════════ #}
+{# ══════════════════════════════════════════════════════════════════ #}
+
+{# ─── Modal CRÉER Charge ─── #}
+<div class="modal-overlay" id="modal-create">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 class="modal-title"><i class="fa-solid fa-plus-circle" style="color:var(--primary);"></i> Ajouter une Charge</h2>
+            <button class="modal-close" onclick="closeModal('modal-create')">✕</button>
+        </div>
+        <div class="modal-body">
+            {# Type Selector #}
+            <div class="form-group">
+                <label class="form-label">Type de charge</label>
+                <div class="type-grid" id="create-type-grid">
+                    {% set typeIcons = {
+                        'ELECTRICITE':{'emoji':'⚡','label':'Électricité'},
+                        'EAU':{'emoji':'💧','label':'Eau'},
+                        'INTERNET':{'emoji':'📶','label':'Internet'},
+                        'AUTRE':{'emoji':'📎','label':'Autre'}
+                    } %}
+                    {% for key, meta in typeIcons %}
+                    <div class="type-btn" data-type="{{ key }}" onclick="selectType('{{ key }}', 'create')">
+                        <span class="t-icon">{{ meta.emoji }}</span>
+                        {{ meta.label }}
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="create-type" value="AUTRE">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Montant (TND)</label>
+                    <input type="number" id="create-montant" class="form-control" step="0.001" min="0" placeholder="ex: 45.500">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Période</label>
+                    <input type="month" id="create-periode" class="form-control" value="{{ 'now'|date('Y-m') }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Contrat</label>
+                <select id="create-contrat" class="form-control">
+                    {% for log in logements %}
+                    <option value="{{ log.contrat_id }}"
+                        {% if selectedContratId == log.contrat_id %}selected{% endif %}>
+                        {{ log.titre }} (Contrat #{{ log.contrat_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Statut</label>
+                <select id="create-statut" class="form-control">
+                    <option value="NON_PAYE">Non payée</option>
+                    <option value="PAYE">Déjà payée</option>
+                    <option value="PARTIEL">Paiement partiel</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description (optionnel)</label>
+                <textarea id="create-desc" class="form-control" rows="2" placeholder="Fournisseur, période, numéro de référence..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Facture / Justificatif <span style="color:#dc2626;">*</span></label>
+                <div class="drop-zone-modal" id="create-dropzone"
+                     ondragover="modalDragOver(event,'create-dropzone')"
+                     ondragleave="modalDragLeave('create-dropzone')"
+                     ondrop="modalDrop(event,'create-file')"
+                     onclick="document.getElementById('create-file').click()">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size:24px;color:#9ca3af;margin-bottom:8px;"></i>
+                    <div id="create-file-label" style="font-size:13px;color:#9ca3af;">Cliquer ou glisser un PDF / Image</div>
+                </div>
+                <input type="file" id="create-file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;"
+                       onchange="previewFile(this,'create-dropzone','create-file-label')">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-secondary" onclick="closeModal('modal-create')">Annuler</button>
+            <button class="btn-modal-primary" id="create-submit-btn" onclick="submitCreate()">
+                <i class="fa-solid fa-plus"></i> Ajouter la charge
+            </button>
+        </div>
+    </div>
+</div>
+
+
+{# ─── Modal MODIFIER Charge ─── #}
+<div class="modal-overlay" id="modal-edit">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 class="modal-title"><i class="fa-solid fa-pen" style="color:#6b7280;"></i> Modifier la charge</h2>
+            <button class="modal-close" onclick="closeModal('modal-edit')">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="edit-id">
+            <div class="form-group">
+                <label class="form-label">Type de charge</label>
+                <div class="type-grid" id="edit-type-grid">
+                    {% for key, meta in typeIcons %}
+                    <div class="type-btn" data-type="{{ key }}" onclick="selectType('{{ key }}', 'edit')">
+                        <span class="t-icon">{{ meta.emoji }}</span>
+                        {{ meta.label }}
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="edit-type" value="">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Montant (TND)</label>
+                    <input type="number" id="edit-montant" class="form-control" step="0.001" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Période</label>
+                    <input type="month" id="edit-periode" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea id="edit-desc" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Facture / Justificatif <span style="color:#dc2626;">*</span></label>
+                <div class="drop-zone-modal" id="edit-dropzone"
+                     ondragover="modalDragOver(event,'edit-dropzone')"
+                     ondragleave="modalDragLeave('edit-dropzone')"
+                     ondrop="modalDrop(event,'edit-file')"
+                     onclick="document.getElementById('edit-file').click()">
+                    <i class="fa-solid fa-arrow-up-from-bracket" style="font-size:24px;color:#9ca3af;margin-bottom:8px;"></i>
+                    <div id="edit-file-label" style="font-size:13px;color:#9ca3af;">Cliquer ou glisser un PDF / Image (optionnel)</div>
+                </div>
+                <input type="file" id="edit-file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;"
+                       onchange="previewFile(this,'edit-dropzone','edit-file-label')">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-secondary" onclick="closeModal('modal-edit')">Annuler</button>
+            <button class="btn-modal-primary" id="edit-submit-btn" onclick="submitEdit()">
+                <i class="fa-solid fa-save"></i> Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+
+{# ─── Modal PAYER (manuel + preuve) ─── #}
+<div class="modal-overlay" id="modal-pay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 class="modal-title"><i class="fa-solid fa-hand-holding-dollar" style="color:var(--primary);"></i> Déclarer le paiement</h2>
+            <button class="modal-close" onclick="closeModal('modal-pay')">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="pay-id">
+            <div style="background:rgba(79,70,229,0.06);border:1px solid rgba(79,70,229,0.15);border-radius:12px;padding:16px;margin-bottom:20px;">
+                <div style="font-size:13px;color:#6b7280;margin-bottom:4px;">Montant à déclarer</div>
+                <div style="font-size:28px;font-weight:800;color:var(--primary);" id="pay-amount-display">0.000 TND</div>
+                <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="pay-info-display"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Preuve de paiement <span style="color:#dc2626;">*</span></label>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Comme dans l'application Java : une photo du reçu ou PDF est obligatoire pour valider le paiement.
+                </p>
+                <div class="drop-zone-modal" id="pay-dropzone"
+                     ondragover="modalDragOver(event,'pay-dropzone')"
+                     ondragleave="modalDragLeave('pay-dropzone')"
+                     ondrop="modalDrop(event,'pay-file')"
+                     onclick="document.getElementById('pay-file').click()">
+                    <i class="fa-solid fa-receipt" style="font-size:28px;color:#9ca3af;margin-bottom:8px;"></i>
+                    <div id="pay-file-label" style="font-size:13px;color:#9ca3af;font-weight:500;">Déposer le reçu ici (Photo ou PDF)</div>
+                    <div style="font-size:11px;color:#d1d5db;margin-top:4px;">PNG, JPG, WEBP, PDF — max 10 MB</div>
+                </div>
+                <input type="file" id="pay-file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;"
+                       onchange="previewFile(this,'pay-dropzone','pay-file-label')">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notes (optionnel)</label>
+                <input type="text" id="pay-notes" class="form-control" placeholder="ex: Virement Banque XYZ, référence ABC123">
+            </div>
+
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;font-size:12px;color:#92400e;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <strong>Important :</strong> Ce paiement sera déclaré comme paiement hors ligne. Un email de confirmation sera envoyé à votre propriétaire.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-secondary" onclick="closeModal('modal-pay')">Annuler</button>
+            <button class="btn-modal-primary" id="pay-submit-btn" onclick="submitPay()">
+                <i class="fa-solid fa-circle-check"></i> Confirmer le paiement
+            </button>
+        </div>
+    </div>
+</div>
+
+
+{# ─── Modal CONFIRMER SUPPRESSION ─── #}
+<div class="modal-overlay" id="modal-delete">
+    <div class="modal-box" style="max-width:420px;">
+        <div class="modal-header">
+            <h2 class="modal-title" style="color:#dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> Supprimer la charge</h2>
+            <button class="modal-close" onclick="closeModal('modal-delete')">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="delete-id">
+            <div style="text-align:center;padding:10px 0;">
+                <div style="width:64px;height:64px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;">
+                    🗑️
+                </div>
+                <p style="font-size:15px;color:#374151;margin:0 0 8px;">
+                    Supprimer la charge <strong id="delete-label"></strong> ?
+                </p>
+                <p style="font-size:13px;color:#9ca3af;margin:0;">
+                    Cette action est irréversible. La facture sera également supprimée.
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-secondary" onclick="closeModal('modal-delete')">Annuler</button>
+            <button class="btn-modal-danger" id="delete-submit-btn" onclick="submitDelete()">
+                <i class="fa-solid fa-trash"></i> Supprimer définitivement
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+{% endblock %}
+
+
+{% block javascripts %}
+{{ parent() }}
+
+{# Chart.js depuis CDN #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{# ── Pont Twig→JS : valeurs injectées dans des data-attributes HTML (100% sûr) ── #}
+<div id="twig-data-bridge"
+     style="display:none"
+     data-route-create="{{ path('locataire_charge_ajouter') }}"
+     data-route-gemini="{{ path('locataire_charge_analyser_facture') }}"
+     data-chart="{{ chartData|json_encode|e('html_attr') }}"></div>
+
+{# ── Fichier JS externe — Twig ne parse jamais ce fichier ── #}
+<script src="{{ asset('js/charges-locataire.js') }}"></script>
+
+{# ── Validation des formulaires financiers ── #}
+<script src="{{ asset('js/validation-finances-locataire.js') }}"></script>
+
+{% endblock %}
+

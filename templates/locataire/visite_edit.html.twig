@@ -1,0 +1,47 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Modifier mon rendez-vous — Sakan{% endblock %}
+{% block page_title %}Modifier la visite{% endblock %}
+{% block page_subtitle %}Reprogrammez votre rencontre avec le propriétaire{% endblock %}
+
+{% block content %}
+    <div class="glass-card" style="max-width: 600px; margin: 0 auto; padding: 40px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i class="fa-solid fa-calendar-day" style="font-size: 48px; color: var(--blue); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--blue-dark);">{{ visite.annonce.titre }}</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Visite actuellement prévue le {{ visite.dateHeure|date('d/m/Y à H:i') }}</p>
+        </div>
+
+        {% if visite.dateHeure < date() %}
+            <div style="background: #fee2e2; border: 1px solid #ef4444; color: #ef4444; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                <strong>Impossible de modifier une visite passée.</strong><br>
+                Veuillez contacter le propriétaire directement ou replanifier une nouvelle visite.
+            </div>
+            <a href="{{ path('tenant_visites') }}" class="btn-primary" style="width: 100%; justify-content: center; text-decoration: none;">Retour à mes visites</a>
+        {% else %}
+            <form method="post" action="{{ path('tenant_visite_edit', {'id': visite.id}) }}">
+                <div style="margin-bottom: 24px;">
+                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Nouvelle date et heure *</label>
+                    <input type="datetime-local" name="dateHeure" class="sakan-input" required
+                           value="{{ visite.dateHeure ? visite.dateHeure|date('Y-m-d\\TH:i') : '' }}"
+                           min="{{ "now"|date('Y-m-d\\TH:i') }}">
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Commentaire</label>
+                    <textarea name="commentaire" class="sakan-input" rows="3" placeholder="Commentaire optionnel...">{{ visite.commentaire }}</textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn-primary" style="flex: 2; justify-content: center;">
+                        <i class="fa-solid fa-check"></i> Confirmer le changement
+                    </button>
+                    <a href="{{ path('tenant_visites') }}" class="btn-secondary" style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                        Annuler
+                    </a>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

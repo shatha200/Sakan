@@ -1,0 +1,75 @@
+<script>
+  (function () {
+    if (window.__sakanOtpTimerInitialized) {
+      return;
+    }
+    window.__sakanOtpTimerInitialized = true;
+
+    function formatTime(totalSeconds) {
+      const safe = Math.max(0, totalSeconds);
+      const minutes = Math.floor(safe / 60);
+      const seconds = safe % 60;
+      return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+
+    function secondsUntil(expiryValue) {
+      if (!expiryValue) {
+        return 0;
+      }
+      const normalized = String(expiryValue).replace(' ', 'T');
+      const expiryDate = new Date(normalized);
+      if (Number.isNaN(expiryDate.getTime())) {
+        return 0;
+      }
+      return Math.max(0, Math.floor((expiryDate.getTime() - Date.now()) / 1000));
+    }
+
+    function getSecondsRemaining(el) {
+      const explicitSeconds = Number.parseInt(el.dataset.otpSecondsRemaining || '', 10);
+      if (!Number.isNaN(explicitSeconds)) {
+        return Math.max(0, explicitSeconds);
+      }
+      return secondsUntil(el.dataset.otpExpiresAt || '');
+    }
+
+    function syncCountdown(el) {
+      const key = el.dataset.otpTimerKey || '';
+      const button = document.querySelector('[data-otp-resend-button="' + key + '"]');
+      const status = document.querySelector('[data-otp-resend-status="' + key + '"]');
+      const maxed = button && button.dataset.otpMaxed === '1';
+      const seconds = getSecondsRemaining(el);
+
+      el.textContent = formatTime(seconds);
+      el.dataset.otpSecondsRemaining = String(Math.max(0, seconds - 1));
+
+      if (button) {
+        button.disabled = !!maxed;
+      }
+
+      if (status) {
+        if (maxed) {
+          status.textContent = 'Limite de renvoi atteinte.';
+        } else if (seconds > 0) {
+          status.textContent = 'Vous pouvez renvoyer le code jusqu\'à 5 fois pendant 5 min.';
+        } else {
+          status.textContent = 'Le prochain renvoi relancera le minuteur à 05:00.';
+        }
+      }
+    }
+
+    function tickAll() {
+      document.querySelectorAll('[data-otp-countdown]').forEach(syncCountdown);
+    }
+
+    function startOtpTimers() {
+      tickAll();
+      window.setInterval(tickAll, 1000);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startOtpTimers);
+    } else {
+      startOtpTimers();
+    }
+  })();
+</script>

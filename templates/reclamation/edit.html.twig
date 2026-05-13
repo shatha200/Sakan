@@ -1,0 +1,218 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Modifier Réclamation{% endblock %}
+{% block page_title %}Mise à jour du dossier{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+    <style>
+        .invalid-feedback {
+            display: block;
+            color: #dc2626; /* Intense red */
+            font-size: 0.875rem;
+            margin-top: 5px;
+            font-weight: 700;
+        }
+        .is-invalid {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.25) !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="glass-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="fw-bold m-0" style="color: #1e293b; font-size: 28px;">Modifier la réclamation</h1>
+            <div class="text-end">
+                <span class="section-label d-block mb-1">Statut actuel</span>
+                <span class="badge-status {{ 
+                    reclamation.statut == 'EN_ATTENTE' ? 'badge-attente' : 
+                    (reclamation.statut == 'EN_COURS' ? 'badge-cours' : 'badge-resolu') 
+                }}">
+                    {{ reclamation.statut }}
+                </span>
+            </div>
+        </div>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible fade show mb-4" role="alert" style="border-radius: 12px; font-weight: 500;">
+                    {% if label == 'error' %}
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                    {% else %}
+                        <i class="fa-solid fa-circle-check me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+            <div class="mb-4">
+                {{ form_label(form.contrat, 'Bien concerné', {'label_attr': {'class': 'label-custom'}}) }}
+                {{ form_widget(form.contrat, {'attr': {'class': 'form-select select-custom ' ~ (form.contrat.vars.errors|length > 0 ? 'is-invalid' : '')}}) }}
+                {% for error in form.contrat.vars.errors %}
+                    <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> {{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                {{ form_label(form.typeId, 'Type', {'label_attr': {'class': 'label-custom'}}) }}
+                {{ form_widget(form.typeId, {'attr': {'class': 'form-select select-custom ' ~ (form.typeId.vars.errors|length > 0 ? 'is-invalid' : '')}}) }}
+                {% for error in form.typeId.vars.errors %}
+                    <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> {{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check custom-checkbox-wrapper p-0">
+                    {{ form_widget(form.isAutre, {'attr': {'class': 'form-check-input', 'style': 'margin-left: 0; position: static;'}}) }}
+                    <label class="form-check-label label-custom d-inline-block ms-2 mb-0" for="{{ form.isAutre.vars.id }}">
+                        Autre (ajouter un second type)
+                    </label>
+                </div>
+                <div id="autre-field-container" class="mt-3" style="display:none;">
+                    {{ form_widget(form.typeAutre, {'attr': {'class': 'form-control input-custom ' ~ (form.typeAutre.vars.errors|length > 0 ? 'is-invalid' : ''), 'placeholder': 'Spécifiez le type...'}}) }}
+                    {% for error in form.typeAutre.vars.errors %}
+                        <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> {{ error.message }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                {{ form_label(form.description, 'Description', {'label_attr': {'class': 'label-custom mb-2'}}) }}
+                <div style="position: relative;">
+                    <div id="description-ghost-overlay" class="form-control input-custom" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; color: #9ca3af; pointer-events: none; z-index: 3; background: transparent; border: 1px solid transparent; white-space: pre-wrap; word-wrap: break-word; overflow: hidden; display: none; padding: 12px 16px; font-size: 1rem; line-height: 1.5;"></div>
+                    {{ form_widget(form.description, {'attr': {'class': 'form-control input-custom ' ~ (form.description.vars.errors|length > 0 ? 'is-invalid' : ''), 'rows': 5, 'placeholder': 'Décrivez votre réclamation...', 'id': 'reclamation-description', 'style': 'background-color: transparent !important; position: relative; z-index: 2; padding: 12px 16px; font-size: 1rem; line-height: 1.5;'}}) }}
+                </div>
+                {% for error in form.description.vars.errors %}
+                    <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> {{ error.message }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="action-footer mt-5">
+                <button type="submit" class="btn btn-premium px-5">Enregistrer les modifications</button>
+                <a href="{{ path('tenant_reclamations') }}" class="btn btn-cancel px-4" style="text-decoration: none;">Annuler</a>
+            </div>
+
+        {% do form.images.setRendered() %}
+        {{ form_end(form) }}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- FOOLPROOF TOGGLE LOGIC ---
+    function syncAutreVisibility() {
+        const checkbox = document.querySelector('input[name*="isAutre"]');
+        const inputAutre = document.querySelector('input[name*="typeAutre"]');
+        const container = document.getElementById('autre-field-container');
+
+        if (checkbox && container && inputAutre) {
+            if (checkbox.checked) {
+                container.style.setProperty('display', 'block', 'important');
+            } else {
+                container.style.setProperty('display', 'none', 'important');
+            }
+        }
+    }
+
+    const checkboxElem = document.querySelector('input[name*="isAutre"]');
+    if (checkboxElem) {
+        checkboxElem.addEventListener('change', syncAutreVisibility);
+    }
+    syncAutreVisibility(); // Execute once on load
+
+    // --- AI AUTOCOMPLETE LOGIC ---
+    const descriptionField = document.getElementById('reclamation-description') || document.querySelector('textarea[name*="description"]');
+    const ghostOverlay = document.getElementById('description-ghost-overlay');
+    let aiSuggestion = '';
+    let fetchTimeout = null;
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function renderGhost() {
+        if (!aiSuggestion) {
+            ghostOverlay.style.display = 'none';
+            return;
+        }
+        
+        // Sync dimensions and style
+        const style = window.getComputedStyle(descriptionField);
+        ghostOverlay.style.width = descriptionField.clientWidth + 'px';
+        ghostOverlay.style.height = descriptionField.clientHeight + 'px';
+        ghostOverlay.style.padding = style.padding;
+        ghostOverlay.style.fontSize = style.fontSize;
+        ghostOverlay.style.lineHeight = style.lineHeight;
+        ghostOverlay.style.fontFamily = style.fontFamily;
+        
+        ghostOverlay.style.display = 'block';
+        ghostOverlay.scrollTop = descriptionField.scrollTop;
+        ghostOverlay.innerHTML = '<span style="color: transparent;">' + escapeHtml(descriptionField.value) + '</span>' + escapeHtml(aiSuggestion);
+    }
+
+    if (descriptionField && ghostOverlay) {
+        descriptionField.addEventListener('input', function() {
+            const currentText = descriptionField.value;
+            aiSuggestion = ''; 
+            renderGhost();
+
+            if (currentText.trim().length < 8) return;
+
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(() => {
+                let type = "général";
+                const selectType = document.querySelector('select[name*="typeId"]');
+                const isAutre = document.querySelector('input[name*="isAutre"]');
+                const typeAutre = document.querySelector('input[name*="typeAutre"]');
+                
+                if (isAutre && isAutre.checked && typeAutre && typeAutre.value) {
+                    type = typeAutre.value;
+                } else if (selectType && selectType.options[selectType.selectedIndex]) {
+                    type = selectType.options[selectType.selectedIndex].text;
+                }
+                
+                console.log("AI: Thinking for type " + type + "...");
+                fetch('/api/ai/generate-description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: type, currentText: currentText })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("AI: Received suggestion", data);
+                    if (data.text && descriptionField.value === currentText) {
+                        aiSuggestion = data.text;
+                        renderGhost();
+                    }
+                })
+                .catch(err => console.error("AI Error:", err));
+            }, 2000); 
+        });
+
+        descriptionField.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' && aiSuggestion) {
+                e.preventDefault();
+                const lastChar = descriptionField.value.slice(-1);
+                // Smart spacing: add space if not already there
+                const prefix = (lastChar !== ' ' && aiSuggestion[0] !== ' ' && lastChar !== '\n' && descriptionField.value !== '') ? ' ' : '';
+                descriptionField.value += prefix + aiSuggestion;
+                aiSuggestion = '';
+                renderGhost();
+                descriptionField.dispatchEvent(new Event('input'));
+            }
+        });
+        
+        descriptionField.addEventListener('scroll', function() {
+            ghostOverlay.scrollTop = descriptionField.scrollTop;
+        });
+    }
+});
+</script>
+{% endblock %}

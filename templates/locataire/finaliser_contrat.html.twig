@@ -1,0 +1,185 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Finaliser le contrat — Sakan{% endblock %}
+{% block page_title %}Finaliser le contrat{% endblock %}
+{% block page_subtitle %}Contrat #{{ contrat.id }} — {{ annonce.titre|default('Bien') }}{% endblock %}
+
+{% block content %}
+<style>
+    .mic-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; }
+    .mic-btn:hover { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+    .mic-btn.is-recording { background: #fef2f2; border-color: #fecaca; color: #b91c1c; animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: 0.85; } }
+    .field-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+    .field-row .sakan-input { flex: 1; min-width: 160px; }
+</style>
+
+{% set parts = app.user.nom|default('')|trim|split(' ') %}
+
+<div class="glass-card" style="max-width: 840px; margin: 24px auto 0; background: white; padding: 32px; border-radius: 24px;">
+
+    <div style="background: #f8fafc; padding: 20px; border-radius: 16px; margin-bottom: 24px;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748b;">Vous finalisez le bail établi par le propriétaire. Les montants et dates ci-dessous proviennent du contrat et de l’annonce.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px;">
+            <span><strong>Loyer :</strong> {{ contrat.montant }} TND/mois</span>
+            <span><strong>Début :</strong> {{ contrat.dateDebut ? contrat.dateDebut|date('d/m/Y H:i') : '—' }}</span>
+            <span><strong>Fin :</strong> {{ contrat.dateFin ? contrat.dateFin|date('d/m/Y H:i') : '—' }}</span>
+        </div>
+    </div>
+
+    {% include 'contrat/_clauses_bail.html.twig' with { annonce: annonce, reservation: reservation } only %}
+
+    <form method="post" enctype="multipart/form-data" id="form-finaliser-contrat">
+        <input type="hidden" name="_token" value="{{ csrf_token('finaliser_contrat_' ~ contrat.id) }}">
+        <input type="hidden" id="cin-verified" name="cin_verified" value="0">
+
+        <h3 style="margin-bottom: 16px; color: var(--blue-dark);"><i class="fa-solid fa-user"></i> Identité du locataire (signataire)</h3>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Prénom et nom : clavier ou <strong>🎤 Parler</strong>. Enregistrés sur votre profil (champ nom existant).</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div>
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Prénom *</label>
+                <div class="field-row">
+                    <input type="text" name="prenom_locataire" id="prenom-loc" class="sakan-input" required autocomplete="given-name"
+                           value="{{ parts|first|default('') }}"
+                           style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <button type="button" class="mic-btn" id="btn-speech-prenom-loc"><i class="fa-solid fa-microphone"></i> Parler</button>
+                </div>
+            </div>
+            <div>
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Nom *</label>
+                <div class="field-row">
+                    <input type="text" name="nom_locataire" id="nom-loc" class="sakan-input" required autocomplete="family-name"
+                           value="{{ parts|length > 1 ? parts|slice(1)|join(' ') : '' }}"
+                           style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <button type="button" class="mic-btn" id="btn-speech-nom-loc"><i class="fa-solid fa-microphone"></i> Parler</button>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border-top: 1px solid var(--border); margin: 32px 0;">
+
+        <h3 style="margin-bottom: 16px; color: var(--blue-dark);"><i class="fa-solid fa-id-card"></i> CIN tunisienne (8 chiffres)</h3>
+        <div style="margin-bottom: 16px;">
+            <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Numéro CIN *</label>
+            <div class="field-row">
+                <input type="text" id="cin-input" class="sakan-input" maxlength="8" pattern="\d{8}" inputmode="numeric" required
+                       style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                <button type="button" class="mic-btn" id="btn-speech-cin-loc"><i class="fa-solid fa-microphone"></i> Parler</button>
+            </div>
+        </div>
+
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <div style="font-size: 14px; font-weight: 600; color: #92400e; margin-bottom: 12px;"><i class="fa-solid fa-camera"></i> Photo / scan du CIN *</div>
+            <p style="font-size: 13px; color: #a16207; margin-bottom: 16px;">L’OCR doit détecter les mêmes 8 chiffres que ceux saisis.</p>
+            <div style="border: 2px dashed #f59e0b; border-radius: 8px; padding: 16px; text-align: center; background: white; cursor: pointer;"
+                 onclick="document.getElementById('cin-file-loc').click()">
+                <i class="fa-solid fa-upload" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
+                <div style="font-size: 13px; color: #6b7280;" id="cin-file-loc-label">Cliquez pour choisir une image</div>
+                <input type="file" id="cin-file-loc" name="cin_file" accept="image/*" required style="display: none;" onchange="sakanHandleCINUpload(this)">
+            </div>
+            <div id="ocr-result" style="margin-top: 12px; display: none;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 8px;" id="ocr-message-box">
+                    <i id="ocr-icon" class="fa-solid fa-circle-notch fa-spin" style="font-size: 18px;"></i>
+                    <div>
+                        <div id="ocr-message" style="font-weight: 600; font-size: 13px;">Analyse en cours...</div>
+                        <div id="ocr-cin-detected" style="font-size: 12px; color: #6b7280;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border-top: 1px solid var(--border); margin: 32px 0;">
+
+        {% for msg in app.flashes('error') %}
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 16px;margin-bottom:16px;color:#b91c1c;font-size:13px;font-weight:600;">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ msg }}
+          </div>
+        {% endfor %}
+        {% for msg in app.flashes('success') %}
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px;color:#15803d;font-size:13px;font-weight:600;">
+            <i class="fa-solid fa-circle-check"></i> {{ msg }}
+          </div>
+        {% endfor %}
+
+        <h3 style="margin-bottom: 16px; color: var(--blue-dark);"><i class="fa-solid fa-signature"></i> Signature électronique</h3>
+        <div style="border: 2px dashed var(--border); border-radius: 12px; padding: 16px; background: #fafafa; margin-bottom: 24px;">
+            <canvas id="signature-pad-loc" style="width: 100%; height: 200px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; touch-action: none; cursor: crosshair;"></canvas>
+            <input type="hidden" name="signature_data" id="signature_data">
+            <div style="text-align: right; margin-top: 12px;">
+                <button type="button" class="btn-secondary" onclick="clearSignatureLoc()" style="font-size: 12px; padding: 6px 12px;">Effacer</button>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-top: 16px;">
+            <a href="{{ path('tenant_contrats') }}" class="btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">Annuler</a>
+            <button type="submit" class="btn-primary" style="flex: 2; justify-content: center; background: linear-gradient(135deg, #059669, #10b981);">
+                <i class="fa-solid fa-check"></i> Enregistrer et finaliser le contrat
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+{% include 'contrat/_js_web_speech_ocr.html.twig' with {
+    cin_input_id: 'cin-input',
+    cin_verified_id: 'cin-verified',
+    verified_ok_value: '1'
+} %}
+<script>
+    var signaturePadLoc;
+    document.addEventListener('DOMContentLoaded', function () {
+        sakanBindSpeech('btn-speech-prenom-loc', 'prenom-loc', 'text');
+        sakanBindSpeech('btn-speech-nom-loc', 'nom-loc', 'text');
+        sakanBindSpeech('btn-speech-cin-loc', 'cin-input', 'cin8');
+
+        var canvas = document.getElementById('signature-pad-loc');
+        function resizeCanvas() {
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+            if (signaturePadLoc) signaturePadLoc.clear();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        signaturePadLoc = new SignaturePad(canvas, {
+            penColor: 'rgb(0, 0, 0)',
+            backgroundColor: 'rgb(255, 255, 255)'
+        });
+
+        document.getElementById('form-finaliser-contrat').addEventListener('submit', function (e) {
+            var cinV = document.getElementById('cin-verified');
+            var cinInput = document.getElementById('cin-input');
+            var prenom = document.getElementById('prenom-loc');
+            var nom = document.getElementById('nom-loc');
+            if (!prenom.value.trim() || !nom.value.trim()) {
+                e.preventDefault();
+                alert('Veuillez renseigner votre prénom et nom.');
+                return false;
+            }
+            if (!cinInput.value || cinInput.value.length !== 8) {
+                e.preventDefault();
+                alert('Le CIN doit comporter exactement 8 chiffres.');
+                return false;
+            }
+            if (cinV.value !== '1') {
+                e.preventDefault();
+                alert('Veuillez téléverser votre CIN et attendre la validation OCR.');
+                return false;
+            }
+            if (signaturePadLoc.isEmpty()) {
+                e.preventDefault();
+                alert('Veuillez apposer votre signature.');
+                return false;
+            }
+            document.getElementById('signature_data').value = signaturePadLoc.toDataURL();
+        });
+    });
+    function clearSignatureLoc() {
+        if (signaturePadLoc) signaturePadLoc.clear();
+    }
+</script>
+{% endblock %}

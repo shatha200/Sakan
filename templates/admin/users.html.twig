@@ -1,0 +1,247 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Utilisateurs - Admin{% endblock %}
+{% block page_title %}Gestion des utilisateurs{% endblock %}
+
+{% block page_actions %}
+  <button class="btn-primary" type="button" onclick="toggleAddUserPanel()"><i class="fa-solid fa-user-plus"></i> Ajouter un utilisateur</button>
+{% endblock %}
+
+{% block content %}
+  <section id="add-user-panel" class="card admin-soft-card" style="display:none; margin-bottom:20px;">
+    <h3 style="margin-bottom:14px;">Nouveau compte</h3>
+    <form method="post" action="{{ path('admin_users') }}" class="admin-grid-form admin-grid-3">
+      <input type="hidden" name="action" value="add_user">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_add_user') }}">
+
+      <label>Nom complet<input class="form-input" type="text" name="nom" required></label>
+      <label>Email<input class="form-input" type="email" name="email" required></label>
+      <label>Telephone<input class="form-input" type="text" name="telephone" pattern="[2-9][0-9]{7}" placeholder="8 chiffres"></label>
+      <label>Role
+        <select class="form-input" name="role">
+          <option value="LOCATAIRE">Locataire</option>
+          <option value="PROPRIETAIRE">Proprietaire</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </label>
+      <label>Statut
+        <select class="form-input" name="statut">
+          <option value="ACTIF">Actif</option>
+          <option value="SUSPENDU">Suspendu</option>
+        </select>
+      </label>
+      <label>Mot de passe<input class="form-input" type="password" name="password" required></label>
+
+      <div class="admin-form-actions">
+        <button type="button" class="btn-secondary" onclick="toggleAddUserPanel()">Annuler</button>
+        <button type="submit" class="btn-primary">Creer le compte</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="admin-kpi-grid admin-kpi-grid-users">
+    <article class="admin-mini-kpi"><span>Total</span><strong>{{ stats.total }}</strong></article>
+    <article class="admin-mini-kpi"><span>Actifs</span><strong>{{ stats.active }}</strong></article>
+    <article class="admin-mini-kpi"><span>Suspendus</span><strong>{{ stats.suspended }}</strong></article>
+    <article class="admin-mini-kpi"><span>Nouveaux ce mois</span><strong>{{ stats.new_this_month }}</strong></article>
+  </section>
+
+  <section class="card admin-soft-card">
+    <div class="admin-inline-filters">
+      <input id="js-search" class="form-input" type="text" placeholder="Rechercher nom, email, téléphone" value="{{ filters.q }}">
+      <select id="js-role-filter" class="form-input">
+        {% for item in roles %}
+          <option value="{{ item }}" {{ filters.role == item ? 'selected' : '' }}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      <select id="js-statut-filter" class="form-input">
+        <option value="">Tous les statuts</option>
+        <option value="ACTIF">Actif</option>
+        <option value="SUSPENDU">Suspendu</option>
+      </select>
+      <button class="btn-secondary" type="button" onclick="resetFilters()">Réinitialiser</button>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="sakan-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Telephone</th>
+            <th>Statut</th>
+            <th>Derniere connexion</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if users is empty %}
+            <tr><td class="admin-empty" colspan="8">Aucun utilisateur trouve.</td></tr>
+          {% else %}
+            {% for user in users %}
+              <tr data-search="{{ (user.nom ~ ' ' ~ user.email ~ ' ' ~ user.telephone)|lower }}"
+                  data-role="{{ user.role }}"
+                  data-statut="{{ user.statut }}">
+                <td>{{ user.id }}</td>
+                <td><a href="{{ path('admin_user_fiche', {id: user.id}) }}" style="font-weight:600;text-decoration:none;color:inherit;">{{ user.nom }}</a></td>
+                <td>{{ user.email }}</td>
+                <td><span class="badge badge-blue">{{ user.role }}</span></td>
+                <td>{{ user.telephone ?: '-' }}</td>
+                <td>
+                  {% if user.statut == 'SUSPENDU' %}
+                    <span class="badge badge-err">Suspendu</span>
+                  {% else %}
+                    <span class="badge badge-actif">Actif</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div>{{ user.last_login_at }}</div>
+                  <small >IP: {{ user.last_login_ip }}</small>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <a href="{{ path('admin_user_fiche', {id: user.id}) }}"
+                       class="btn-secondary btn-sm"
+                       title="Consulter la fiche">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+
+                    <button
+                      class="btn-secondary btn-sm js-open-user-edit"
+                      type="button"
+                      data-id="{{ user.id }}"
+                      data-nom="{{ user.nom }}"
+                      data-email="{{ user.email }}"
+                      data-role="{{ user.role }}"
+                      data-statut="{{ user.statut }}"
+                      data-telephone="{{ user.telephone }}"
+                      data-csrf="{{ csrf_token('admin_edit_user_' ~ user.id) }}"
+                    >
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+
+<form method="post" action="{{ path('admin_users') }}" onsubmit="return confirm('Supprimer cet utilisateur ?');">
+                      <input type="hidden" name="action" value="delete_user">
+                      <input type="hidden" name="user_id" value="{{ user.id }}">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_delete_user_' ~ user.id) }}">
+                      <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div id="user-edit-modal" class="admin-modal" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-head">
+        <h3>Modifier utilisateur</h3>
+        <button type="button" class="admin-close" onclick="closeUserEdit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form method="post" action="{{ path('admin_users') }}" class="admin-grid-form admin-grid-2">
+        <input type="hidden" name="action" value="edit_user">
+        <input type="hidden" name="user_id" id="edit-user-id">
+        <input type="hidden" name="_csrf_token" id="edit-user-csrf">
+
+        <label>Nom complet<input class="form-input" id="edit-user-nom" type="text" name="nom" required></label>
+        <label>Email<input class="form-input" id="edit-user-email" type="email" name="email" required></label>
+        <label>Telephone<input class="form-input" id="edit-user-telephone" type="text" name="telephone" pattern="[2-9][0-9]{7}"></label>
+        <label>Role
+          <select class="form-input" id="edit-user-role" name="role">
+            <option value="LOCATAIRE">Locataire</option>
+            <option value="PROPRIETAIRE">Proprietaire</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </label>
+        <label>Statut
+          <select class="form-input" id="edit-user-statut" name="statut">
+            <option value="ACTIF">Actif</option>
+            <option value="SUSPENDU">Suspendu</option>
+          </select>
+        </label>
+        <label>Nouveau mot de passe (optionnel)<input class="form-input" type="password" name="password" placeholder="Laisser vide pour garder l'ancien"></label>
+
+        <div class="admin-form-actions">
+          <button type="button" class="btn-secondary" onclick="closeUserEdit()">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    function applyFilters() {
+      const q = (document.getElementById('js-search').value || '').toLowerCase().trim();
+      const role = (document.getElementById('js-role-filter').value || '').toUpperCase();
+      const statut = (document.getElementById('js-statut-filter').value || '').toUpperCase();
+
+      document.querySelectorAll('tbody tr[data-search]').forEach((row) => {
+        const matchSearch = q === '' || (row.dataset.search || '').includes(q);
+        const matchRole = role === '' || role === 'TOUS' || (row.dataset.role || '').toUpperCase() === role;
+        const matchStatut = statut === '' || (row.dataset.statut || '').toUpperCase() === statut;
+        row.style.display = matchSearch && matchRole && matchStatut ? '' : 'none';
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('js-search').value = '';
+      document.getElementById('js-role-filter').value = '{{ roles|first }}';
+      document.getElementById('js-statut-filter').value = '';
+      applyFilters();
+    }
+
+    document.getElementById('js-search').addEventListener('input', applyFilters);
+    document.getElementById('js-role-filter').addEventListener('change', applyFilters);
+    document.getElementById('js-statut-filter').addEventListener('change', applyFilters);
+
+    function toggleAddUserPanel() {
+      const panel = document.getElementById('add-user-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function closeUserEdit() {
+      const modal = document.getElementById('user-edit-modal');
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.querySelectorAll('.js-open-user-edit').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const nom = btn.dataset.nom || '';
+        const email = btn.dataset.email || '';
+        const role = btn.dataset.role || 'LOCATAIRE';
+        const statut = btn.dataset.statut || 'ACTIF';
+        const telephone = btn.dataset.telephone || '';
+        const csrf = btn.dataset.csrf || '';
+
+        document.getElementById('edit-user-id').value = id;
+        document.getElementById('edit-user-nom').value = nom;
+        document.getElementById('edit-user-email').value = email;
+        document.getElementById('edit-user-role').value = role;
+        document.getElementById('edit-user-statut').value = statut;
+        document.getElementById('edit-user-telephone').value = telephone;
+        document.getElementById('edit-user-csrf').value = csrf;
+
+        const modal = document.getElementById('user-edit-modal');
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      });
+    });
+
+    document.getElementById('user-edit-modal').addEventListener('click', (event) => {
+      if (event.target.id === 'user-edit-modal') {
+        closeUserEdit();
+      }
+    });
+  </script>
+{% endblock %}

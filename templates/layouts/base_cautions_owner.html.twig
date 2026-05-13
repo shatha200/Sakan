@@ -1,0 +1,61 @@
+{% extends 'layouts/base_owner.html.twig' %}
+{% block page_title %}Cautions{% endblock %}
+{% block page_subtitle %}Gestion des dépôts de garantie{% endblock %}
+
+{% block content %}
+{# ── Navbar à onglets ──────────────────────────────────────── #}
+<div style="
+    display:flex; gap:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:6px;
+    margin-bottom:28px;
+    width:fit-content;">
+
+    <a href="{{ path('caution_depots_actifs') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') in ['caution_depots_actifs', 'owner_cautions', 'owner_cautions_actifs'] %}
+            background:var(--primary);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-shield-check" style="margin-right:6px"></i>
+        Dépôts actifs
+    </a>
+
+    <a href="{{ path('caution_a_regulariser') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') in ['caution_a_regulariser', 'owner_cautions_regulariser'] %}
+            background:#d97706;color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-rotate" style="margin-right:6px"></i>
+        À régulariser
+    </a>
+
+    <a href="{{ path('caution_archivage') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') in ['caution_archivage', 'owner_cautions_archive'] %}
+            background:#475569;color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-box-archive" style="margin-right:6px"></i>
+        Archivage
+    </a>
+
+</div>
+
+{% block cautions_content %}{% endblock %}
+{% endblock %}

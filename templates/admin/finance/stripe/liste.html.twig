@@ -1,0 +1,229 @@
+{% extends 'layouts/base_admin.html.twig' %}
+{% block title %}Transactions Stripe — Admin Sakan{% endblock %}
+{% block page_title %}<i class="fa-brands fa-stripe" ></i> Transactions Stripe{% endblock %}
+
+{% block content %}
+<style>
+.fin-kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:28px; }
+.fin-kpi { background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);border-left:4px solid #e5e7eb; }
+.fin-kpi.stripe { border-left-color:#6366f1; } .fin-kpi.stripe .fin-kpi-value { color:#6366f1; }
+.fin-kpi.green { border-left-color:#16a34a; } .fin-kpi.green .fin-kpi-value { color:#16a34a; }
+.fin-kpi.red { border-left-color:#dc2626; } .fin-kpi.red .fin-kpi-value { color:#dc2626; }
+.fin-kpi-label { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6b7280;margin-bottom:8px; }
+.fin-kpi-value { font-size:26px;font-weight:800; }
+.fin-kpi-sub { font-size:12px;color:#9ca3af;margin-top:4px; }
+.fin-card { background:white;border-radius:16px;padding:24px;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.fin-card-title { font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:8px;margin-bottom:20px;color:#6366f1; }
+
+.fin-filter-bar { display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#f9fafb;border-radius:12px; }
+.fin-filter-input { padding:9px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;background:white; }
+.fin-table { width:100%;border-collapse:collapse;font-size:13px; }
+.fin-table th { padding:12px 10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #f3f4f6;white-space:nowrap; }
+.fin-table td { padding:11px 10px;border-bottom:1px solid #f9fafb; }
+.fin-table tr:hover td { background:rgba(99,102,241,0.03); }
+
+.fin-tags-group { display:flex; gap:6px; flex-wrap:wrap; }
+.fin-tag { padding:8px 14px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; background:white; border:1px solid #e5e7eb; color:#6b7280; transition:all 0.2s; }
+.fin-tag:hover { background:#f9fafb; border-color:#d1d5db; }
+.fin-tag.active { background:#6366f1; color:white; border-color:#6366f1; box-shadow:0 2px 8px rgba(99,102,241,0.3); }
+
+.fin-pagination-container { display:flex; justify-content:space-between; align-items:center; padding:16px 0 0 0; margin-top:20px; border-top:1px solid #f3f4f6; flex-wrap:wrap; gap:16px; }
+.fin-pagination { display:flex; gap:6px; }
+.fin-page-btn { width:32px; height:32px; border-radius:8px; border:1px solid #e5e7eb; background:white; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#4b5563; cursor:pointer; transition:all 0.2s; }
+.fin-page-btn:hover:not(:disabled) { background:#f3f4f6; color:#111827; }
+.fin-page-btn.active { background:#6366f1; color:white; border-color:#6366f1; }
+.fin-page-btn:disabled { opacity:0.5; cursor:not-allowed; }
+</style>
+
+<div class="fin-kpi-grid">
+  <div class="fin-kpi stripe">
+    <div class="fin-kpi-label"><i class="fa-brands fa-stripe"></i> Transactions</div>
+    <div class="fin-kpi-value">{{ kpis.nb_transactions ?? 0 }}</div>
+    <div class="fin-kpi-sub">Total enregistrées</div>
+  </div>
+  <div class="fin-kpi green">
+    <div class="fin-kpi-label"><i class="fa-solid fa-check"></i> Succès</div>
+    <div class="fin-kpi-value">{{ kpis.nb_reussis ?? 0 }}</div>
+    <div class="fin-kpi-sub">Paiements validés</div>
+  </div>
+  <div class="fin-kpi red">
+    <div class="fin-kpi-label"><i class="fa-solid fa-xmark"></i> Échecs</div>
+    <div class="fin-kpi-value">{{ kpis.nb_echecs ?? 0 }}</div>
+    <div class="fin-kpi-sub">Paiements refusés</div>
+  </div>
+</div>
+
+<div class="fin-card">
+  <div class="fin-card-title">
+    <i class="fa-solid fa-list"></i> Historique des Transactions Stripe
+    <span style="margin-left:auto; font-size:12px; font-weight:400; text-transform:none; letter-spacing:0;"><span id="table-count">{{ transactions|length }}</span> résultat(s)</span>
+  </div>
+
+  <div class="fin-filter-bar">
+    <div style="flex:1; min-width:250px; position:relative;">
+      <i class="fa-solid fa-search" style="position:absolute; left:14px; top:12px;"></i>
+      <input type="text" id="f-search" class="fin-filter-input" placeholder="Rechercher ref, client..." style="width:100%; padding-left:36px;" oninput="filterTable()">
+    </div>
+    
+    <div class="fin-tags-group" id="f-statut-tags">
+      <button class="fin-tag active" data-val="">Toutes</button>
+      <button class="fin-tag" data-val="succeeded" >Succès</button>
+      <button class="fin-tag" data-val="failed" >Échecs</button>
+    </div>
+
+    <button onclick="resetFilters()" style="padding:9px 14px; border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px;">
+      <i class="fa-solid fa-rotate-left"></i> RàZ
+    </button>
+    
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; padding:8px 12px; border-radius:10px; border:1px solid #e5e7eb;">
+      <i class="fa-solid fa-list-ol"></i> Lignes:
+      <select id="f-limit" onchange="filterTable()" style="border:none; background:transparent; font-weight:600; cursor:pointer; outline:none;">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="fin-table" id="stripe-table">
+      <thead><tr>
+        <th>Date</th><th>Référence Stripe</th><th>Client</th><th>Type</th><th>Montant</th><th>Statut</th>
+      </tr></thead>
+      <tbody>
+        {% for t in transactions %}
+        <tr data-search="{{ (t.reference ~ ' ' ~ t.client_email)|lower }}" data-statut="{{ t.status }}">
+          <td>{{ t.date|date('d/m/Y H:i') }}</td>
+          <td><strong >{{ t.reference }}</strong></td>
+          <td>{{ t.client_email }}</td>
+          <td>{{ t.type }}</td>
+          <td><strong>{{ t.montant|number_format(3,',', ' ') }} TND</strong></td>
+          <td>
+            {% if t.status == 'succeeded' %}<span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;">SUCCÈS</span>
+            {% else %}<span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;">ÉCHEC</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr class="no-data-row"><td colspan="6" style="text-align:center; padding:40px;"><i class="fa-brands fa-stripe fa-2x mb-2" style="opacity:0.3; display:block;"></i> Aucune transaction Stripe trouvée.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div id="no-result" style="display:none; text-align:center; padding:40px;">
+      <i class="fa-solid fa-search fa-2x" style="opacity:0.3; display:block; margin-bottom:10px;"></i>
+      Aucun résultat.
+    </div>
+  </div>
+  
+  <div class="fin-pagination-container">
+    <div id="pagination-info" style="font-size:12px; font-weight:600;"></div>
+    <div id="pagination-controls" class="fin-pagination"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+let currentStatut = '';
+let currentPage = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#f-statut-tags .fin-tag').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('#f-statut-tags .fin-tag').forEach(b => b.classList.remove('active'));
+      const target = e.currentTarget;
+      target.classList.add('active');
+      currentStatut = target.dataset.val;
+      currentPage = 1;
+      filterTable();
+    });
+  });
+  filterTable();
+  
+  document.querySelectorAll('.sidebar-group').forEach(g => { g.style.listStyle = 'none'; });
+});
+
+function resetFilters() {
+  document.getElementById('f-search').value = '';
+  document.querySelectorAll('#f-statut-tags .fin-tag').forEach(b => b.classList.remove('active'));
+  document.querySelector('#f-statut-tags .fin-tag[data-val=""]').classList.add('active');
+  currentStatut = '';
+  currentPage = 1;
+  filterTable();
+}
+
+function filterTable() {
+  const search = document.getElementById('f-search').value.toLowerCase();
+  const limit = parseInt(document.getElementById('f-limit').value);
+  const rows = Array.from(document.querySelectorAll('#stripe-table tbody tr[data-search]'));
+  
+  let filteredRows = rows.filter(row => {
+    const matchSearch = !search || row.dataset.search.includes(search);
+    const matchStatut = !currentStatut || row.dataset.statut === currentStatut;
+    return matchSearch && matchStatut;
+  });
+  
+  rows.forEach(r => r.style.display = 'none');
+  document.querySelector('.no-data-row') && (document.querySelector('.no-data-row').style.display = 'none');
+  
+  const total = filteredRows.length;
+  document.getElementById('table-count').textContent = total;
+  document.getElementById('no-result').style.display = total === 0 ? 'block' : 'none';
+  
+  if (total === 0) {
+    renderPagination(0, limit);
+    document.getElementById('pagination-info').innerText = '';
+    return;
+  }
+  
+  const totalPages = Math.ceil(total / limit);
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * limit;
+  const end = start + limit;
+  
+  filteredRows.slice(start, end).forEach(r => r.style.display = '');
+  document.getElementById('pagination-info').innerHTML = `Affichage de <strong >${start + 1}</strong> à <strong >${Math.min(end, total)}</strong> sur <strong >${total}</strong> entrées`;
+  renderPagination(totalPages, limit);
+}
+
+function renderPagination(totalPages, limit) {
+  const container = document.getElementById('pagination-controls');
+  container.innerHTML = '';
+  if (totalPages <= 1) return;
+  
+  let prev = document.createElement('button');
+  prev.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+  prev.className = 'fin-page-btn';
+  prev.disabled = currentPage === 1;
+  prev.onclick = () => { currentPage--; filterTable(); };
+  container.appendChild(prev);
+  
+  let startP = Math.max(1, currentPage - 2);
+  let endP = Math.min(totalPages, currentPage + 2);
+  
+  if (startP > 1) {
+    let b = document.createElement('button'); b.className='fin-page-btn'; b.innerText='1'; b.onclick=()=>{currentPage=1; filterTable();}; container.appendChild(b);
+  }
+  
+  for(let i=startP; i<=endP; i++){
+    let b = document.createElement('button');
+    b.className = 'fin-page-btn' + (i === currentPage ? ' active' : '');
+    b.innerText = i;
+    b.onclick = () => { currentPage = i; filterTable(); };
+    container.appendChild(b);
+  }
+  
+  if (endP < totalPages) {
+    let b = document.createElement('button'); b.className='fin-page-btn'; b.innerText=totalPages; b.onclick=()=>{currentPage=totalPages; filterTable();}; container.appendChild(b);
+  }
+  
+  let next = document.createElement('button');
+  next.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+  next.className = 'fin-page-btn';
+  next.disabled = currentPage === totalPages;
+  next.onclick = () => { currentPage++; filterTable(); };
+  container.appendChild(next);
+}
+</script>
+{% endblock %}

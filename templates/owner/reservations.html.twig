@@ -1,0 +1,58 @@
+{# templates/owner/reservations.html.twig #}
+{% extends 'layouts/base_owner.html.twig' %}
+{% block title %}Gestion des Réservations — Sakan{% endblock %}
+{% block content %}
+<div class="glass-card overflow-hidden" style="background: white; margin-top: 24px;">
+    <div style="padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="h5 mb-0" style="font-weight: 700; color: var(--blue-dark);">Liste des demandes</h2>
+    </div>
+    <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #f8fafc; border-bottom: 1px solid var(--border);">
+                <th style="padding: 20px;">ID</th>
+                <th style="padding: 20px;">Logement</th>
+                <th style="padding: 20px;">Locataire</th>
+                <th style="padding: 20px;">Dates</th>
+                <th style="padding: 20px;">Statut</th>
+                <th style="padding: 20px; text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation in reservations %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 20px;">#{{ reservation.id }}</td>
+                <td style="padding: 20px;">{{ reservation.annonce.titre }}</td>
+                <td style="padding: 20px;">{{ reservation.locataire.nom }}</td>
+                <td style="padding: 20px;">Du {{ reservation.dateDebut|date('d/m/Y') }} Au {{ reservation.dateFin|date('d/m/Y') }}</td>
+                <td style="padding: 20px;">
+                    <span class="badge {% if reservation.statut == 'Approuvée' %}bg-success{% elseif reservation.statut == 'Refusée' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ reservation.statut }}
+                    </span>
+                </td>
+                <td style="padding: 20px; text-align: right; white-space: nowrap;">
+                    {% if reservation.statut|lower == 'en attente' %}
+                        <form action="{{ path('owner_reservation_approve', {'id': reservation.id}) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-success" title="Approuver"><i class="fa fa-check"></i></button>
+                        </form>
+                        <form action="{{ path('owner_reservation_reject', {'id': reservation.id}) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Refuser"><i class="fa fa-times"></i></button>
+                        </form>
+                    {% elseif reservation.statut|lower starts with 'approuv' %}
+                        {% set contratLie = contratsParReservation[reservation.id] ?? null %}
+                        {% if not contratLie %}
+                            <a href="{{ path('owner_reservation_creer_contrat', { id: reservation.id }) }}" class="btn btn-sm btn-primary" style="font-weight: 700; text-decoration: none;">
+                                <i class="fa-solid fa-file-contract"></i> Créer le contrat
+                            </a>
+                        {% else %}
+                            <a href="{{ path('contrat_voir', { id: contratLie.id }) }}" class="btn btn-sm btn-outline-secondary" style="text-decoration: none;">
+                                <i class="fa-solid fa-eye"></i> Voir le contrat
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

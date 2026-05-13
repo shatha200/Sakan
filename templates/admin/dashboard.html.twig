@@ -1,0 +1,418 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Dashboard Admin - Sakan{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% set growth_labels = [] %}
+{% set growth_values = [] %}
+{% for item in user_growth %}
+  {% set growth_labels = growth_labels|merge([item.label]) %}
+  {% set growth_values = growth_values|merge([item.count]) %}
+{% endfor %}
+
+{% set annonce_labels = [] %}
+{% set annonce_values = [] %}
+{% for row in annonce_status %}
+  {% set annonce_labels = annonce_labels|merge([row.status|lower]) %}
+  {% set annonce_values = annonce_values|merge([row.count]) %}
+{% endfor %}
+
+{% set security_labels = [] %}
+{% set security_registrations = [] %}
+{% set security_failures = [] %}
+{% for item in security_daily %}
+  {% set security_labels = security_labels|merge([item.label]) %}
+  {% set security_registrations = security_registrations|merge([item.registrations]) %}
+  {% set security_failures = security_failures|merge([item.failed_logins]) %}
+{% endfor %}
+
+{% block content %}
+  <section class="admin-kpi-grid">
+    <article class="admin-kpi-card admin-kpi-violet">
+      <div class="admin-kpi-icon"><i class="fa-solid fa-users"></i></div>
+      <div>
+        <p>Utilisateurs</p>
+        <h3>{{ metrics.users }}</h3>
+      </div>
+    </article>
+
+    <article class="admin-kpi-card admin-kpi-blue">
+      <div class="admin-kpi-icon"><i class="fa-solid fa-bullhorn"></i></div>
+      <div>
+        <p>Annonces disponibles</p>
+        <h3>{{ metrics.annonces }}</h3>
+      </div>
+    </article>
+
+    <article class="admin-kpi-card admin-kpi-green">
+      <div class="admin-kpi-icon"><i class="fa-solid fa-calendar-check"></i></div>
+      <div>
+        <p>Reservations</p>
+        <h3>{{ metrics.reservations }}</h3>
+      </div>
+    </article>
+
+    <article class="admin-kpi-card admin-kpi-green">
+      <div class="admin-kpi-icon"><i class="fa-solid fa-check-circle"></i></div>
+      <div>
+        <p>Reclamations résolues</p>
+        <h3>{{ metrics.reclamations }}</h3>
+      </div>
+    </article>
+  </section>
+
+  <section class="admin-card-grid">
+    <article class="card admin-soft-card">
+      <div class="admin-card-head">
+        <h3>Dashboard securite</h3>
+      </div>
+      <section class="admin-kpi-grid" style="margin-top: 0;">
+        <article class="admin-kpi-card admin-kpi-blue">
+          <div class="admin-kpi-icon"><i class="fa-solid fa-user-plus"></i></div>
+          <div>
+            <p>Inscriptions du jour</p>
+            <h3>{{ security_metrics.registrations_today }}</h3>
+          </div>
+        </article>
+
+        <article class="admin-kpi-card admin-kpi-red">
+          <div class="admin-kpi-icon"><i class="fa-solid fa-shield-halved"></i></div>
+          <div>
+            <p>Logins rates du jour</p>
+            <h3>{{ security_metrics.failed_logins_today }}</h3>
+          </div>
+        </article>
+
+        <article class="admin-kpi-card admin-kpi-violet">
+          <div class="admin-kpi-icon"><i class="fa-solid fa-user-slash"></i></div>
+          <div>
+            <p>Comptes desactives</p>
+            <h3>{{ security_metrics.disabled_accounts }}</h3>
+          </div>
+        </article>
+
+        <article class="admin-kpi-card admin-kpi-green">
+          <div class="admin-kpi-icon"><i class="fa-brands fa-google"></i></div>
+          <div>
+            <p>Comptes Google</p>
+            <h3>{{ security_metrics.google_accounts }}</h3>
+          </div>
+        </article>
+      </section>
+    </article>
+
+    <article class="card admin-soft-card admin-chart-card">
+      <div class="admin-card-head">
+        <h3>Inscriptions et echecs de connexion</h3>
+      </div>
+      <div class="admin-chart-wrap">
+        <canvas id="admin-security-chart" aria-label="Activite securite"></canvas>
+      </div>
+      <p class="admin-muted">Vue sur les 7 derniers jours.</p>
+    </article>
+  </section>
+
+  <section class="admin-card-grid">
+    <article class="card admin-soft-card admin-chart-card">
+      <div class="admin-card-head">
+        <h3>Croissance des utilisateurs</h3>
+      </div>
+      <div class="admin-chart-wrap">
+        <canvas id="admin-users-growth-chart" aria-label="Croissance des utilisateurs"></canvas>
+      </div>
+      {% if user_growth is empty %}
+        <p class="admin-muted">Aucune donnee d'inscription disponible.</p>
+      {% endif %}
+    </article>
+
+    <article class="card admin-soft-card admin-chart-card">
+      <div class="admin-card-head">
+        <h3>Statut des annonces</h3>
+      </div>
+      <div class="admin-chart-wrap admin-chart-wrap-pie">
+        <canvas id="admin-annonce-status-chart" aria-label="Statut des annonces"></canvas>
+      </div>
+      {% if annonce_status is empty %}
+        <p class="admin-muted">Aucune annonce trouvee.</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="admin-card-grid">
+    <article class="card admin-soft-card">
+      <div class="admin-card-head">
+        <h3>Reclamations recentes</h3>
+        <a class="admin-link" href="{{ path('admin_reclamations') }}">Voir tout</a>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="sakan-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Utilisateur</th>
+              <th>Type</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if recent_reclamations is empty %}
+              <tr><td colspan="4" class="admin-empty">Aucune reclamation.</td></tr>
+            {% else %}
+              {% for row in recent_reclamations %}
+                <tr>
+                  <td>#{{ row.id }}</td>
+                  <td>{{ row.utilisateur }}</td>
+                  <td>{{ row.type }}</td>
+                  <td><span class="badge badge-blue">{{ row.statut }}</span></td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="card admin-soft-card">
+      <div class="admin-card-head">
+        <h3>Dernieres annonces</h3>
+        <a class="admin-link" href="{{ path('admin_annonces') }}">Voir tout</a>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="sakan-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Titre</th>
+              <th>Proprietaire</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if recent_annonces is empty %}
+              <tr><td colspan="4" class="admin-empty">Aucune annonce.</td></tr>
+            {% else %}
+              {% for row in recent_annonces %}
+                <tr>
+                  <td>#{{ row.id }}</td>
+                  <td>{{ row.titre }}</td>
+                  <td>{{ row.owner_name }}</td>
+                  <td><span class="badge badge-actif">{{ row.statut }}</span></td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (() => {
+      if (typeof Chart === 'undefined') {
+        return;
+      }
+
+      const growthLabels = {{ growth_labels|json_encode|raw }};
+      const growthValues = {{ growth_values|json_encode|raw }};
+      const annonceLabels = {{ annonce_labels|json_encode|raw }};
+      const annonceValues = {{ annonce_values|json_encode|raw }};
+      const securityLabels = {{ security_labels|json_encode|raw }};
+      const securityRegistrations = {{ security_registrations|json_encode|raw }};
+      const securityFailures = {{ security_failures|json_encode|raw }};
+
+      const growthCanvas = document.getElementById('admin-users-growth-chart');
+      if (growthCanvas && growthLabels.length > 0 && growthValues.length > 0) {
+        new Chart(growthCanvas, {
+          type: 'line',
+          data: {
+            labels: growthLabels,
+            datasets: [{
+              label: 'Utilisateurs',
+              data: growthValues,
+              borderColor: '#e86a33',
+              backgroundColor: 'rgba(232, 106, 51, 0.15)',
+              borderWidth: 3,
+              fill: false,
+              tension: 0,
+              pointRadius: 4.5,
+              pointHoverRadius: 5.5,
+              pointBorderWidth: 2.5,
+              pointBackgroundColor: '#f5f7fa',
+              pointBorderColor: '#e86a33',
+              pointStyle: 'circle'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true,
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  color: '#1f2937',
+                  font: {
+                    family: 'Poppins',
+                    size: 13,
+                    weight: '600'
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Mois',
+                  color: '#374151',
+                  font: { family: 'Poppins', size: 12, weight: '600' }
+                },
+                grid: {
+                  color: '#d1d5db',
+                  borderDash: [4, 4]
+                },
+                ticks: { color: '#1f2937', font: { family: 'Poppins', size: 12 } }
+              },
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Utilisateurs',
+                  color: '#374151',
+                  font: { family: 'Poppins', size: 12, weight: '600' }
+                },
+                grid: {
+                  color: '#d1d5db',
+                  borderDash: [4, 4]
+                },
+                ticks: {
+                  precision: 0,
+                  color: '#1f2937',
+                  font: { family: 'Poppins', size: 12 }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      const pieCanvas = document.getElementById('admin-annonce-status-chart');
+      if (pieCanvas && annonceLabels.length > 0 && annonceValues.length > 0) {
+        new Chart(pieCanvas, {
+          type: 'pie',
+          data: {
+            labels: annonceLabels,
+            datasets: [{
+              data: annonceValues,
+              borderWidth: 1,
+              borderColor: '#f5f7fa',
+              backgroundColor: [
+                '#e86a33',
+                '#f59e0b',
+                '#fb7185',
+                '#f97316',
+                '#fb923c',
+                '#fdba74'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true,
+                  boxWidth: 10,
+                  boxHeight: 10,
+                  color: '#1f2937',
+                  font: {
+                    family: 'Poppins',
+                    size: 13,
+                    weight: '600'
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      const securityCanvas = document.getElementById('admin-security-chart');
+      if (securityCanvas && securityLabels.length > 0) {
+        new Chart(securityCanvas, {
+          type: 'bar',
+          data: {
+            labels: securityLabels,
+            datasets: [{
+              label: 'Inscriptions',
+              data: securityRegistrations,
+              backgroundColor: 'rgba(37, 99, 235, 0.65)',
+              borderColor: '#2563eb',
+              borderWidth: 1.5,
+              borderRadius: 10,
+              order: 2
+            }, {
+              label: 'Echecs login',
+              data: securityFailures,
+              type: 'line',
+              borderColor: '#dc2626',
+              backgroundColor: 'rgba(220, 38, 38, 0.15)',
+              borderWidth: 3,
+              fill: false,
+              tension: 0.25,
+              pointRadius: 4,
+              pointHoverRadius: 5,
+              order: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true,
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  color: '#1f2937',
+                  font: {
+                    family: 'Poppins',
+                    size: 13,
+                    weight: '600'
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: '#1f2937', font: { family: 'Poppins', size: 12 } }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0,
+                  color: '#1f2937',
+                  font: { family: 'Poppins', size: 12 }
+                },
+                grid: {
+                  color: '#d1d5db',
+                  borderDash: [4, 4]
+                }
+              }
+            }
+          }
+        });
+      }
+    })();
+  </script>
+{% endblock %}

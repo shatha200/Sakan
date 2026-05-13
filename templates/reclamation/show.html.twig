@@ -1,0 +1,302 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Réclamation #{{ reclamation.id }}{% endblock %}
+{% block page_title %}Dossier de suivi{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+    <style>
+        .details-container {
+            max-width: 1100px;
+            margin: 1rem auto;
+            padding: 0 20px;
+        }
+        .main-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            padding: 2.5rem;
+            border: 1px solid #edf2f7;
+        }
+        .top-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        @media (max-width: 768px) {
+            .top-info-grid { grid-template-columns: 1fr; }
+        }
+        .status-pill-fixed {
+            display: inline-flex !important;
+            align-items: center;
+            width: auto !important;
+            padding: 4px 12px !important;
+            border-radius: 50px !important;
+            font-weight: 700 !important;
+            font-size: 0.75rem !important;
+            text-transform: uppercase;
+        }
+        .property-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px 20px;
+            border: 1px solid #eef2f7;
+            height: 100%;
+        }
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .description-content {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .action-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .response-container {
+            background: #f1f5ff;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #5E17EB;
+        }
+        .btn-back-link {
+            display: inline-flex;
+            align-items: center;
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            padding: 8px 16px;
+            border-radius: 12px;
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+        }
+        .btn-back-link:hover {
+            background: #ede9fe;
+            color: #4f46e5;
+            transform: translateX(-4px);
+        }
+        .btn-custom {
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .btn-edit {
+            background: #6366f1;
+            color: #fff !important;
+            border: none;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+        .btn-edit:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn-close-view {
+            background: #f1f5f9;
+            color: #475569 !important;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-close-view:hover {
+            background: #e2e8f0;
+            color: #1e293b !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="details-container">
+        {# Top bar #}
+        <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+            <a href="{{ path('tenant_reclamations') }}" class="btn-back-link">
+                <i class="fa-solid fa-arrow-left me-2"></i>Retour
+            </a>
+            <div class="status-pill-fixed {{ 
+                reclamation.statut == 'EN_ATTENTE' ? 'badge-attente' : 
+                (reclamation.statut == 'EN_COURS' ? 'badge-cours' : 'badge-resolu') 
+            }}">
+                {{ reclamation.statut }}
+            </div>
+        </div>
+
+        <div class="main-card">
+            <div class="mb-4 d-flex justify-content-between align-items-start">
+                <div>
+                    <h2 class="fw-bold mb-1" style="color: #1a202c; font-size: 24px;">Détails de la demande</h2>
+                    <div class="text-muted small">
+                        <i class="fa-regular fa-calendar-check me-1"></i> Soumis le {{ reclamation.date|date('d/m/Y à H:i') }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="top-info-grid">
+                {% if contrat %}
+                    <div class="property-box">
+                        <span class="section-label">Bien loué</span>
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="font-size: 1.2rem; color: #5E17EB; background: #f0eaff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+                                <i class="fa-solid fa-house-chimney"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: #1a202c; font-size: 1.1rem;">{{ contrat.annonce.titre }}</div>
+                                <div class="text-muted small"><i class="fa-solid fa-location-dot me-1"></i> {{ contrat.annonce.adresse }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="property-box">
+                    <span class="section-label">Type & Catégorie</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="font-size: 1.2rem; color: #f59e0b; background: #fffbeb; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+                            <i class="fa-solid fa-bookmark"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="color: #1a202c; font-size: 1.1rem;">{{ reclamation.typeId.libelle ?? reclamation.type }}</div>
+                            {% if reclamation.typeAutre %}
+                                <div class="text-muted small">{{ reclamation.typeAutre }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <span class="section-label">Description du problème</span>
+            <div class="description-content">
+                {{ reclamation.description|nl2br }}
+            </div>
+
+            <div class="section-label" style="margin-top: 30px;">Pièces jointes</div>
+            {% if reclamation.images|length > 0 %}
+                <div class="image-grid">
+                    {% for image in reclamation.images %}
+                        {% if image.imageDataUri %}
+                            <div class="rounded-3 border" 
+                                 style="height: 120px; background: url('{{ image.imageDataUri }}') center/cover no-repeat; cursor: pointer; overflow: hidden; position: relative;"
+                                 onclick="showImage('{{ image.imageDataUri }}')">
+                            </div>
+                        {% else %}
+                            <div class="rounded-3 border bg-light d-flex align-items-center justify-content-center text-muted" style="height: 120px;">
+                                <i class="fa-solid fa-image"></i>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted small italic mb-4">Aucune pièce jointe.</div>
+            {% endif %}
+
+            <div class="section-label" style="margin-top: 40px; clear: both;">Réponse & Traitement</div>
+            {% if reclamation.traitement %}
+                <div class="response-container">
+                    <div class="fw-bold mb-2 text-primary small text-uppercase">Réponse du propriétaire</div>
+                    <div style="color: #2d3748;">{{ reclamation.traitement.reponse|nl2br }}</div>
+                    <div class="mt-3 text-muted text-end" style="font-size: 0.75rem;">
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Traitée le {{ reclamation.traitement.dateTraitement|date('d/m/Y') }}
+                    </div>
+                </div>
+            {% else %}
+                <div class="p-3 rounded-3 text-center" style="background: #f8fafc; border: 1px dashed #e2e8f0;">
+                    <span class="text-muted small italic">
+                        <i class="fa-solid fa-hourglass-half fa-spin me-2"></i>
+                        En attente de traitement par le propriétaire...
+                    </span>
+                </div>
+            {% endif %}
+
+            <div class="action-footer">
+                {% if reclamation.statut in ['EN_ATTENTE', 'EN_COURS'] %}
+                    <a href="{{ path('tenant_reclamation_edit', {'id': reclamation.id}) }}" class="btn-custom btn-edit">
+                        <i class="fa-solid fa-pen-to-square me-2"></i>Modifier
+                    </a>
+                {% endif %}
+                <a href="{{ path('tenant_reclamations') }}" class="btn-custom btn-close-view">
+                    Fermer
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Image Preview Modal #}
+<div id="imageModal" class="img-modal-overlay" onclick="this.style.display='none'">
+    <span class="img-modal-close">&times;</span>
+    <img id="imgModalTarget" class="img-modal-content">
+</div>
+
+<style>
+    .img-modal-overlay {
+        display: none;
+        position: fixed;
+        z-index: 99999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.85);
+        backdrop-filter: blur(5px);
+        cursor: zoom-out;
+    }
+    .img-modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 85%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 16px;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        border: 4px solid white;
+    }
+    .img-modal-close {
+        position: absolute;
+        top: 30px;
+        right: 40px;
+        color: white;
+        font-size: 50px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    function showImage(src) {
+        document.getElementById('imgModalTarget').src = src;
+        document.getElementById('imageModal').style.display = 'block';
+    }
+</script>
+{% endblock %}

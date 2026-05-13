@@ -1,0 +1,417 @@
+{% extends 'layouts/base_owner.html.twig' %}
+{% block title %}Pénalités — Configuration — Sakan{% endblock %}
+{% block page_title %}Configuration des Pénalités{% endblock %}
+{% block page_subtitle %}Règles de calcul et simulateur{% endblock %}
+
+{% block content %}
+
+<!-- Flash Messages -->
+{% for message in app.flashes('success') %}
+    <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #166534;">
+        <i class="fa-solid fa-check-circle"></i> {{ message }}
+    </div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+    <div style="background: #fef2f2; border: 1px solid #dc2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #991b1b;">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+    </div>
+{% endfor %}
+
+<!-- ═══ Info: Configuration Globale ═══════════════════════════════════ -->
+<div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; background: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="fa-solid fa-circle-info" style="font-size: 24px; color: white;"></i>
+        </div>
+        <div>
+            <h4 style="font-size: 16px; font-weight: 700; color: #1e40af; margin-bottom: 4px;">Configuration des règles de pénalité</h4>
+            <p style="font-size: 14px; color: #3b82f6; margin: 0;">
+                Vous configurez ici une <strong>règle globale</strong> qui s'appliquera à tous vos biens. Vous pourrez personnaliser ces règles pour chaque bien individuellement une fois que vous aurez des contrats actifs.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Mode Toggle ═════════════════════════════════════════════════ -->
+<div style="display: flex; gap: 12px; margin-bottom: 28px; background: white; padding: 6px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); width: fit-content;">
+    <button id="btnSimple" onclick="switchMode('simple')" style="padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--primary); color: white;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Mode Simple
+    </button>
+    <button id="btnExpert" onclick="switchMode('expert')" style="padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: #6b7280;">
+        <i class="fa-solid fa-sliders"></i> Mode Expert
+    </button>
+</div>
+
+<!-- ═══ Mode Simple: Profils Prédéfinis ═══════════════════════════════ -->
+<div id="modeSimple" style="display: block;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 28px;">
+        
+        {% for key, profil in profils %}
+        <div id="card{{ key|capitalize }}" onclick="selectProfil('{{ key }}')" 
+             style="background: white; border-radius: 16px; padding: 28px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 3px solid transparent;"
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.12)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.08)';">
+            
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                <div style="width: 64px; height: 64px; border-radius: 16px; background: {{ profil.couleur }}20; display: flex; align-items: center; justify-content: center; font-size: 32px;">
+                    {{ profil.icone }}
+                </div>
+                <div>
+                    <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0;">{{ profil.nom }}</h3>
+                    <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0 0;">{{ profil.description }}</p>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                <div style="background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600;">Délai</div>
+                    <div style="font-size: 18px; font-weight: 700; color: {{ profil.couleur }};">{{ profil.delaiGrace }}j</div>
+                </div>
+                <div style="background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600;">Fixe</div>
+                    <div style="font-size: 18px; font-weight: 700; color: {{ profil.couleur }};">{{ profil.montantFixe }} TND</div>
+                </div>
+                <div style="background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600;">Variable</div>
+                    <div style="font-size: 18px; font-weight: 700; color: {{ profil.couleur }};">{{ profil.pourcentage }}%</div>
+                </div>
+                <div style="background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600;">Plafond</div>
+                    <div style="font-size: 18px; font-weight: 700; color: {{ profil.couleur }};">{{ profil.plafond }}%</div>
+                </div>
+            </div>
+            
+            <button onclick="event.stopPropagation(); sauvegarderProfil('{{ key }}')" 
+                    style="width: 100%; padding: 14px; background: {{ profil.couleur }}; color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; transition: opacity 0.2s;"
+                    onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                <i class="fa-solid fa-check"></i> Appliquer {{ profil.nom }}
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ═══ Mode Expert: Sliders ═════════════════════════════════════════ -->
+<div id="modeExpert" style="display: none;">
+    <div style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 28px;">
+        <h3 style="font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 28px;">
+            <i class="fa-solid fa-sliders" style="color: #6366f1; margin-right: 8px;"></i>
+            Configuration Manuelle
+        </h3>
+        
+        <!-- Délai de grâce -->
+        <div style="margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label style="font-size: 14px; font-weight: 600; color: #374151;">
+                    <i class="fa-solid fa-hourglass-half" style="color: #f59e0b; margin-right: 6px;"></i>
+                    Délai de grâce
+                </label>
+                <span id="valDelai" style="padding: 6px 14px; background: #6366f1; color: white; border-radius: 20px; font-weight: 700; font-size: 14px;">5 jours</span>
+            </div>
+            <input type="range" id="sliderDelai" min="0" max="15" value="5" 
+                   style="width: 100%; height: 8px; border-radius: 4px; background: #e5e7eb; outline: none; cursor: pointer;"
+                   oninput="updateExpertValues()">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 6px;">
+                <span>0j</span><span>15j</span>
+            </div>
+        </div>
+        
+        <!-- Montant fixe -->
+        <div style="margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label style="font-size: 14px; font-weight: 600; color: #374151;">
+                    <i class="fa-solid fa-coins" style="color: #10b981; margin-right: 6px;"></i>
+                    Montant fixe
+                </label>
+                <span id="valFixe" style="padding: 6px 14px; background: #10b981; color: white; border-radius: 20px; font-weight: 700; font-size: 14px;">10.00 TND</span>
+            </div>
+            <input type="range" id="sliderFixe" min="0" max="50" value="10" step="0.5"
+                   style="width: 100%; height: 8px; border-radius: 4px; background: #e5e7eb; outline: none; cursor: pointer;"
+                   oninput="updateExpertValues()">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 6px;">
+                <span>0 TND</span><span>50 TND</span>
+            </div>
+        </div>
+        
+        <!-- Pourcentage -->
+        <div style="margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label style="font-size: 14px; font-weight: 600; color: #374151;">
+                    <i class="fa-solid fa-percent" style="color: #6366f1; margin-right: 6px;"></i>
+                    Pourcentage du loyer
+                </label>
+                <span id="valPourcentage" style="padding: 6px 14px; background: #6366f1; color: white; border-radius: 20px; font-weight: 700; font-size: 14px;">2.50%</span>
+            </div>
+            <input type="range" id="sliderPourcentage" min="0" max="10" value="2.5" step="0.25"
+                   style="width: 100%; height: 8px; border-radius: 4px; background: #e5e7eb; outline: none; cursor: pointer;"
+                   oninput="updateExpertValues()">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 6px;">
+                <span>0%</span><span>10%</span>
+            </div>
+        </div>
+        
+        <!-- Plafond -->
+        <div style="margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label style="font-size: 14px; font-weight: 600; color: #374151;">
+                    <i class="fa-solid fa-arrow-up-to-line" style="color: #ef4444; margin-right: 6px;"></i>
+                    Plafond cumulé (% du loyer)
+                </label>
+                <span id="valPlafond" style="padding: 6px 14px; background: #ef4444; color: white; border-radius: 20px; font-weight: 700; font-size: 14px;">10.00%</span>
+            </div>
+            <input type="range" id="sliderPlafond" min="0" max="20" value="10" step="0.5"
+                   style="width: 100%; height: 8px; border-radius: 4px; background: #e5e7eb; outline: none; cursor: pointer;"
+                   oninput="updateExpertValues()">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 6px;">
+                <span>0%</span><span>20%</span>
+            </div>
+        </div>
+        
+        <button onclick="sauvegarderExpert()" 
+                style="width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: opacity 0.2s;"
+                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            <i class="fa-solid fa-save"></i> Sauvegarder la configuration personnalisée
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Simulateur Temps Réel ════════════════════════════════════════ -->
+<div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-radius: 16px; padding: 32px; color: white;">
+    <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 28px;">
+        <i class="fa-solid fa-calculator" style="color: #fbbf24; margin-right: 8px;"></i>
+        Simulateur de Pénalité
+    </h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 28px;">
+        <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 8px;">Montant du loyer</label>
+            <div style="display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 4px;">
+                <input type="number" id="simLoyer" value="600" min="100" max="5000" step="50"
+                       style="flex: 1; background: transparent; border: none; color: white; padding: 12px 16px; font-size: 18px; font-weight: 700; outline: none;"
+                       oninput="simuler()">
+                <span style="padding: 0 16px; font-weight: 600; opacity: 0.8;">TND</span>
+            </div>
+        </div>
+        
+        <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 8px;">Jours de retard</label>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <input type="range" id="simJours" min="0" max="30" value="7" 
+                       style="flex: 1; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.2); outline: none; cursor: pointer;"
+                       oninput="document.getElementById('simJoursVal').textContent = this.value + 'j'; simuler()">
+                <span id="simJoursVal" style="padding: 10px 18px; background: rgba(255,255,255,0.15); border-radius: 10px; font-weight: 700; min-width: 60px; text-align: center;">7j</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="simResultat" style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; text-align: center;">
+        <div style="font-size: 14px; opacity: 0.8; margin-bottom: 8px;">Pénalité calculée</div>
+        <div id="simMontant" style="font-size: 48px; font-weight: 700; color: #fbbf24;">15.00 TND</div>
+        <div id="simDetail" style="font-size: 14px; opacity: 0.9; margin-top: 12px;">
+            Fixe: 10.00 TND + Variable: 15.00 TND (2.5% de 600 TND)
+        </div>
+        <div id="simPlafond" style="display: none; margin-top: 12px; padding: 10px 16px; background: #ef4444; border-radius: 8px; font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Plafond appliqué: 60.00 TND max
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    let currentMode = 'simple';
+    let currentProfil = 'standard';
+    
+    // ─── Profils Config ─────────────────────────────────────────────────
+    const profils = {{ profils|json_encode|raw }};
+    const regleGlobale = {{ regleGlobale ? {
+        'delaiGraceJours': regleGlobale.delaiGraceJours,
+        'penaliteFixe': regleGlobale.penaliteFixe,
+        'penalitePourcentage': regleGlobale.penalitePourcentage,
+        'plafondPourcentage': regleGlobale.plafondPourcentage
+    }|json_encode|raw : 'null' }};
+    
+    // ─── Switch Mode ────────────────────────────────────────────────────
+    function switchMode(mode) {
+        currentMode = mode;
+        document.getElementById('modeSimple').style.display = mode === 'simple' ? 'block' : 'none';
+        document.getElementById('modeExpert').style.display = mode === 'expert' ? 'block' : 'none';
+        
+        const btnSimple = document.getElementById('btnSimple');
+        const btnExpert = document.getElementById('btnExpert');
+        
+        if (mode === 'simple') {
+            btnSimple.style.background = 'var(--primary)';
+            btnSimple.style.color = 'white';
+            btnExpert.style.background = 'transparent';
+            btnExpert.style.color = '#6b7280';
+        } else {
+            btnExpert.style.background = 'var(--primary)';
+            btnExpert.style.color = 'white';
+            btnSimple.style.background = 'transparent';
+            btnSimple.style.color = '#6b7280';
+        }
+        
+        simuler();
+    }
+    
+    // ─── Select Profil ──────────────────────────────────────────────────
+    function selectProfil(profil) {
+        currentProfil = profil;
+        
+        // Reset all cards
+        ['Tolerant', 'Standard', 'Strict'].forEach(p => {
+            const card = document.getElementById('card' + p);
+            if (card) card.style.border = '3px solid transparent';
+        });
+        
+        // Highlight selected
+        const selectedCard = document.getElementById('card' + profil.charAt(0).toUpperCase() + profil.slice(1));
+        if (selectedCard) selectedCard.style.border = '3px solid ' + profils[profil].couleur;
+        
+        simuler();
+    }
+    
+    // ─── Update Expert Values ─────────────────────────────────────────
+    function updateExpertValues() {
+        const delai = document.getElementById('sliderDelai').value;
+        const fixe = document.getElementById('sliderFixe').value;
+        const pourcentage = document.getElementById('sliderPourcentage').value;
+        const plafond = document.getElementById('sliderPlafond').value;
+        
+        document.getElementById('valDelai').textContent = delai + ' jours';
+        document.getElementById('valFixe').textContent = parseFloat(fixe).toFixed(2) + ' TND';
+        document.getElementById('valPourcentage').textContent = parseFloat(pourcentage).toFixed(2) + '%';
+        document.getElementById('valPlafond').textContent = parseFloat(plafond).toFixed(2) + '%';
+        
+        simuler();
+    }
+    
+    // ─── Simuler ────────────────────────────────────────────────────────
+    function simuler() {
+        const inputLoyer = document.getElementById('simLoyer');
+        let loyer = parseFloat(inputLoyer.value);
+        
+        // Contrôle de saisie : Si vide ou non numérique ou négatif
+        if (isNaN(loyer) || loyer < 1) {
+            inputLoyer.style.color = '#ef4444'; // rouge pour l'invalide
+            loyer = 0; 
+        } else {
+            inputLoyer.style.color = 'white';
+        }
+
+        const jours = parseInt(document.getElementById('simJours').value) || 0;
+        
+        let config;
+        if (currentMode === 'simple') {
+            config = profils[currentProfil];
+        } else {
+            config = {
+                delaiGrace: parseInt(document.getElementById('sliderDelai').value),
+                montantFixe: parseFloat(document.getElementById('sliderFixe').value),
+                pourcentage: parseFloat(document.getElementById('sliderPourcentage').value),
+                plafond: parseFloat(document.getElementById('sliderPlafond').value)
+            };
+        }
+        
+        // Calcul
+        let penalite = 0;
+        let detail = '';
+        let plafondApplique = false;
+        
+        if (jours <= config.delaiGrace) {
+            penalite = 0;
+            detail = `Dans le délai de grâce (${config.delaiGrace}j)`;
+        } else {
+            const variable = loyer * (config.pourcentage / 100);
+            penalite = config.montantFixe + variable;
+            const plafondMax = loyer * (config.plafond / 100);
+            
+            if (penalite > plafondMax) {
+                penalite = plafondMax;
+                plafondApplique = true;
+            }
+            
+            detail = `Fixe: ${config.montantFixe.toFixed(2)} TND + Variable: ${variable.toFixed(2)} TND (${config.pourcentage}% de ${loyer.toFixed(0)} TND)`;
+        }
+        
+        // Update UI
+        const montantEl = document.getElementById('simMontant');
+        montantEl.textContent = penalite.toFixed(2) + ' TND';
+        montantEl.style.color = penalite > 0 ? '#fbbf24' : '#10b981';
+        
+        document.getElementById('simDetail').textContent = detail;
+        document.getElementById('simPlafond').style.display = plafondApplique ? 'block' : 'none';
+    }
+    
+    // ─── Sauvegarder Profil ─────────────────────────────────────────────
+    function sauvegarderProfil(profil) {
+        fetch('{{ path('api_penalites_sauvegarder') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profil: profil })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Configuration "' + profils[profil].nom + '" sauvegardée avec succès!');
+                window.location.reload();
+            } else {
+                alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+            }
+        })
+        .catch(e => {
+            alert('Erreur de connexion: ' + e.message);
+        });
+    }
+    
+    // ─── Sauvegarder Expert ─────────────────────────────────────────────
+    function sauvegarderExpert() {
+        const config = {
+            delaiGrace: parseInt(document.getElementById('sliderDelai').value),
+            montantFixe: parseFloat(document.getElementById('sliderFixe').value),
+            pourcentage: parseFloat(document.getElementById('sliderPourcentage').value),
+            plafond: parseFloat(document.getElementById('sliderPlafond').value)
+        };
+        
+        // Créer un profil personnalisé
+        fetch('{{ path('api_penalites_sauvegarder') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                profil: 'custom',
+                config: config
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Configuration personnalisée sauvegardée avec succès!');
+                window.location.reload();
+            } else {
+                alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+            }
+        })
+        .catch(e => {
+            alert('Erreur de connexion: ' + e.message);
+        });
+    }
+    
+    // ─── Init ───────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        // Charger la règle globale existante si présente
+        if (regleGlobale) {
+            document.getElementById('sliderDelai').value = regleGlobale.delaiGraceJours;
+            document.getElementById('sliderFixe').value = regleGlobale.penaliteFixe;
+            document.getElementById('sliderPourcentage').value = regleGlobale.penalitePourcentage;
+            document.getElementById('sliderPlafond').value = regleGlobale.plafondPourcentage;
+            updateExpertValues();
+        }
+        
+        selectProfil('standard');
+        simuler();
+    });
+</script>
+{% endblock %}

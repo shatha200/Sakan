@@ -1,0 +1,227 @@
+{% extends 'layouts/base_revenus_owner.html.twig' %}
+{% block revenus_content %}
+
+<!-- Summary Bar Alert -->
+<div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; color: white;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;"><i class="fa-solid fa-triangle-exclamation"></i> Loyers en retard</div>
+            <div style="font-size: 28px; font-weight: 700;">{{ count }} <span style="font-size: 16px; font-weight: 500;">paiement(s)</span></div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Total dû (loyers + pénalités)</div>
+            <div style="font-size: 28px; font-weight: 700;">{{ totalDu|number_format(3, ',', ' ') }} <span style="font-size: 16px; font-weight: 500;">TND</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- État Vide -->
+{% if loyers is empty %}
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 16px; padding: 48px; text-align: center; box-shadow: var(--shadow-card); border: 1px solid #bbf7d0;">
+    <div style="width: 80px; height: 80px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <i class="fa-solid fa-check-double" style="font-size: 32px; color: white;"></i>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: #166534; margin-bottom: 12px;">Excellent ! Aucun retard de paiement</h3>
+    <p style="font-size: 15px; color: #15803d; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Tous vos locataires sont à jour dans leurs paiements. Continuez à surveiller les échéances à venir.
+    </p>
+    <a href="{{ path('owner_revenus_paiements') }}" style="padding: 12px 24px; background: #16a34a; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        <i class="fa-solid fa-clock"></i> Voir les paiements attendus
+    </a>
+</div>
+{% else %}
+
+<!-- Retards List -->
+<div style="background: white; border-radius: 20px; padding: 24px; box-shadow: var(--shadow-card);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="font-size: 16px; font-weight: 700; margin: 0;">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626; margin-right: 8px;"></i> Retards de paiement
+        </h3>
+        <button onclick="relancerToutRetards()" style="padding: 8px 16px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-paper-plane"></i> Relancer tous les retardataires
+        </button>
+    </div>
+
+    <table class="table-paiements" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e5e7eb;">
+                <th style="text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Locataire</th>
+                <th style="text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Bien</th>
+                <th style="text-align: right; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Loyer</th>
+                <th style="text-align: center; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Retard</th>
+                <th style="text-align: right; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Pénalité</th>
+                <th style="text-align: right; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Total dû</th>
+                <th style="text-align: center; padding: 12px; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for loyer in loyers %}
+            {% set totalLoyer = loyer.montant + (loyer.penalite|default(0)) %}
+            <tr data-id="{{ loyer.paiement_id }}" style="border-bottom: 1px solid #fef2f2; background: #fef2f2;">
+                <td style="padding: 16px 12px;">
+                    <div style="font-weight: 600; color: #1f2937;">{{ loyer.nom_locataire }}</div>
+                    <div style="font-size: 12px; color: #6b7280;">
+                        <i class="fa-solid fa-phone"></i> {{ loyer.telephone }}
+                    </div>
+                </td>
+                <td style="padding: 16px 12px;">
+                    <div style="font-weight: 500; color: #374151;">{{ loyer.nom_bien }}</div>
+                </td>
+                <td style="padding: 16px 12px; text-align: right;">
+                    <div style="font-weight: 600; color: #1f2937;">{{ loyer.montant|number_format(3, ',', ' ') }} TND</div>
+                </td>
+                <td style="padding: 16px 12px; text-align: center;">
+                    <span style="padding: 6px 12px; background: #dc2626; color: white; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                        {{ loyer.jours_retard }}j
+                    </span>
+                </td>
+                <td style="padding: 16px 12px; text-align: right;">
+                    {% if loyer.penalite > 0 %}
+                        <div style="font-weight: 600; color: #dc2626;">{{ loyer.penalite|number_format(3, ',', ' ') }} TND</div>
+                    {% else %}
+                        <div style="font-size: 12px; color: #9ca3af;">—</div>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px 12px; text-align: right;">
+                    <div style="font-weight: 700; color: #dc2626; font-size: 15px;">{{ totalLoyer|number_format(3, ',', ' ') }} TND</div>
+                </td>
+                <td style="padding: 16px 12px; text-align: center;">
+                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                        <a href="tel:{{ loyer.telephone }}" style="padding: 8px 12px; background: #dbeafe; color: #1d4ed8; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-phone"></i> Appeler
+                        </a>
+                        <button onclick="relancerRetard({{ loyer.paiement_id }}, '{{ loyer.nom_locataire }}')" 
+                                style="padding: 8px 12px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-paper-plane"></i> Relancer
+                        </button>
+                        <button onclick="marquerPayeRetard({{ loyer.paiement_id }})" 
+                                style="padding: 8px 12px; background: #16a34a; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-check"></i> Payé
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {# Pagination et contrôles #}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
+        {# Lignes par page #}
+        <form method="get" action="{{ path('owner_revenus_retards') }}" style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 13px; color: #6b7280;">Lignes par page:</label>
+            <select name="limit" onchange="this.form.submit()" style="padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                <option value="5" {{ limit == 5 ? 'selected' }}>5</option>
+                <option value="10" {{ limit == 10 ? 'selected' }}>10</option>
+                <option value="20" {{ limit == 20 ? 'selected' }}>20</option>
+                <option value="50" {{ limit == 50 ? 'selected' }}>50</option>
+            </select>
+        </form>
+        
+        {# Pagination Pagerfanta #}
+        {% if pager.nbPages > 1 %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            {% if pager.currentPage > 1 %}
+                <a href="{{ path('owner_revenus_retards', app.request.query.all|merge({page: pager.currentPage - 1})) }}"
+                   style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            {% else %}
+                <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </span>
+            {% endif %}
+
+            {% for page in 1..pager.nbPages %}
+                {% if page == pager.currentPage %}
+                    <span style="padding: 8px 14px; background: #6366f1; color: white; border-radius: 6px; font-weight: 600; font-size: 13px;">
+                        {{ page }}
+                    </span>
+                {% elseif page >= pager.currentPage - 2 and page <= pager.currentPage + 2 %}
+                    <a href="{{ path('owner_revenus_retards', app.request.query.all|merge({page: page})) }}"
+                       style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                        {{ page }}
+                    </a>
+                {% elseif page == 1 or page == pager.nbPages %}
+                    <a href="{{ path('owner_revenus_retards', app.request.query.all|merge({page: page})) }}"
+                       style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                        {{ page }}
+                    </a>
+                {% elseif page == pager.currentPage - 3 or page == pager.currentPage + 3 %}
+                    <span style="padding: 8px; color: #94a3b8; font-size: 13px;">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pager.currentPage < pager.nbPages %}
+                <a href="{{ path('owner_revenus_retards', app.request.query.all|merge({page: pager.currentPage + 1})) }}"
+                   style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </span>
+            {% endif %}
+
+            <span style="font-size: 12px; color: #64748b; margin-left: 8px;">
+                Page {{ pager.currentPage }} / {{ pager.nbPages }}
+            </span>
+        </div>
+        {% endif %}
+        
+        {# Info résultats #}
+        <span style="font-size: 13px; color: #6b7280;">
+            {{ pager.nbResults }} retard(s) au total
+        </span>
+    </div>
+</div>
+
+{% endif %}
+
+<!-- Toast Notification -->
+<div id="toast" style="display: none; position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; background: #1f2937; color: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 1000; font-weight: 500;"></div>
+
+<script>
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        t.style.background = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#1f2937';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function relancerRetard(id, nom) {
+        // Simulation - à remplacer par appel API réel
+        showToast('📧 Relance prioritaire envoyée à ' + nom, 'success');
+    }
+
+    function relancerToutRetards() {
+        if (!confirm('Envoyer une relance à tous les locataires en retard ?')) return;
+        showToast('📧 Relances prioritaires envoyées', 'success');
+    }
+
+    function marquerPayeRetard(id) {
+        if (!confirm('Confirmer le paiement de ce loyer (incluant les pénalités) ?')) return;
+        
+        fetch('/api/loyers/' + id + '/payer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ methode: 'MANUEL', reference: 'PAYEMENT-' + Date.now() })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Paiement enregistré', 'success');
+                document.querySelector('tr[data-id="' + id + '"]').style.opacity = '0.5';
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ ' + (data.error || 'Erreur'), 'error');
+            }
+        })
+        .catch(e => {
+            showToast('❌ Erreur: ' + e.message, 'error');
+        });
+    }
+</script>
+
+{% endblock %}

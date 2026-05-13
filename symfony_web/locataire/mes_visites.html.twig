@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Mes Visites</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-locataire.css">
+  <link rel="stylesheet" href="../../css_web/sakan-paiement.css">
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sakan-sidebar" id="sidebar-locataire">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="catalogue.html"><i class="fa-solid fa-magnifying-glass"></i> Explorer les biens</a></li>
+      <li><a href="mes_visites.html" class="active"><i class="fa-solid fa-calendar-check"></i> Mes visites</a></li>
+      <li><a href="mes_reservations.html"><i class="fa-solid fa-check"></i> Mes réservations</a></li>
+      <li><a href="mes_contrats.html"><i class="fa-solid fa-file-contract"></i> Mes contrats</a></li>
+      <li><a href="../paiement/finances.html"><i class="fa-solid fa-coins"></i> Espace financier</a></li>
+      <li><a href="../reclamations/reclamations_locataire.html"><i class="fa-solid fa-shield-halved"></i> Service client</a></li>
+      <li><a href="mon_profil.html"><i class="fa-solid fa-user"></i> Mon profil</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="../auth/login.html">
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <main class="sakan-main">
+    <div class="sakan-content">
+
+      <!-- EN-TÊTE -->
+      <div class="page-header" style="justify-content: space-between; align-items: center;">
+        <h1 style="display:flex; align-items:center; gap:12px;"><i class="fa-solid fa-calendar-check"></i> Mes Visites</h1>
+        <button class="btn-primary" onclick="window.location.href='catalogue.html'">
+          <i class="fa-solid fa-plus"></i> Planifier une visite
+        </button>
+      </div>
+
+      <!-- ONGLETS STATUT -->
+      <div class="section-tabs">
+        <button class="tab-btn active" onclick="filterVisites('all')">
+          Toutes (3)
+        </button>
+        <button class="tab-btn" onclick="filterVisites('confirmee')">
+          <i class="fa-solid fa-circle-check" style="color:#16a34a"></i>
+          Confirmées (1)
+        </button>
+        <button class="tab-btn" onclick="filterVisites('attente')">
+          <i class="fa-solid fa-clock" style="color:#ca8a04"></i>
+          En attente (1)
+        </button>
+        <button class="tab-btn" onclick="filterVisites('passee')">
+          <i class="fa-solid fa-flag-checkered"></i>
+          Passées (1)
+        </button>
+      </div>
+
+      <!-- GRILLE DES VISITES -->
+      <div class="visites-grid">
+
+        <!-- VISITE 1 : CONFIRMÉE -->
+        <div class="visite-card visite-confirmee" data-statut="confirmee">
+          <div class="visite-image">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" alt="Appartement">
+            <span class="badge-statut confirmee">
+              <i class="fa-solid fa-circle-check"></i> Confirmée
+            </span>
+          </div>
+          <div class="visite-body">
+            <h3>Appartement lumineux - Lac 2, Tunis</h3>
+            <div class="visite-details">
+              <span><i class="fa-solid fa-calendar"></i> 15 Août 2025</span>
+              <span><i class="fa-solid fa-clock"></i> 10:00</span>
+              <span><i class="fa-solid fa-user"></i> Karim Mezghani</span>
+            </div>
+            <div class="visite-actions">
+              <button class="btn-qr" onclick="showModal('modal-qr')">
+                <i class="fa-solid fa-qrcode"></i> Mon Pass QR
+              </button>
+              <button class="btn-outline btn-sm" onclick="showModal('modal-edit-visite')">
+                <i class="fa-solid fa-pen"></i> Modifier
+              </button>
+              <button class="btn-primary btn-sm" style="background-color: var(--danger); border-color: var(--danger);" onclick="showToast('❌ Visite annulée')">
+                <i class="fa-solid fa-xmark"></i> Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISITE 2 : EN ATTENTE -->
+        <div class="visite-card visite-attente" data-statut="attente">
+          <div class="visite-image">
+            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400" alt="Studio">
+            <span class="badge-statut attente">
+              <i class="fa-solid fa-clock"></i> En attente
+            </span>
+          </div>
+          <div class="visite-body">
+            <h3>Studio moderne - Menzah 6, Tunis</h3>
+            <div class="visite-details">
+              <span><i class="fa-solid fa-calendar"></i> 20 Août 2025</span>
+              <span><i class="fa-solid fa-clock"></i> 14:00</span>
+              <span><i class="fa-solid fa-user"></i> Karim Mezghani</span>
+            </div>
+            <p class="visite-info-tip">
+              <i class="fa-solid fa-circle-info"></i> En attente de confirmation du propriétaire. Vous recevrez un QR code dès validation.
+            </p>
+            <div class="visite-actions">
+              <button class="btn-outline btn-sm" onclick="showModal('modal-edit-visite')">
+                <i class="fa-solid fa-pen"></i> Modifier
+              </button>
+              <button class="btn-primary btn-sm" style="background-color: var(--danger); border-color: var(--danger);" onclick="showToast('❌ Demande annulée')">
+                <i class="fa-solid fa-xmark"></i> Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISITE 3 : PASSÉE -->
+        <div class="visite-card visite-passee" data-statut="passee">
+          <div class="visite-image">
+            <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400" alt="Duplex">
+            <span class="badge-statut passee">
+              <i class="fa-solid fa-flag-checkered"></i> Passée
+            </span>
+          </div>
+          <div class="visite-body">
+            <h3>Duplex standing - Ennasr 2, Tunis</h3>
+            <div class="visite-details">
+              <span><i class="fa-solid fa-calendar"></i> 10 Juillet 2025</span>
+              <span><i class="fa-solid fa-clock"></i> 11:00</span>
+              <span><i class="fa-solid fa-user"></i> Karim Mezghani</span>
+            </div>
+            <div class="visite-actions">
+              <button class="btn-outline btn-sm" onclick="window.location.href='detail_annonce.html'">
+                <i class="fa-solid fa-eye"></i> Revoir l'annonce
+              </button>
+              <button class="btn-primary btn-sm" onclick="showModal('modal-avis')">
+                <i class="fa-solid fa-star"></i> Laisser un avis
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL QR CODE PASS -->
+<div id="modal-qr" class="modal-overlay" style="display:none">
+  <div class="modal-card modal-qr-card">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-qrcode"></i> Mon Pass de Visite</h3>
+      <button style="border:none;background:none;font-size:24px;cursor:pointer" onclick="closeModal('modal-qr')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <div class="qr-container">
+        <!-- QR Code simulé -->
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SAKAN-VISITE-FATMA-20250815-1000" alt="QR Code Visite" class="qr-image">
+      </div>
+      <div class="qr-infos">
+        <h4>Appartement lumineux - Lac 2</h4>
+        <p><i class="fa-solid fa-calendar"></i> 15 Août 2025 à 10:00</p>
+        <p><i class="fa-solid fa-user"></i> Fatma Trabelsi</p>
+        <p class="qr-instruction">
+          Présentez ce QR code au propriétaire lors de votre visite
+        </p>
+        <div class="qr-validity">
+          <i class="fa-solid fa-shield-halved"></i>
+          Valide uniquement le 15/08/2025
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="showToast('📥 Pass téléchargé !')">
+          <i class="fa-solid fa-download"></i> Télécharger
+        </button>
+        <button class="btn-primary" onclick="showToast('📱 Pass partagé !')">
+          <i class="fa-solid fa-share-nodes"></i> Partager
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MODIFIER VISITE -->
+<div id="modal-edit-visite" class="modal-overlay" style="display:none">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-pen"></i> Modifier la visite</h3>
+      <button style="border:none;background:none;font-size:24px;cursor:pointer" onclick="closeModal('modal-edit-visite')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label style="display:block;margin-bottom:8px;font-weight:600">Nouvelle date</label>
+      <input type="date" class="sakan-input" value="2025-08-15" style="width:100%;margin-bottom:16px;">
+      
+      <label style="display:block;margin-bottom:8px;font-weight:600">Nouvelle heure</label>
+      <select class="sakan-input" style="width:100%;margin-bottom:16px;">
+        <option>09:00</option>
+        <option selected>10:00</option>
+        <option>11:00</option>
+        <option>14:00</option>
+        <option>15:00</option>
+      </select>
+      
+      <label style="display:block;margin-bottom:8px;font-weight:600">Message au propriétaire</label>
+      <textarea class="sakan-input" rows="2" placeholder="Expliquez la raison du changement..." style="width:100%;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-edit-visite')">Annuler</button>
+      <button class="btn-primary" onclick="closeModal('modal-edit-visite'); showToast('✅ Visite modifiée avec succès !')">
+        <i class="fa-solid fa-check"></i> Confirmer le changement
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AVIS -->
+<div id="modal-avis" class="modal-overlay" style="display:none">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-star"></i> Laisser un avis</h3>
+      <button style="border:none;background:none;font-size:24px;cursor:pointer" onclick="closeModal('modal-avis')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-weight:600; text-align:center; margin-bottom:16px;">Duplex standing - Ennasr 2, Tunis</p>
+      <div class="stars-selector" id="stars-selector">
+        <i class="fa-regular fa-star" onclick="setRating(1)"></i>
+        <i class="fa-regular fa-star" onclick="setRating(2)"></i>
+        <i class="fa-regular fa-star" onclick="setRating(3)"></i>
+        <i class="fa-regular fa-star" onclick="setRating(4)"></i>
+        <i class="fa-regular fa-star" onclick="setRating(5)"></i>
+      </div>
+      <textarea class="sakan-input" rows="3" placeholder="Partagez votre expérience..." style="width:100%;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-avis')">Annuler</button>
+      <button class="btn-primary" onclick="closeModal('modal-avis'); showToast('⭐ Avis publié, merci !')">
+        <i class="fa-solid fa-paper-plane"></i> Publier l'avis
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+  function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+  function filterVisites(statut) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.visite-card').forEach(card => {
+      if (statut === 'all' || card.dataset.statut === statut) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+  function setRating(n) {
+    document.querySelectorAll('#stars-selector i').forEach((s, i) => {
+      s.className = i < n ? 'fa-solid fa-star' : 'fa-regular fa-star';
+      s.style.color = i < n ? '#f59e0b' : '';
+    });
+  }
+</script>
+</body>
+</html>

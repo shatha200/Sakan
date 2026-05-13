@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="auth-wrapper">
+    <div class="auth-left">
+        {% block auth_content %}{% endblock %}
+    </div>
+    <div class="auth-right">
+        <div class="auth-hero">
+            <h2 class="hero-title">G&eacute;rez vos biens immobiliers en toute s&eacute;r&eacute;nit&eacute;</h2>
+            <p class="hero-subtitle">Paiements, contrats, visites &mdash; tout en un seul endroit.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

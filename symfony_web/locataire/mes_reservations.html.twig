@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Mes Réservations</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-locataire.css">
+  <link rel="stylesheet" href="../../css_web/sakan-paiement.css">
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sakan-sidebar" id="sidebar-locataire">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="catalogue.html"><i class="fa-solid fa-magnifying-glass"></i> Explorer les biens</a></li>
+      <li><a href="mes_visites.html"><i class="fa-solid fa-calendar-check"></i> Mes visites</a></li>
+      <li><a href="mes_reservations.html" class="active"><i class="fa-solid fa-check"></i> Mes réservations</a></li>
+      <li><a href="mes_contrats.html"><i class="fa-solid fa-file-contract"></i> Mes contrats</a></li>
+      <li><a href="../paiement/finances.html"><i class="fa-solid fa-coins"></i> Espace financier</a></li>
+      <li><a href="../reclamations/reclamations_locataire.html"><i class="fa-solid fa-shield-halved"></i> Service client</a></li>
+      <li><a href="mon_profil.html"><i class="fa-solid fa-user"></i> Mon profil</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="../auth/login.html">
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <main class="sakan-main">
+    <div class="sakan-content">
+
+      <!-- EN-TÊTE -->
+      <div class="page-header" style="justify-content: space-between; align-items: center;">
+        <h1 style="display:flex; align-items:center; gap:12px;"><i class="fa-solid fa-check"></i> Mes Réservations</h1>
+        <button class="btn-primary" onclick="window.location.href='catalogue.html'">
+          <i class="fa-solid fa-magnifying-glass"></i> Nouvelle recherche
+        </button>
+      </div>
+
+      <!-- ONGLETS STATUT -->
+      <div class="section-tabs">
+        <button class="tab-btn active" onclick="filterResa('all')">Toutes (3)</button>
+        <button class="tab-btn" onclick="filterResa('acceptee')"><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Acceptées (1)</button>
+        <button class="tab-btn" onclick="filterResa('attente')"><i class="fa-solid fa-clock" style="color:#ca8a04"></i> En attente (1)</button>
+        <button class="tab-btn" onclick="filterResa('refusee')"><i class="fa-solid fa-circle-xmark" style="color:#dc2626"></i> Refusées (1)</button>
+      </div>
+
+      <!-- LISTE DES RESERVATIONS -->
+      <div class="resa-list">
+
+        <!-- CARTE 1 — ACCEPTÉE -->
+        <div class="resa-card" data-statut="acceptee">
+          <div class="visite-image">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" alt="Appartement">
+            <span class="badge-statut confirmee">
+              <i class="fa-solid fa-circle-check"></i> Acceptée
+            </span>
+          </div>
+          <div class="resa-body">
+            <h3>Appartement lumineux - Lac 2, Tunis</h3>
+            
+            <div class="status-timeline">
+              <div class="timeline-item step-done">
+                <div class="step-icon">✓</div>
+                <div class="step-text">Demande envoyée</div>
+                <div class="step-date">01/08/2025</div>
+              </div>
+              <div class="timeline-item step-done">
+                <div class="step-icon">✓</div>
+                <div class="step-text">Examinée par le propriétaire</div>
+                <div class="step-date">03/08/2025</div>
+              </div>
+              <div class="timeline-item step-current">
+                <div class="step-icon">3</div>
+                <div class="step-text">Acceptée</div>
+                <div class="step-date">05/08/2025</div>
+              </div>
+              <div class="timeline-item step-pending">
+                <div class="step-icon">4</div>
+                <div class="step-text">Contrat signé (en cours)</div>
+              </div>
+            </div>
+
+            <div class="resa-details" style="margin-top: 16px;">
+              <span><i class="fa-solid fa-calendar-days"></i> Septembre 2025 → Août 2026</span>
+              <span><i class="fa-solid fa-wallet"></i> 2 200 TND / mois</span>
+            </div>
+            <div class="resa-actions">
+              <button class="btn-primary btn-sm" onclick="window.location.href='mes_contrats.html'">
+                <i class="fa-solid fa-file-contract"></i> Voir le contrat
+              </button>
+              <button class="btn-outline btn-sm" onclick="showToast('📞 +216 55 123 456')">
+                <i class="fa-solid fa-phone"></i> Contacter propriétaire
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARTE 2 — REFUSÉE -->
+        <div class="resa-card" data-statut="refusee">
+          <div class="visite-image">
+            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400" alt="Studio">
+            <span class="badge-statut passee" style="color:var(--danger)">
+              <i class="fa-solid fa-circle-xmark"></i> Refusée
+            </span>
+          </div>
+          <div class="resa-body">
+            <h3>Studio moderne - Menzah 6, Tunis</h3>
+            <p class="visite-info-tip" style="background:var(--danger-light); color:var(--danger);">
+              <i class="fa-solid fa-circle-info"></i> Motif : Le bien a été loué à un autre candidat.
+            </p>
+            <div class="resa-details">
+              <span><i class="fa-solid fa-calendar-days"></i> Octobre 2025 → Septembre 2026</span>
+            </div>
+            <div class="resa-actions">
+              <button class="btn-primary btn-sm" onclick="window.location.href='catalogue.html'">
+                <i class="fa-solid fa-magnifying-glass"></i> Chercher un bien similaire
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARTE 3 — EN ATTENTE -->
+        <div class="resa-card" data-statut="attente">
+          <div class="visite-image">
+            <img src="https://images.unsplash.com/photo-1613490900233-08bc3e433b93?w=400" alt="Villa">
+            <span class="badge-statut attente">
+              <i class="fa-solid fa-clock"></i> En attente
+            </span>
+          </div>
+          <div class="resa-body">
+            <h3>Villa avec piscine - La Marsa</h3>
+            
+            <div class="status-timeline">
+              <div class="timeline-item step-done">
+                <div class="step-icon">✓</div>
+                <div class="step-text">Demande envoyée</div>
+                <div class="step-date">20/07/2025</div>
+              </div>
+              <div class="timeline-item step-current">
+                <div class="step-icon" style="animation: spin 2s linear infinite;">↻</div>
+                <div class="step-text">En cours d'examen...</div>
+              </div>
+            </div>
+
+            <div class="resa-details" style="margin-top: 16px;">
+              <span><i class="fa-solid fa-calendar-days"></i> Novembre 2025 → Octobre 2026</span>
+            </div>
+            <div class="resa-actions">
+              <button class="btn-outline btn-sm" onclick="showModal('modal-edit-resa')">
+                <i class="fa-solid fa-pen"></i> Modifier la demande
+              </button>
+              <button class="btn-primary btn-sm" style="background-color: var(--danger); border-color: var(--danger);" onclick="showToast('❌ Demande annulée')">
+                <i class="fa-solid fa-xmark"></i> Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL MODIFIER RÉSERVATION -->
+<div id="modal-edit-resa" class="modal-overlay" style="display:none">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-pen"></i> Modifier la réservation</h3>
+      <button style="border:none;background:none;font-size:24px;cursor:pointer" onclick="closeModal('modal-edit-resa')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label style="display:block;margin-bottom:8px;font-weight:600">Nouvelle date début</label>
+      <input type="date" class="sakan-input" value="2025-11-01" style="width:100%;margin-bottom:16px;">
+      
+      <label style="display:block;margin-bottom:8px;font-weight:600">Nouvelle durée</label>
+      <select class="sakan-input" style="width:100%;margin-bottom:16px;">
+        <option>6 mois</option>
+        <option selected>12 mois</option>
+        <option>24 mois</option>
+      </select>
+      
+      <label style="display:block;margin-bottom:8px;font-weight:600">Nouveau message</label>
+      <textarea class="sakan-input" rows="3" placeholder="Message complémentaire..." style="width:100%;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-edit-resa')">Annuler</button>
+      <button class="btn-primary" onclick="closeModal('modal-edit-resa'); showToast('✅ Réservation mise à jour !')">
+        <i class="fa-solid fa-check"></i> Mettre à jour
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+
+<script>
+  function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+  function filterResa(statut) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.resa-card').forEach(card => {
+      if (statut === 'all' || card.dataset.statut === statut) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
+</body>
+</html>

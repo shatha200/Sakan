@@ -1,0 +1,756 @@
+{% extends 'layouts/base_cautions_owner.html.twig' %}
+{% block cautions_content %}
+
+{# ── Flash messages ─────────────────────────────────────────── #}
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+    <div style="padding:14px 18px;border-radius:12px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;
+        {% if label == 'success' %}background:#dcfce7;color:#166534;border:1px solid #bbf7d0;
+        {% elseif label == 'warning' %}background:#fef3c7;color:#92400e;border:1px solid #fde68a;
+        {% else %}background:#fee2e2;color:#991b1b;border:1px solid #fecaca;{% endif %}">
+        <i class="fa-solid {% if label == 'success' %}fa-circle-check{% elseif label == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-xmark{% endif %}"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endfor %}
+
+{# ── Stats bar ──────────────────────────────────────────────── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#d97706,#f59e0b);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-rotate" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">À régulariser</div>
+            <div style="font-size:26px;font-weight:800;color:var(--text-primary);line-height:1.2;">{{ cautions|length }}</div>
+        </div>
+    </div>
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#dc2626,#ef4444);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-arrow-trend-down" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">Total à rembourser</div>
+            <div style="font-size:20px;font-weight:800;color:#dc2626;line-height:1.2;">
+                {{ totalARembourser|number_format(3, '.', ' ') }} <span style="font-size:13px;font-weight:600;">TND</span>
+            </div>
+        </div>
+    </div>
+    <div style="background:{% if count > 0 %}#fef3c7{% else %}#f0fdf4{% endif %};border:1px solid {% if count > 0 %}#fde68a{% else %}#bbf7d0{% endif %};border-radius:16px;padding:20px 24px;">
+        <div style="font-size:12px;font-weight:600;color:{% if count > 0 %}#92400e{% else %}#166534{% endif %};margin-bottom:4px;">
+            <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
+            {% if count == 0 %}Aucun délai en cours{% else %}Délai légal 60 jours{% endif %}
+        </div>
+        <p style="font-size:13px;color:{% if count > 0 %}#78350f{% else %}#14532d{% endif %};margin:0;line-height:1.5;">
+            {% if count > 0 %}
+                {{ count }} caution{{ count > 1 ? 's' : '' }} dépassent la date de fin contrat. Le remboursement doit être effectué dans 60 jours.
+            {% else %}
+                Aucune caution en attente de régularisation.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+{# ── Table card ─────────────────────────────────────────────── #}
+<div style="background:white;border-radius:20px;padding:0;box-shadow:var(--shadow-card);overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border);">
+        <h3 style="font-size:16px;font-weight:700;margin:0 0 2px;">
+            <i class="fa-solid fa-rotate" style="color:#d97706;margin-right:8px;"></i>
+            Cautions à régulariser — Contrats terminés
+        </h3>
+        <p style="font-size:13px;color:var(--text-muted);margin:0;">Contrats dont la date de fin est dépassée — Remboursez ou retenez la caution via Stripe</p>
+    </div>
+
+    {% if cautions is empty %}
+    <div style="padding:60px 24px;text-align:center;color:var(--text-muted);">
+        <i class="fa-solid fa-circle-check" style="font-size:48px;color:#22c55e;opacity:.4;display:block;margin-bottom:16px;"></i>
+        <p style="font-size:16px;font-weight:500;margin-bottom:4px;">Tout est régularisé !</p>
+        <p style="font-size:13px;">Aucune caution en attente de remboursement.</p>
+    </div>
+    {% else %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Locataire / Bien</th>
+                    <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Montant initial</th>
+                    <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Retenue</th>
+                    <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Charges Impayées</th>
+                    <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">À rembourser</th>
+                    <th style="padding:14px 20px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Délai restant</th>
+                    <th style="padding:14px 20px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in cautions %}
+            {% set joursRestants = c.jours_restants|default(0) %}
+            {% set aRembourser = c.a_rembourser|default(0) %}
+            <tr id="row-{{ c.caution_id }}" style="border-bottom:1px solid #f1f5f9;transition:background .15s;" onmouseover="this.style.background='#fefce8'" onmouseout="this.style.background=''">
+                <td style="padding:16px 20px;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#d97706,#f59e0b);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;font-weight:700;color:white;">
+                            {{ c.nom_locataire|first|upper }}
+                        </div>
+                        <div>
+                            <div style="font-weight:600;font-size:14px;color:var(--text-primary);">{{ c.nom_locataire }}</div>
+                            <div style="font-size:12px;color:var(--text-muted);">
+                                <i class="fa-solid fa-building" style="margin-right:4px;"></i>{{ c.nom_bien }}
+                            </div>
+                            {% if c.telephone %}
+                            <div style="font-size:11px;color:var(--text-muted);">{{ c.telephone }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td style="padding:16px 20px;text-align:right;font-size:15px;font-weight:700;color:var(--text-primary);">
+                    {{ c.montant_initial|number_format(3, '.', ' ') }} TND
+                </td>
+                <td style="padding:16px 20px;text-align:right;">
+                    {% if c.montant_retention > 0 %}
+                    <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:8px;font-size:13px;font-weight:600;">
+                        {{ c.montant_retention|number_format(3, '.', ' ') }} TND
+                    </span>
+                    {% else %}
+                    <span style="color:var(--text-muted);font-size:13px;">—</span>
+                    {% endif %}
+                </td>
+                <td style="padding:16px 20px;text-align:right;">
+                    {% if c.total_charges_impayees|default(0) > 0 %}
+                        <div style="display:inline-flex;flex-direction:column;align-items:flex-end;">
+                            <span data-charges="{{ c.total_charges_impayees }}" style="background:#fee2e2;color:#dc2626;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #fecaca;">
+                                <i class="fa-solid fa-file-invoice-dollar" style="margin-right:4px;"></i>
+                                {{ c.total_charges_impayees|number_format(3, '.', ' ') }} TND
+                            </span>
+                            {% if c.total_charges_impayees > c.montant_initial %}
+                                <span style="font-size:9px;color:#ef4444;font-weight:800;text-transform:uppercase;margin-top:2px;">⚠️ Dépasse la caution</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <span data-charges="0" style="color:#059669;font-size:12px;font-weight:600;"><i class="fa-solid fa-circle-check" style="margin-right:2px;"></i> À jour</span>
+                    {% endif %}
+                </td>
+                <td style="padding:16px 20px;text-align:right;">
+                    <span style="font-size:16px;font-weight:800;color:{% if aRembourser > 0 %}#dc2626{% else %}#059669{% endif %};">
+                        {{ aRembourser|number_format(3, '.', ' ') }} TND
+                    </span>
+                </td>
+                <td style="padding:16px 20px;text-align:center;">
+                    {% if joursRestants < 0 %}
+                    <span style="background:#fee2e2;color:#991b1b;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;">
+                        <i class="fa-solid fa-circle-exclamation" style="margin-right:4px;"></i>
+                        {{ joursRestants|abs }}j dépassés
+                    </span>
+                    {% elseif joursRestants <= 10 %}
+                    <span style="background:#fef3c7;color:#92400e;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;">
+                        <i class="fa-solid fa-clock" style="margin-right:4px;"></i>
+                        {{ joursRestants }}j restants
+                    </span>
+                    {% else %}
+                    <span style="background:#dcfce7;color:#166534;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;">
+                        {{ joursRestants }}j restants
+                    </span>
+                    {% endif %}
+                </td>
+                <td style="padding:16px 20px;text-align:center;">
+                    <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
+                        {# Bouton remboursement total — workflow 1 (Smart Liquidation: déduit charges impayées) #}
+                        {% set montantEffectif = c.montant_initial - c.total_charges_impayees|default(0) %}
+                        <button
+                            onclick="initierRemboursementTotal({{ c.caution_id }}, {{ montantEffectif }}, '{{ c.nom_locataire|e('js') }}', {{ c.total_charges_impayees|default(0) }})"
+                            title="Rembourser la caution en totalité via Stripe (charges impayées déduites)"
+                            style="padding:7px 14px;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;"
+                            onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+                            <i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Remboursement total
+                        </button>
+                        {# Bouton retenue — workflow 2 (Smart Liquidation: charges déjà déduites) #}
+                        {% set montantEffectifRetention = c.montant_initial - c.total_charges_impayees|default(0) %}
+                        <button
+                            onclick="ouvrirPanelRetenue({{ c.caution_id }}, {{ montantEffectifRetention }}, '{{ c.nom_locataire|e('js') }}', {{ c.total_charges_impayees|default(0) }})"
+                            title="Définir une retenue sur dommages (charges impayées déjà déduites)"
+                            style="padding:7px 14px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;"
+                            onmouseover="this.style.background='#334155';this.style.color='white'" onmouseout="this.style.background='#1e293b';this.style.color='#94a3b8'">
+                            <i class="fa-solid fa-scissors" style="margin-right:4px;"></i>Retenue dommages
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+{# ══════════════════════════════════════════════════════════════
+   PANEL RETENUE — Dark mode overlay (inspiré de l'app Java)
+   ══════════════════════════════════════════════════════════════ #}
+<div id="panelRetenue" style="display:none;position:fixed;top:0;right:0;width:520px;height:100vh;background:#0f172a;z-index:9990;overflow-y:auto;box-shadow:-20px 0 60px rgba(0,0,0,.5);transition:transform .3s;transform:translateX(100%);">
+    <div style="padding:28px 24px;">
+        {# Header panel #}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+            <div>
+                <h2 style="color:white;font-size:20px;font-weight:700;margin:0 0 4px;">Panel Retenue</h2>
+                <p style="color:#94a3b8;font-size:13px;margin:0;">Gestion de la caution - Sakan Paiement</p>
+            </div>
+            <button onclick="fermerPanelRetenue()" style="background:#1e293b;border:none;color:#94a3b8;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div id="panelRetenueContent" style="color:#94a3b8;text-align:center;padding:40px 0;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size:32px;color:#4f46e5;margin-bottom:12px;display:block;"></i>
+            Chargement…
+        </div>
+    </div>
+</div>
+<div id="panelBackdrop" onclick="fermerPanelRetenue()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9989;"></div>
+
+{# ── Modal Stripe ─────────────────────────────────────────────── #}
+<div id="modalStripe" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:24px;padding:32px;max-width:480px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,.25);animation:slideUp .25s ease;">
+        <div style="text-align:center;margin-bottom:24px;">
+            <div id="stripeIconWrap" style="width:64px;height:64px;background:linear-gradient(135deg,#059669,#10b981);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i class="fa-solid fa-circle-check" style="color:white;font-size:28px;"></i>
+            </div>
+            <h3 id="stripeTitre" style="font-size:20px;font-weight:700;margin:0 0 6px;">Remboursement total</h3>
+            <p id="stripeDesc" style="font-size:14px;color:#6b7280;margin:0;"></p>
+        </div>
+        <div style="background:#f8fafc;border-radius:12px;padding:20px;margin-bottom:20px;text-align:center;">
+            <div style="font-size:13px;color:#6b7280;margin-bottom:4px;">Montant à rembourser</div>
+            <div id="stripeMontant" style="font-size:36px;font-weight:800;color:#059669;"></div>
+            <div id="stripeDetail" style="font-size:12px;color:#9ca3af;margin-top:4px;"></div>
+        </div>
+        <div id="stripeRetenueBox" style="display:none;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#92400e;">
+            <i class="fa-solid fa-scissors" style="margin-right:6px;"></i>
+            <span id="stripeRetenueDesc"></span>
+        </div>
+        <div style="display:flex;gap:12px;">
+            <button onclick="fermerModalStripe()" style="flex:1;padding:12px;background:#f8fafc;color:#374151;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;">
+                Annuler
+            </button>
+            <button id="btnStripe" onclick="lancerStripe()" style="flex:2;padding:12px;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fa-brands fa-stripe" style="font-size:16px;"></i>Confirmer via Stripe
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ── Toast ────────────────────────────────────────────────────── #}
+<div id="toastReg" style="display:none;position:fixed;bottom:24px;right:24px;background:#1e293b;color:white;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:500;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:380px;border-left:4px solid #22c55e;"></div>
+
+<style>
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
+<script>
+// ── PANEL RETENUE ──────────────────────────────────────────────
+let _panelMontantInitial = 0;
+let _panelLocataire = '';
+let _panelChargesImpayees = 0;
+
+function ouvrirPanelRetenue(cautionId, montantInitial, locataire, chargesImpayees = 0) {
+    _panelMontantInitial = montantInitial;
+    _panelLocataire = locataire;
+    _panelChargesImpayees = chargesImpayees;
+
+    const panel = document.getElementById('panelRetenue');
+    const backdrop = document.getElementById('panelBackdrop');
+    document.getElementById('panelRetenueContent').innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin" style="font-size:32px;color:#4f46e5;margin-bottom:12px;display:block;"></i>Chargement…';
+    panel.style.display = 'block';
+    backdrop.style.display = 'block';
+    setTimeout(() => panel.style.transform = 'translateX(0)', 10);
+
+    fetch(`/proprietaire/cautions/api/panel/${cautionId}`)
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById('panelRetenueContent').innerHTML = html;
+            // APRÈS chargement du panel, on injecte l'Audit Intelligent
+            chargerSmartAudit(cautionId);
+        })
+        .catch(() => {
+            document.getElementById('panelRetenueContent').innerHTML =
+                '<p style="color:#f87171;">Erreur lors du chargement du panel.</p>';
+        });
+}
+
+/**
+ * Charge l'audit financier intelligent et l'injecte graphiquement dans le panel
+ */
+async function chargerSmartAudit(cautionId) {
+    const content = document.getElementById('panelRetenueContent');
+    // Créer un conteneur pour l'audit s'il n'existe pas
+    let auditBox = document.getElementById('smartAuditBox');
+    if (!auditBox) {
+        auditBox = document.createElement('div');
+        auditBox.id = 'smartAuditBox';
+        auditBox.style.cssText = 'margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid #1e293b;';
+        content.insertBefore(auditBox, content.firstChild);
+    }
+    
+    auditBox.innerHTML = '<div style="padding:15px;color:#94a3b8;font-size:13px;"><i class="fa-solid fa-microchip fa-spin" style="margin-right:8px;"></i> Audit Intelligent Sakan en cours...</div>';
+
+    try {
+        const res = await fetch(`/proprietaire/cautions/api/audit/${cautionId}`);
+        const data = await res.json();
+        
+        if (data.success && data.audit) {
+            const a = data.audit;
+            const scenarioColors = {
+                'CERTIFIED_OK': { bg: '#065f46', text: '#34d399', icon: 'fa-circle-check', label: 'Restitution Sécurisée' },
+                'POSITIVE_BALANCE': { bg: '#92400e', text: '#fbbf24', icon: 'fa-triangle-exclamation', label: 'Dettes Partielles Détectées' },
+                'CRITICAL_OVERAGE': { bg: '#7f1d1d', text: '#fca5a5', icon: 'fa-skull-crossbones', label: 'Risque Financier Critique' }
+            };
+            const config = scenarioColors[a.scenario] || scenarioColors['CERTIFIED_OK'];
+
+            let html = `
+                <div style="background:${config.bg};padding:14px;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid ${config.icon}" style="font-size:20px;color:${config.text};"></i>
+                    <div>
+                        <div style="font-size:11px;color:${config.text};font-weight:800;text-transform:uppercase;letter-spacing:1px;">Smart Scenario</div>
+                        <div style="color:white;font-size:14px;font-weight:700;">${config.label}</div>
+                    </div>
+                </div>
+                <div style="background:#1e293b;padding:16px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;">
+                        <span>Charges Impayées:</span>
+                        <span style="color:#ef4444;font-weight:700;">- ${parseFloat(a.total_charges_impayees).toFixed(3)} TND</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:13px;">
+                        <span>Dégâts (SAKAN AI):</span>
+                        <span style="color:#f59e0b;font-weight:700;">- ${parseFloat(a.total_degats_ia).toFixed(3)} TND</span>
+                    </div>
+                    <div style="border-top:1px solid #334155;padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:white;font-weight:600;font-size:14px;">Restitution Suggérée:</span>
+                        <span style="color:${a.montant_restitution_suggere <= 0 ? '#ef4444' : '#10b981'};font-size:18px;font-weight:800;">
+                            ${parseFloat(a.montant_restitution_suggere).toFixed(3)} TND
+                        </span>
+                    </div>
+                    ${a.charges_detail.length > 0 ? `
+                        <div style="margin-top:14px;background:#0f172a;border-radius:8px;padding:10px;">
+                            <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Détails des dettes</div>
+                            ${a.charges_detail.map(c => `
+                                <div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:3px;color:#94a3b8;">
+                                    <span>${c.type_charge} (${c.periode})</span>
+                                    <span style="color:#f87171;">${parseFloat(c.montant).toFixed(3)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            auditBox.innerHTML = html;
+            
+            // Auto-remplissage intelligent du montant de retenue si le propriétaire ne l'a pas encore fait
+            const inputRetenue = document.getElementById('panelMontantRetention');
+            if (inputRetenue && (parseFloat(inputRetenue.value) || 0) === 0) {
+                const totalADeduire = parseFloat(a.total_charges_impayees) + parseFloat(a.total_degats_ia);
+                inputRetenue.value = totalADeduire.toFixed(3);
+                
+                let descArea = document.getElementById('panelDescriptionRetenue');
+                if (descArea) {
+                    descArea.value = "[AUDIT AUTOMATIQUE] Déduction des charges impayées et dommages IA.";
+                }
+            }
+        } else {
+            auditBox.style.display = 'none';
+        }
+    } catch (e) {
+        console.error("Audit UI Error:", e);
+        auditBox.style.display = 'none';
+    }
+}
+
+function fermerPanelRetenue() {
+    const panel = document.getElementById('panelRetenue');
+    panel.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+        panel.style.display = 'none';
+        document.getElementById('panelBackdrop').style.display = 'none';
+    }, 300);
+}
+
+// ── STRIPE — 2 WORKFLOWS ──────────────────────────────────────────────
+let _stripeCautionId = null, _stripeAmount = null;
+
+// Workflow 1 : Remboursement TOTAL (Smart Liquidation: montant initial MOINS charges impayées)
+function initierRemboursementTotal(cautionId, montantInitial, locataire, chargesImpayees = 0) {
+    _stripeCautionId = cautionId;
+    _stripeAmount = montantInitial;
+
+    const montantInitialBrut = montantInitial + chargesImpayees;
+
+    document.getElementById('stripeTitre').textContent = 'Remboursement total de la caution';
+    document.getElementById('stripeDesc').textContent = `Caution de ${locataire} — remboursement après déduction des dettes`;
+    document.getElementById('stripeMontant').textContent = parseFloat(montantInitial).toFixed(3) + ' TND';
+    document.getElementById('stripeMontant').style.color = '#059669';
+
+    // Affichage smart des déductions
+    if (chargesImpayees > 0) {
+        document.getElementById('stripeDetail').innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;justify-content:space-between;">
+                    <span>Caution initiale:</span>
+                    <span>${parseFloat(montantInitialBrut).toFixed(3)} TND</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;color:#dc2626;">
+                    <span>− Charges impayées:</span>
+                    <span>− ${parseFloat(chargesImpayees).toFixed(3)} TND</span>
+                </div>
+                <div style="border-top:1px solid #e5e7eb;margin-top:4px;padding-top:4px;display:flex;justify-content:space-between;font-weight:700;color:#059669;">
+                    <span>= Net à rembourser:</span>
+                    <span>${parseFloat(montantInitial).toFixed(3)} TND</span>
+                </div>
+            </div>
+        `;
+    } else {
+        document.getElementById('stripeDetail').textContent = 'Aucune charge impayée — remboursement intégral de la caution';
+    }
+    document.getElementById('stripeDetail').style.display = 'block';
+
+    document.getElementById('stripeRetenueBox').style.display = chargesImpayees > 0 ? 'block' : 'none';
+    if (chargesImpayees > 0) {
+        document.getElementById('stripeRetenueDesc').textContent = `Déduction automatique de ${parseFloat(chargesImpayees).toFixed(3)} TND pour charges impayées`;
+    }
+
+    document.getElementById('stripeIconWrap').style.background = 'linear-gradient(135deg,#059669,#10b981)';
+    document.getElementById('stripeIconWrap').innerHTML = '<i class="fa-solid fa-circle-check" style="color:white;font-size:28px;"></i>';
+    document.getElementById('btnStripe').style.background = 'linear-gradient(135deg,#059669,#10b981)';
+    document.getElementById('modalStripe').style.display = 'flex';
+}
+
+// Workflow 2 : Remboursement PARTIEL après retenue (appelé depuis le panel)
+function initierRemboursementPartiel(cautionId, montantARembourser, montantRetenu, description, locataire) {
+    _stripeCautionId = cautionId;
+    _stripeAmount = montantARembourser;
+    document.getElementById('stripeTitre').textContent = 'Remboursement après retenue';
+    document.getElementById('stripeDesc').textContent = `Caution de ${locataire}`;
+    document.getElementById('stripeMontant').textContent = parseFloat(montantARembourser).toFixed(3) + ' TND';
+    document.getElementById('stripeMontant').style.color = '#d97706';
+    document.getElementById('stripeDetail').textContent = `Retenu : ${parseFloat(montantRetenu).toFixed(3)} TND`;
+    document.getElementById('stripeDetail').style.display = 'block';
+    document.getElementById('stripeRetenueBox').style.display = 'block';
+    document.getElementById('stripeRetenueDesc').textContent = description || 'Retenue pour dommages constatés';
+    document.getElementById('stripeIconWrap').style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+    document.getElementById('stripeIconWrap').innerHTML = '<i class="fa-solid fa-scissors" style="color:white;font-size:24px;"></i>';
+    document.getElementById('btnStripe').style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+    document.getElementById('modalStripe').style.display = 'flex';
+    fermerPanelRetenue();
+}
+
+// Ancienne fonction conservée pour compatibilité (redirige vers total)
+// Détecte automatiquement les charges et ajuste le montant
+function initierRemboursement(cautionId, amount, locataire) {
+    // Chercher la ligne de données pour obtenir les charges
+    const row = document.getElementById('row-' + cautionId);
+    let charges = 0;
+    if (row) {
+        // Essayer de trouver le badge de charges dans la ligne
+        const chargesBadge = row.querySelector('[data-charges]');
+        if (chargesBadge) {
+            charges = parseFloat(chargesBadge.dataset.charges) || 0;
+        }
+    }
+    const montantNet = Math.max(0, amount - charges);
+    initierRemboursementTotal(cautionId, montantNet, locataire, charges);
+}
+
+function fermerModalStripe() {
+    document.getElementById('modalStripe').style.display = 'none';
+}
+
+async function lancerStripe() {
+    const btn = document.getElementById('btnStripe');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Redirection…';
+
+    try {
+        const res = await fetch('/proprietaire/cautions/api/rembourser/initier', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            body: JSON.stringify({caution_id: _stripeCautionId, amount: _stripeAmount})
+        });
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            fermerModalStripe();
+            showToast('❌ ' + (data.error || 'Erreur Stripe'), 'error');
+        }
+    } catch (e) {
+        fermerModalStripe();
+        showToast('❌ Erreur réseau. Veuillez réessayer.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-brands fa-stripe" style="margin-right:6px;"></i>Payer via Stripe';
+    }
+}
+
+function showToast(msg, type = 'success') {
+    const colors = {success: '#22c55e', error: '#dc2626', info: '#4f46e5'};
+    const t = document.getElementById('toastReg');
+    t.style.borderLeftColor = colors[type] || colors.success;
+    t.innerHTML = msg;
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display = 'none', 5000);
+}
+
+document.getElementById('modalStripe').addEventListener('click', function(e) {
+    if (e.target === this) fermerModalStripe();
+});
+
+// ── PANEL RETENUE FUNCTIONS (moved from _panel_retenue.html.twig) ──
+function verifierPlafondRetenue(input, maxVal, totalCharges = 0) {
+    let val = parseFloat(input.value) || 0;
+    const msg = document.getElementById('erreurPlafond');
+    const container = document.getElementById('retenueInputContainer');
+    
+    if (val < 0) { input.value = 0; val = 0; }
+    if (val > maxVal) {
+        input.value = maxVal;
+        val = maxVal;
+        if(container) container.style.borderColor = '#f87171';
+        msg.style.display = 'block';
+    } else {
+        if(container) container.style.borderColor = '#8b5cf6'; // Keep focus color while editing
+        msg.style.display = 'none';
+        document.getElementById('panelDescriptionRetenue').style.borderColor = '#334155';
+    }
+    
+    // ── Live Update Récapitulatif ──
+    const rowRetenue = document.getElementById('liveRetenueRow');
+    const dispRetenue = document.getElementById('liveRetenueDisplay');
+    const dispNet = document.getElementById('liveNetDisplay');
+    
+    if (val > 0) {
+        if(rowRetenue) rowRetenue.style.display = 'flex';
+        if(dispRetenue) dispRetenue.textContent = '− ' + val.toFixed(3) + ' TND';
+    } else {
+        if(rowRetenue) rowRetenue.style.display = 'none';
+    }
+    
+    // Calcul du nouveau net
+    let net = maxVal - totalCharges - val;
+    if (net < 0) net = 0;
+    if(dispNet) dispNet.textContent = net.toFixed(3) + ' TND';
+}
+
+async function sauvegarderRetenue(cautionId) {
+    const inputMontant = document.getElementById('panelMontantRetention');
+    const inputDesc = document.getElementById('panelDescriptionRetenue');
+    const montant = parseFloat(inputMontant.value) || 0;
+    const description = inputDesc.value.trim();
+
+    if (montant > 0) {
+        if (description === '') {
+            inputDesc.style.borderColor = '#f87171';
+            inputDesc.style.backgroundColor = '#450a0a';
+            setTimeout(() => inputDesc.style.backgroundColor = '#0f172a', 300);
+            if (typeof showToast === 'function') showToast('⚠️ La description est obligatoire pour une retenue.', 'error');
+            else alert('La description est obligatoire si le montant retenu est supérieur à 0.');
+            inputDesc.focus();
+            return;
+        }
+
+        const photosList = document.getElementById('photosListPanel');
+        const hasUpload = photosList && photosList.querySelectorAll('[data-uploaded]').length > 0;
+        if (!hasUpload) {
+            if (typeof showToast === 'function') showToast('⚠️ La photo justificative est obligatoire pour justifier la retenue.', 'error');
+            else alert('Veuillez ajouter au moins une photo justificative pour cette retenue.');
+            return;
+        }
+    }
+    inputDesc.style.borderColor = '#334155';
+
+    const btnSave = document.getElementById('btnSauvegarderRetenue');
+    btnSave.disabled = true;
+    btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>Sauvegarde...';
+
+    try {
+        const res = await fetch('/proprietaire/cautions/api/retenue/confirmer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            body: JSON.stringify({caution_id: cautionId, retention: montant, description: description})
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (typeof showToast === 'function') showToast('✅ Retenue sauvegardée ! Finalisez le remboursement.', 'success');
+            btnSave.style.opacity = '0.5';
+            btnSave.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px;"></i>Retenue sauvegardée';
+
+            // Calculer et afficher le montant à rembourser
+            const montantARembourser = (_panelMontantInitial > 0 ? _panelMontantInitial : parseFloat(document.getElementById('panelMontantRetention').max || 0)) - montant;
+            const wrapper = document.getElementById('btnFinaliserWrapper');
+            const display = document.getElementById('montantFinaliserDisplay');
+            if (wrapper && display) {
+                display.textContent = montantARembourser.toFixed(3) + ' TND';
+                wrapper.style.display = 'block';
+                // Stocker les données pour initierRemboursementPartiel
+                wrapper.dataset.cautionId = cautionId;
+                wrapper.dataset.montantARembourser = montantARembourser;
+                wrapper.dataset.montantRetenu = montant;
+                wrapper.dataset.description = description;
+                wrapper._locataire = _panelLocataire;
+            }
+        } else {
+            if (typeof showToast === 'function') showToast('❌ Erreur : Vérifiez les informations.', 'error');
+            else alert('Erreur : Vérifiez les informations.');
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:8px;"></i>Sauvegarder la retenue';
+        }
+    } catch (e) {
+        alert('Erreur réseau. Veuillez réessayer.');
+        btnSave.disabled = false;
+        btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:8px;"></i>Sauvegarder la retenue';
+    }
+}
+
+function finaliserRemboursementPartiel() {
+    const wrapper = document.getElementById('btnFinaliserWrapper');
+    if (!wrapper) return;
+    const cautionId = parseInt(wrapper.dataset.cautionId);
+    const montantARembourser = parseFloat(wrapper.dataset.montantARembourser);
+    const montantRetenu = parseFloat(wrapper.dataset.montantRetenu);
+    const description = wrapper.dataset.description;
+    const locataire = wrapper._locataire || _panelLocataire || 'le locataire';
+    initierRemboursementPartiel(cautionId, montantARembourser, montantRetenu, description, locataire);
+}
+
+async function uploadPhotoPanel(input, cautionId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+        if (typeof showToast === 'function') showToast('❌ Le fichier dépasse 5 MB.', 'error');
+        else alert('Le fichier dépasse la taille limite de 5 MB.');
+        input.value = '';
+        return;
+    }
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+        if (typeof showToast === 'function') showToast('❌ Type de fichier non supporté.', 'error');
+        else alert('Veuillez sélectionner une image valide.');
+        input.value = '';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const container = document.getElementById('photosListPanel');
+    const loadingEl = document.createElement('div');
+    loadingEl.style.cssText = 'background:#0f172a;border-radius:8px;padding:12px;margin-bottom:8px;color:#94a3b8;font-size:13px;display:flex;align-items:center;gap:10px;';
+    loadingEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:#4f46e5;"></i> SAKAN AI analyse en cours...';
+    container.insertBefore(loadingEl, container.firstChild);
+
+    try {
+        const res = await fetch(`/proprietaire/cautions/api/upload-photo/${cautionId}`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success && data.analyse) {
+            const a       = data.analyse;
+            const source  = a.source || 'sakan_ai_texte';
+            const hasYolo = data.tags_detectes && data.tags_detectes.length > 0;
+
+            // ── Couleur selon gravité ────────────────────────────────
+            const graviteColor = {
+                'CRITIQUE': '#ef4444', 'IMPORTANT': '#f97316',
+                'MODERE': '#f59e0b',   'MINEUR': '#3b82f6', 'AUCUN': '#64748b'
+            }[a.gravite] || '#64748b';
+
+            // ── Badge source IA ──────────────────────────────────────
+            const sourceBadge = source === 'yolo_only'
+                ? `<span style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;padding:2px 9px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.3px;"><i class="fa-solid fa-robot" style="margin-right:3px;font-size:8px;"></i>SAKAN AI (Vision)</span>`
+                : source === 'sakan_ai_complet'
+                ? `<span style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:2px 9px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.3px;"><i class="fa-solid fa-robot" style="margin-right:3px;font-size:8px;"></i>SAKAN AI (Complet)</span>`
+                : `<span style="background:#1e293b;color:#94a3b8;padding:2px 9px;border-radius:10px;font-size:9px;font-weight:600;"><i class="fa-solid fa-brain" style="margin-right:3px;font-size:8px;"></i>SAKAN AI (Texte)</span>`;
+
+            // ── Tags YOLO détectés ───────────────────────────────────
+            let tagsHtml = '';
+            if (hasYolo) {
+                tagsHtml = `
+                    <div style="margin-top:10px;">
+                        <div style="font-size:9px;color:#6366f1;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">
+                            <i class="fa-solid fa-crosshairs" style="margin-right:3px;"></i>Détections YOLOv8 Sakan
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                            ${data.tags_detectes.map(t =>
+                                `<span style="background:#1e3a5f;color:#38bdf8;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;">
+                                    ${t.label_fr || t.tag} <span style="opacity:.6;font-size:9px;">${Math.round(t.confidence*100)}%</span>
+                                </span>`
+                            ).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            // ── Description (FR unie depuis Sakan AI) ──────────
+            const descFr = a.description_fr || a.description_courte || '';
+
+            let descHtml = '';
+            if (source === 'yolo_only') {
+                descHtml = `<div style="color:#a5b4fc;font-size:12px;line-height:1.5;">
+                    ${hasYolo ? 'Dommages identifiés : ' + data.tags_detectes.map(t => t.label_fr || t.tag).join(', ') + '.' : 'Dommage détecté.'}
+                    </div>`;
+            } else if (source === 'manual') {
+                descHtml = `<div style="color:#475569;font-size:12px;">Photo sauvegardée — saisissez la description ci-dessous.</div>`;
+            } else if (descFr) {
+                descHtml = `
+                    <div style="margin-bottom:6px;">
+                        <div style="color:#e2e8f0;font-size:12px;line-height:1.5;">${descFr}</div>
+                    </div>`;
+            }
+
+            // ── Construire la carte ──────────────────────────────────
+            const card = document.createElement('div');
+            card.setAttribute('data-uploaded', '1');
+            card.style.cssText = 'background:#0f172a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:12px;';
+            card.innerHTML = `
+                <div style="display:flex;align-items:flex-start;gap:10px;">
+                    <img src="${data.url}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;border:2px solid #1e3a5f;" alt="Photo">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            ${sourceBadge}
+                            <span style="background:${graviteColor};color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">${a.gravite || '—'}</span>
+                        </div>
+                        <div style="font-size:13px;font-weight:700;color:white;margin-bottom:6px;">${a.type_dommage || 'Dommage'}</div>
+                        ${descHtml}
+                        ${tagsHtml}
+                    </div>
+                </div>
+            `;
+            container.replaceChild(card, loadingEl);
+
+            // ── Pré-remplir la justification avec la description FR ──
+            const descInput = document.getElementById('panelDescriptionRetenue');
+            if (descInput && !descInput.value.trim()) {
+                if (descFr && source !== 'manual') {
+                    descInput.value = descFr;
+                } else if (hasYolo) {
+                    descInput.value = 'Dommages détectés par YOLOv8 Sakan : ' + data.tags_detectes.map(t => t.label_fr || t.tag).join(', ') + '.';
+                }
+            }
+
+            // ── Toast adapté ─────────────────────────────────────────
+            if (source === 'yolo_only') {
+                if (typeof showToast === 'function')
+                    showToast('🤖 Photo analysée par SAKAN AI (Modèle de vision).', 'info');
+            } else if (source === 'manual') {
+                if (typeof showToast === 'function')
+                    showToast('📷 Photo enregistrée. Décrivez les dommages manuellement.', 'info');
+            } else {
+                if (typeof showToast === 'function')
+                    showToast('✅ Analyse complète par SAKAN AI.', 'success');
+            }
+        } else {
+            loadingEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#f87171;margin-right:6px;"></i><span style="color:#94a3b8;font-size:12px;">Erreur lors de l'envoi. Veuillez réessayer.</span>`;
+        }
+    } catch (e) {
+        loadingEl.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#f87171;margin-right:6px;"></i><span style="color:#94a3b8;font-size:12px;">Erreur réseau. Vérifiez votre connexion.</span>';
+    } finally {
+        input.value = '';
+    }
+}
+</script>
+
+{% endblock %}

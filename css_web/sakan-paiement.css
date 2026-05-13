@@ -1,0 +1,249 @@
+/* sakan-paiement.css */
+/* Section Header */
+.section-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.section-tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+}
+.tab-btn.active {
+  color: var(--primary);
+}
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--primary);
+}
+
+/* KPI Finances */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.kpi-finances, .kpi-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.kpi-attente .kpi-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.kpi-paye .kpi-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.kpi-caution .kpi-icon { background: rgba(94, 23, 235, 0.1); color: var(--primary); }
+.kpi-total .kpi-icon { background: var(--bg-color); color: var(--text-main); }
+
+.kpi-body { flex: 1; margin-bottom: 20px; }
+.kpi-label { color: var(--text-muted); font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.kpi-montant { font-size: 28px; font-weight: 900; color: var(--text-main); margin-bottom: 4px; }
+.kpi-sub { color: var(--text-muted); font-size: 13px; }
+
+/* Table Paiements */
+.table-paiements {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+.table-paiements th, .table-paiements td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.table-paiements th {
+  background: var(--bg-color);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 14px;
+}
+.col-type { font-weight: bold; }
+.col-statut { text-align: center; }
+
+/* Badges Statut */
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.badge-paye { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+.badge-attente { background: #fef9c3; color: #ca8a04; border: 1px solid #fde047; }
+.badge-retard { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.badge-refusee { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+
+/* Buttons Payment */
+.btn-payer {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-telecharger, .btn-imprimer {
+  background: white;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Card Contrat Recap */
+.card-contrat-recap {
+  display: flex;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  gap: 24px;
+  margin-bottom: 32px;
+  align-items: center;
+}
+.recap-image img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.recap-infos { flex: 1; }
+.recap-infos h3 { font-size: 20px; margin-bottom: 12px; }
+.recap-infos p { color: var(--text-muted); font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.recap-montants { display: flex; gap: 16px; }
+.montant-chip {
+  background: var(--bg-color);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+}
+.montant-chip span { color: var(--text-muted); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.montant-chip strong { font-size: 18px; color: var(--text-main); font-weight: 900; }
+.montant-chip.caution { background: rgba(16, 185, 129, 0.1); }
+.montant-chip.caution strong { color: var(--success); }
+
+/* Visites & Reservations Cards */
+.visites-grid, .resa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.visite-card, .resa-card {
+  display: flex;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  gap: 24px;
+  align-items: center;
+}
+.visite-image { position: relative; width: 180px; height: 140px; }
+.visite-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+.badge-statut { position: absolute; top: 12px; left: 12px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: white; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.badge-statut.confirmee { color: var(--success); }
+.badge-statut.attente { color: var(--warning); }
+.badge-statut.passee { color: var(--text-muted); }
+
+.visite-body, .resa-body { flex: 1; }
+.visite-body h3, .resa-body h3 { font-size: 18px; margin-bottom: 12px; }
+.visite-details, .resa-details { display: flex; gap: 16px; color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+.visite-details span i, .resa-details span i { margin-right: 6px; }
+.visite-info-tip { background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 12px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; margin-bottom: 16px; display: inline-block; }
+
+.visite-actions, .resa-actions { display: flex; gap: 12px; }
+.btn-sm { padding: 8px 16px; font-size: 13px; }
+.btn-qr { background: var(--text-main); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-md); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+/* Timeline Réservation */
+.status-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 20px 0;
+}
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.step-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: bold;
+}
+.step-done .step-icon { background: #dcfce7; color: #16a34a; }
+.step-done .step-text { font-weight: 600; color: var(--text-main); }
+.step-done .step-date { color: var(--text-muted); font-size: 12px; margin-left: auto; }
+
+.step-current .step-icon { background: var(--primary-light); color: var(--primary); }
+.step-current .step-text { font-weight: bold; color: var(--primary); }
+
+.step-pending .step-icon { background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border); }
+.step-pending .step-text { color: var(--text-muted); }
+
+/* QR Modal Specific */
+.qr-container { padding: 32px; background: var(--bg-color); border-radius: 16px; display: inline-block; margin-bottom: 24px; }
+.qr-container img { width: 200px; height: 200px; }
+.qr-infos { margin-bottom: 24px; }
+.qr-infos h4 { font-size: 20px; margin-bottom: 16px; }
+.qr-infos p { color: var(--text-muted); font-weight: 500; margin-bottom: 8px; font-size: 15px; }
+.qr-instruction { font-style: italic; margin-top: 16px; margin-bottom: 16px; color: var(--text-main) !important; font-weight: 600 !important; }
+.qr-validity { background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 12px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; }
+
+.stars-selector { display: flex; gap: 8px; font-size: 28px; color: var(--border); cursor: pointer; margin: 16px 0; justify-content: center; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }

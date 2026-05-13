@@ -1,0 +1,256 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Annonces - Admin{% endblock %}
+{% block page_title %}Gestion des annonces{% endblock %}
+
+{% block page_actions %}
+  <button type="button" class="btn-primary" onclick="openAnnonceCreate()">
+    <i class="fa-solid fa-plus"></i> Ajouter une annonce
+  </button>
+{% endblock %}
+
+{% block content %}
+  <section class="admin-kpi-grid admin-kpi-grid-users">
+    <article class="admin-mini-kpi"><span>Total annonces</span><strong>{{ stats.total }}</strong></article>
+    <article class="admin-mini-kpi"><span>Disponibles</span><strong>{{ stats.disponibles }}</strong></article>
+    <article class="admin-mini-kpi"><span>Occupees</span><strong>{{ stats.occupees }}</strong></article>
+    <article class="admin-mini-kpi"><span>Bientot</span><strong>{{ stats.bientot }}</strong></article>
+  </section>
+
+  <section class="card admin-soft-card">
+    <form method="get" action="{{ path('admin_annonces') }}" class="admin-inline-filters">
+      <input class="form-input" type="text" name="q" value="{{ filters.q }}" placeholder="Rechercher titre ou proprietaire">
+      <select class="form-input" name="status">
+        {% for option in status_options %}
+          <option value="{{ option }}" {{ filters.status == option ? 'selected' : '' }}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-secondary" type="submit"><i class="fa-solid fa-filter"></i> Filtrer</button>
+      <a class="btn-secondary" href="{{ path('admin_annonces') }}">Reinitialiser</a>
+    </form>
+
+    <form id="bulk-delete-annonces-form" method="post" action="{{ path('admin_annonces') }}" onsubmit="return confirm('Supprimer définitivement les annonces sélectionnées ?');" style="display:none;">
+      <input type="hidden" name="action" value="bulk_delete_annonces">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_bulk_delete_annonces') }}">
+    </form>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;">
+      <button type="submit" form="bulk-delete-annonces-form" class="btn-danger btn-sm" id="bulk-delete-annonces-btn" disabled>
+        <i class="fa-solid fa-trash"></i> Supprimer la sélection (<span id="bulk-annonces-count">0</span>)
+      </button>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="sakan-table">
+        <thead>
+          <tr>
+            <th style="width:30px;"><input type="checkbox" id="select-all-annonces" title="Tout sélectionner"></th>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Proprietaire</th>
+            <th>Email</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if annonces is empty %}
+            <tr><td class="admin-empty" colspan="7">Aucune annonce trouvee.</td></tr>
+          {% else %}
+            {% for item in annonces %}
+              <tr>
+                <td><input type="checkbox" class="annonce-bulk-chk" name="annonce_ids[]" value="{{ item.id }}" form="bulk-delete-annonces-form"></td>
+                <td>#{{ item.id }}</td>
+                <td>{{ item.titre }}</td>
+                <td>{{ item.owner_name }}</td>
+                <td>{{ item.owner_email }}</td>
+                <td>
+                  {% set statusLabel = item.statut|lower %}
+                  {% set badgeClass = 'badge-blue' %}
+                  {% if 'disp' in statusLabel %}{% set badgeClass = 'badge-ok' %}
+                  {% elseif 'occ' in statusLabel %}{% set badgeClass = 'badge-err' %}
+                  {% elseif 'bient' in statusLabel %}{% set badgeClass = 'badge-warn' %}
+                  {% endif %}
+                  <span class="badge {{ badgeClass }}">{{ item.statut }}</span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <button
+                      type="button"
+                      class="btn-secondary btn-sm js-open-annonce-edit"
+                      data-id="{{ item.id }}"
+                      data-title="{{ item.titre }}"
+                      data-status="{{ item.statut|lower }}"
+                      data-csrf="{{ csrf_token('admin_update_annonce_' ~ item.id) }}"
+                      title="Modifier"
+                    >
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+
+                    <form method="post" action="{{ path('admin_annonces') }}" onsubmit="return confirm('Supprimer cette annonce ?');">
+                      <input type="hidden" name="action" value="delete_annonce">
+                      <input type="hidden" name="annonce_id" value="{{ item.id }}">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_delete_annonce_' ~ item.id) }}">
+                      <button type="submit" class="btn-danger btn-sm" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div id="annonce-create-modal" class="admin-modal" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-head">
+        <h3>Ajouter une annonce</h3>
+        <button type="button" class="admin-close" onclick="closeAnnonceCreate()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form method="post" action="{{ path('admin_annonces') }}" class="admin-grid-form">
+        <input type="hidden" name="action" value="create_annonce">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_create_annonce') }}">
+
+        <label>Titre<input class="form-input" type="text" name="titre" required placeholder="Ex: Appartement S+2 Centre-Ville"></label>
+
+        <label>Proprietaire
+          <select class="form-input" name="proprietaire_id">
+            <option value="">-- Aucun --</option>
+            {% for o in proprietaires %}
+              <option value="{{ o.id }}">{{ o.nom }}{% if o.email %} ({{ o.email }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>Statut
+          <select class="form-input" name="statut">
+            <option value="disponible" selected>Disponible</option>
+            <option value="occupe">Occupé</option>
+            <option value="bientot">Bientôt</option>
+          </select>
+        </label>
+
+        <label>Description<textarea class="form-input" name="description" rows="3" placeholder="Description optionnelle"></textarea></label>
+
+        <div class="admin-form-actions">
+          <button type="button" class="btn-secondary" onclick="closeAnnonceCreate()">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="annonce-edit-modal" class="admin-modal" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-head">
+        <h3>Modifier annonce</h3>
+        <button type="button" class="admin-close" onclick="closeAnnonceEdit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form method="post" action="{{ path('admin_annonces') }}" class="admin-grid-form">
+        <input type="hidden" name="action" value="update_annonce">
+        <input type="hidden" name="annonce_id" id="edit-annonce-id">
+        <input type="hidden" name="_csrf_token" id="edit-annonce-csrf">
+
+        <label>Titre<input class="form-input" type="text" id="edit-annonce-title" name="titre" required></label>
+        <label>Statut
+          <select class="form-input" id="edit-annonce-status" name="statut">
+            <option value="disponible">Disponible</option>
+            <option value="occupe">Occupé</option>
+            <option value="bientot">Bientôt</option>
+          </select>
+        </label>
+
+        <div class="admin-form-actions">
+          <button type="button" class="btn-secondary" onclick="closeAnnonceEdit()">Annuler</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    function openModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openAnnonceCreate() { openModal('annonce-create-modal'); }
+    function closeAnnonceCreate() { closeModal('annonce-create-modal'); }
+    function closeAnnonceEdit() { closeModal('annonce-edit-modal'); }
+
+    function normalizeStatus(raw) {
+      const s = (raw || '').toLowerCase().trim();
+      if (s.indexOf('disp') !== -1) return 'disponible';
+      if (s.indexOf('occ') !== -1) return 'occupe';
+      if (s.indexOf('bient') !== -1) return 'bientot';
+      return 'disponible';
+    }
+
+    document.querySelectorAll('.js-open-annonce-edit').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById('edit-annonce-id').value = btn.dataset.id;
+        document.getElementById('edit-annonce-title').value = btn.dataset.title || '';
+        document.getElementById('edit-annonce-status').value = normalizeStatus(btn.dataset.status);
+        document.getElementById('edit-annonce-csrf').value = btn.dataset.csrf || '';
+        openModal('annonce-edit-modal');
+      });
+    });
+
+    ['annonce-edit-modal', 'annonce-create-modal'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('click', (event) => {
+        if (event.target.id === id) closeModal(id);
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeModal('annonce-edit-modal');
+        closeModal('annonce-create-modal');
+      }
+    });
+
+    // Bulk delete annonces: select-all + counter + enable/disable submit button
+    (function() {
+      const selAll = document.getElementById('select-all-annonces');
+      const btn = document.getElementById('bulk-delete-annonces-btn');
+      const cnt = document.getElementById('bulk-annonces-count');
+      const chks = document.querySelectorAll('.annonce-bulk-chk');
+      if (!btn || !cnt) return;
+
+      function update() {
+        let n = 0;
+        chks.forEach((c) => { if (c.checked) n++; });
+        cnt.textContent = String(n);
+        btn.disabled = n === 0;
+        if (selAll) {
+          selAll.checked = n > 0 && n === chks.length;
+          selAll.indeterminate = n > 0 && n < chks.length;
+        }
+      }
+
+      if (selAll) {
+        selAll.addEventListener('change', () => {
+          chks.forEach((c) => { c.checked = selAll.checked; });
+          update();
+        });
+      }
+      chks.forEach((c) => c.addEventListener('change', update));
+      update();
+    })();
+  </script>
+{% endblock %}

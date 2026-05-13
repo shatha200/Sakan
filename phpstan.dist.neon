@@ -1,0 +1,13 @@
+parameters:
+    level: 8
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/
+    ignoreErrors:
+        - '#Instantiated class Endroid\\QrCode\\.*not found#'
+        - identifier: classConstant.unused
+        - identifier: property.onlyWritten

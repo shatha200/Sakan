@@ -1,0 +1,24 @@
+<script>
+(() => {
+    function frenchValidityMessage(el) {
+        const v = el.validity;
+        if (v.valueMissing) return 'Veuillez remplir ce champ.';
+        if (v.typeMismatch && el.type === 'email') return 'Veuillez saisir une adresse e-mail valide.';
+        if (v.patternMismatch) return 'Le format saisi est invalide.';
+        if (v.tooShort) return `Ce champ doit contenir au moins ${el.minLength} caracteres.`;
+        if (v.tooLong) return `Ce champ doit contenir au maximum ${el.maxLength} caracteres.`;
+        return 'Valeur invalide.';
+    }
+
+    document.querySelectorAll('form input, form textarea, form select').forEach((el) => {
+        el.addEventListener('invalid', function () {
+            this.setCustomValidity(frenchValidityMessage(this));
+        });
+
+        const clear = function () { this.setCustomValidity(''); };
+        el.addEventListener('input', clear);
+        el.addEventListener('change', clear);
+    });
+})();
+</script>
+

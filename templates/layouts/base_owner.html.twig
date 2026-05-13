@@ -1,0 +1,296 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="sakan-layout">
+    <nav class="sakan-sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Sakan" style="height: 40px; object-fit: contain;">
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="{{ path('owner_dashboard') }}"
+                   class="{{ app.request.get('_route') == 'owner_dashboard' ? 'active' : '' }}">
+                    <i class="fa-solid fa-chart-pie"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_biens') }}"
+                   class="{{ app.request.get('_route') == 'owner_biens' ? 'active' : '' }}">
+                    <i class="fa-solid fa-building"></i> Mes propriétés
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_ajouter_bien') }}"
+                   class="{{ app.request.get('_route') == 'owner_ajouter_bien' ? 'active' : '' }}">
+                    <i class="fa-solid fa-plus"></i> Ajouter un bien
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_visites') }}"
+                   class="{{ app.request.get('_route') == 'owner_visites' ? 'active' : '' }}">
+                    <i class="fa-solid fa-calendar-check"></i> Visites
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_reservations') }}"
+                   class="{{ app.request.get('_route') in ['owner_reservations', 'owner_reservation_creer_contrat'] ? 'active' : '' }}">
+                    <i class="fa-solid fa-check"></i> Réservations
+                </a>
+            </li>
+{% set contrat_owner_routes = [
+    'proprietaire_contrats_liste',
+    'contrat_nouveau',
+    'owner_reservation_creer_contrat',
+    'contrat_voir',
+    'contrat_signer',
+    'contrat_pdf'
+] %}
+            <li>
+                <a href="{{ path('proprietaire_contrats_liste') }}"
+                   class="{{ app.request.get('_route') in contrat_owner_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-file-contract"></i> Contrats
+                </a>
+            </li>
+{% set revenus_routes = ['owner_revenus', 'owner_revenus_paiements', 'owner_revenus_retards', 'owner_revenus_journal', 'owner_loyers'] %}
+            <li>
+                <a href="{{ path('owner_revenus') }}"
+                   class="{{ app.request.get('_route') in revenus_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-money-bill-trend-up"></i> Revenus
+                </a>
+            </li>
+{% set charges_routes = ['owner_charges', 'owner_charges_gestion', 'owner_charges_annuels'] %}
+            <li>
+                <a href="{{ path('owner_charges') }}"
+                   class="{{ app.request.get('_route') in charges_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-receipt"></i> Charges
+                </a>
+            </li>
+{% set cautions_routes = ['owner_cautions', 'owner_cautions_actifs', 'owner_cautions_regulariser', 'owner_cautions_archive'] %}
+            <li>
+                <a href="{{ path('owner_cautions') }}"
+                   class="{{ app.request.get('_route') in cautions_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-shield-halved"></i> Cautions
+                </a>
+            </li>
+{% set penalites_routes = ['owner_penalites_dashboard', 'owner_penalites_configuration'] %}
+            <li>
+                <a href="{{ path('owner_penalites_dashboard') }}"
+                   class="{{ app.request.get('_route') in penalites_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-gavel"></i> Pénalités
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_reclamations') }}"
+                   class="{{ app.request.get('_route') == 'owner_reclamations' ? 'active' : '' }}">
+                    <i class="fa-solid fa-shield-halved"></i> réclamations
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_notifications') }}"
+                   class="{{ app.request.get('_route') == 'owner_notifications' ? 'active' : '' }}">
+                    <i class="fa-solid fa-bell"></i> Notifications
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('owner_profil') }}"
+                   class="{{ app.request.get('_route') == 'owner_profil' ? 'active' : '' }}">
+                    <i class="fa-solid fa-user"></i> Mon profil
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{{ path('app_logout') }}">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
+    </nav>
+
+    <main class="sakan-main">
+        <!-- TOPBAR avec Role Switcher -->
+        <header class="sakan-topbar" style="margin-bottom: 24px;">
+            <div class="topbar-context">
+                <span class="context-chip">
+                    <i class="fa-solid fa-building"></i>
+                    Espace propriétaire
+                </span>
+            </div>
+            <div class="topbar-actions">
+                <button type="button" class="theme-toggle" onclick="toggleSakanTheme()" aria-label="Changer le thème" title="Changer le thème">
+                    <span class="knob">
+                        <i class="fa-solid fa-sun icon-sun"></i>
+                        <i class="fa-solid fa-moon icon-moon"></i>
+                    </span>
+                </button>
+                {% set owner_unread = owner_notif_count() %}
+                {% set owner_recent = owner_notif_recent(6) %}
+                <div class="owner-notif-wrap">
+                    <button type="button" class="icon-btn owner-notif-btn" onclick="toggleOwnerNotif()" aria-label="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        {% if owner_unread > 0 %}
+                            <span class="owner-notif-badge">{{ owner_unread > 99 ? '99+' : owner_unread }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="owner-notif-dropdown" id="owner-notif-dropdown" aria-hidden="true">
+                        <div class="owner-notif-head">
+                            <strong>Notifications</strong>
+                            {% if owner_unread > 0 %}
+                                <form method="post" action="{{ path('owner_notifications_read_all') }}" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('owner_notifs_read_all') }}">
+                                    <button class="owner-notif-link" type="submit">Tout marquer lu</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        <ul class="owner-notif-list">
+                            {% for n in owner_recent %}
+                                <li class="owner-notif-item {{ n.is_read ? '' : 'is-unread' }}">
+                                    {% if n.type == 'ALERTE_BIEN' %}
+                                        <i class="fa-solid fa-shield-circle-exclamation" style="color:#ef4444;"></i>
+                                    {% elseif n.type == 'ALERTE_CONSOMMATION' %}
+                                        <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
+                                    {% elseif n.type == 'VUES_PALIER' %}
+                                        <i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-bell"></i>
+                                    {% endif %}
+                                    <div class="owner-notif-body">
+                                        <p>{{ n.message }}</p>
+                                        <time>{{ n.created_at|date('d/m/Y H:i') }}</time>
+                                    </div>
+                                </li>
+                            {% else %}
+                                <li class="owner-notif-empty">Aucune notification.</li>
+                            {% endfor %}
+                        </ul>
+                        <a class="owner-notif-see-all" href="{{ path('owner_notifications') }}">Voir toutes</a>
+                    </div>
+                </div>
+                <div class="user-profile">
+                    <img src="{{ path('app_profile_avatar') }}" alt="Avatar">
+                </div>
+            </div>
+        </header>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            </div>
+            {% block page_actions %}{% endblock %}
+        </div>
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<!-- SAKAN AI CHATBOT (IA Feature) -->
+<div id="sakan-chatbot" style="position: fixed; bottom: 30px; right: 30px; z-index: 5000; font-family: 'Inter', sans-serif;">
+    <!-- Chat Bubble -->
+    <div id="chat-bubble" onclick="toggleChat()" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <i class="fa-solid fa-robot"></i>
+    </div>
+    
+    <!-- Chat Window -->
+    <div id="chat-window" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: white; border-radius: 24px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); overflow: hidden; flex-direction: column;">
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 20px; color: white; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Sakan Assistant IA</h3>
+                <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Propriétaire Premium</p>
+            </div>
+            <i class="fa-solid fa-xmark" onclick="toggleChat()" style="cursor: pointer; font-size: 20px;"></i>
+        </div>
+        
+        <div id="chat-messages" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f8fafc;">
+            <!-- Messages go here -->
+        </div>
+        
+        <div style="padding: 15px; background: white; border-top: 1px solid rgba(0,0,0,0.05); display: flex; gap: 10px;">
+            <input type="text" id="chat-input" placeholder="Posez votre question..." onkeypress="handleKeyPress(event)" style="flex: 1; padding: 12px 16px; border-radius: 50px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 14px; outline: none;">
+            <button onclick="sendMessage()" style="background: #6366f1; color: white; border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleChat() {
+        const chatWindow = document.getElementById('chat-window');
+        const bubble = document.getElementById('chat-bubble');
+        if (chatWindow.style.display === 'none') {
+            chatWindow.style.display = 'flex';
+            bubble.style.transform = 'scale(0.8)';
+            if (document.getElementById('chat-messages').children.length === 0) {
+                addMessage("Bonjour ! Je suis l'IA Assistant Sakan. Comment puis-je vous aider pour la gestion de vos visites ou réservations ?", 'bot');
+            }
+        } else {
+            chatWindow.style.display = 'none';
+            bubble.style.transform = 'scale(1)';
+        }
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        addMessage(text, 'user');
+        input.value = '';
+        
+        // Call Chatbot Service API
+        fetch('/api/chatbot', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.reply) addMessage(data.reply, 'bot');
+        });
+    }
+
+    function addMessage(text, sender) {
+        const container = document.getElementById('chat-messages');
+        const msgDiv = document.createElement('div');
+        const isBot = sender === 'bot';
+        
+        msgDiv.style.alignSelf = isBot ? 'flex-start' : 'flex-end';
+        msgDiv.style.maxWidth = '80%';
+        msgDiv.style.padding = '12px 16px';
+        msgDiv.style.borderRadius = isBot ? '20px 20px 20px 4px' : '20px 20px 4px 20px';
+        msgDiv.style.background = isBot ? 'white' : '#6366f1';
+        msgDiv.style.color = isBot ? '#1e293b' : 'white';
+        msgDiv.style.boxShadow = '0 2px 5px rgba(0,0,0,0.05)';
+        msgDiv.style.fontSize = '13px';
+        msgDiv.style.lineHeight = '1.5';
+        
+        // Preserve line breaks
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+</script>
+<script>
+  function toggleOwnerNotif() {
+    var el = document.getElementById('owner-notif-dropdown');
+    if (!el) return;
+    var open = el.classList.toggle('is-open');
+    el.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) {
+      var badge = document.querySelector('.owner-notif-badge');
+      if (badge) badge.style.display = 'none';
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var el = document.getElementById('owner-notif-dropdown');
+    var btn = document.querySelector('.owner-notif-btn');
+    if (!el || !btn) return;
+    if (!el.contains(e.target) && !btn.contains(e.target)) {
+      el.classList.remove('is-open');
+      el.setAttribute('aria-hidden', 'true');
+    }
+  });
+</script>
+{% endblock %}

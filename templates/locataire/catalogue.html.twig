@@ -1,0 +1,363 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Catalogue des biens — Sakan{% endblock %}
+{% block page_title %}Explorer les biens disponibles{% endblock %}
+{% block page_subtitle %}Trouvez votre logement idéal{% endblock %}
+
+{% block content %}
+    {% set filters = filters|default({'q':'','type':'','prix_max':'','surface_min':'','sort':'recent'}) %}
+    {% set allowed_types = allowed_types|default(['Appartement','Villa','Studio','Maison','Bureau']) %}
+
+    {% set total = annonces|length %}
+    {% set nb_dispo  = annonces|filter(a => a.statut == 'disponible')|length %}
+    {% set nb_bient  = annonces|filter(a => a.statut == 'bientot')|length %}
+
+    <!-- BARRE DE FILTRES -->
+    <form method="get" action="{{ path('tenant_catalogue') }}"
+          style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto auto;gap:12px;align-items:end;
+                 background:white;padding:20px 22px;border-radius:20px;box-shadow:0 4px 18px rgba(15,23,42,0.06);
+                 margin-bottom:20px;border:1px solid #eef2f7;">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;"><i class="fa-solid fa-magnifying-glass"></i> Rechercher</label>
+        <input type="text" name="q" value="{{ filters.q }}" placeholder="Titre, description, adresse..." class="sakan-input" style="width:100%;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Type</label>
+        <select name="type" class="sakan-input" style="width:100%;">
+          <option value="">Tous</option>
+          {% for t in allowed_types %}
+            <option value="{{ t }}" {{ filters.type == t ? 'selected' : '' }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Prix max (TND)</label>
+        <input type="number" min="0" name="prix_max" value="{{ filters.prix_max }}" placeholder="Ex: 2000" class="sakan-input" style="width:100%;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Surface min (m²)</label>
+        <input type="number" min="0" name="surface_min" value="{{ filters.surface_min }}" placeholder="Ex: 70" class="sakan-input" style="width:100%;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Trier par</label>
+        <select name="sort" class="sakan-input" style="width:100%;">
+          <option value="recent"    {{ filters.sort == 'recent'    ? 'selected' : '' }}>Plus récent</option>
+          <option value="prix_asc"  {{ filters.sort == 'prix_asc'  ? 'selected' : '' }}>Prix croissant</option>
+          <option value="prix_desc" {{ filters.sort == 'prix_desc' ? 'selected' : '' }}>Prix décroissant</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary" style="height:44px;"><i class="fa-solid fa-filter"></i> Filtrer</button>
+      <a href="{{ path('tenant_catalogue') }}" class="btn-secondary" title="Réinitialiser" style="height:44px;display:flex;align-items:center;"><i class="fa-solid fa-rotate-left"></i></a>
+    </form>
+
+    <!-- CHIPS DISPONIBILITÉ (filtrage temps réel JS) -->
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+      <button type="button" class="chip-statut active" data-statut="all"
+              style="padding:9px 18px;border-radius:999px;border:1.5px solid #5E17EB;background:#5E17EB;color:white;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;">
+        Tous ({{ total }})
+      </button>
+      <button type="button" class="chip-statut" data-statut="disponible"
+              style="padding:9px 18px;border-radius:999px;border:1.5px solid #e2e8f0;background:white;color:#334155;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s;">
+        <span style="color:#10b981;">●</span> Disponibles ({{ nb_dispo }})
+      </button>
+      <button type="button" class="chip-statut" data-statut="bientot"
+              style="padding:9px 18px;border-radius:999px;border:1.5px solid #e2e8f0;background:white;color:#334155;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s;">
+        <span style="color:#d97706;">●</span> Bientôt ({{ nb_bient }})
+      </button>
+    </div>
+
+    <!-- GRILLE DES ANNONCES -->
+    <div class="annonces-grid">
+
+        {% if annonces is empty %}
+            <div style="grid-column:1/-1;padding:40px;text-align:center;background:white;border-radius:20px;">
+                <i class="fa-solid fa-house-circle-xmark" style="font-size:42px;color:var(--text-muted);"></i>
+                <h3 style="margin:12px 0 4px 0;">Aucune annonce disponible</h3>
+                <p style="color:var(--text-muted);margin:0;">Revenez bientôt pour découvrir de nouveaux biens.</p>
+            </div>
+        {% endif %}
+
+        {% for a in annonces %}
+            {% set badge = a.statut == 'bientot' ? 'bientot' : 'disponible' %}
+            {% set badge_label = a.statut == 'bientot' ? 'Bientôt' : 'Disponible' %}
+            {% set isFav = a.id in (wishlist_ids|default([])) %}
+            <div class="annonce-card" data-statut="{{ a.statut }}" onclick="window.location.href='{{ a.slug is defined and a.slug ? path('tenant_annonce_detail_slug', {'slug': a.slug}) : path('tenant_annonce_detail', {'id': a.id}) }}'">
+                <div class="card-image-wrapper">
+                    {% if a.cover %}
+                        <img src="{{ a.cover | imagine_filter('annonce_thumb') }}" alt="{{ a.titre }}" class="card-img">
+                    {% else %}
+                        <div class="card-img" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);"><i class="fa-solid fa-image" style="font-size:32px;"></i></div>
+                    {% endif %}
+                    <span class="badge-statut {{ badge }}">{{ badge_label }}</span>
+                    <button type="button" class="btn-favori {{ isFav ? 'active' : '' }}" data-fav-id="{{ a.id }}"
+                            onclick="event.stopPropagation(); toggleFav(this, {{ a.id }})"
+                            style="{{ isFav ? 'color:#ef4444;' : '' }}">
+                        <i class="fa-solid fa-heart" style="{{ isFav ? 'color:#ef4444;' : '' }}"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="card-prix">{{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }} TND<span>/mois</span></div>
+                    <h3 class="card-titre">{{ a.titre }}</h3>
+                    <div class="card-localisation">
+                        <i class="fa-solid fa-location-dot"></i> {{ a.adresse_text ?: '—' }}
+                    </div>
+                    {% if a.statut == 'bientot' %}
+                        <div style="margin:8px 0;padding:8px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12.5px;font-weight:600;color:#92400e;">
+                            <i class="fa-solid fa-clock"></i>
+                            {% if a.jours_restants is not null %}
+                                Ce bien sera disponible après
+                                {% if a.jours_restants > 0 %}{{ a.jours_restants }} j{% endif %}
+                                {% if a.heures_restantes > 0 %}{% if a.jours_restants > 0 %} {% endif %}{{ a.heures_restantes }} h{% endif %}
+                                {% if a.jours_restants == 0 and a.heures_restantes == 0 %}quelques minutes{% endif %}
+                            {% else %}
+                                Date de disponibilité imprévue
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <div class="card-infos">
+                        <span><i class="fa-solid fa-bed"></i> {{ a.nombreChambres ?: 0 }} ch</span>
+                        <span><i class="fa-solid fa-ruler-combined"></i> {{ a.superficie ?: '—' }} m²</span>
+                        {% if a.bien_type %}<span><i class="fa-solid fa-house"></i> {{ a.bien_type }}</span>{% endif %}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-voir" onclick="event.stopPropagation(); window.location.href='{{ a.slug is defined and a.slug ? path('tenant_annonce_detail_slug', {'slug': a.slug}) : path('tenant_annonce_detail', {'id': a.id}) }}'">
+                            <i class="fa-solid fa-eye"></i> Voir l'annonce
+                        </button>
+                        {% if a.statut == 'disponible' %}
+                            <button class="btn-visite" onclick="event.stopPropagation(); showModal('modal-visite')">
+                                <i class="fa-solid fa-calendar-check"></i> Visite
+                            </button>
+                        {% else %}
+                            <button class="btn-visite" style="opacity:0.5;pointer-events:none;">
+                                <i class="fa-solid fa-calendar-check"></i> Bientôt
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        {% if false %}
+        <!-- CARTE BIEN 1 -->
+        <div class="annonce-card" onclick="window.location.href='{{ path('tenant_annonce_detail', {'id': 1}) }}'">
+            <div class="card-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800" alt="Appartement lumineux" class="card-img">
+                <span class="badge-statut disponible">Disponible</span>
+                <button class="btn-favori" onclick="event.stopPropagation(); this.classList.toggle('active')">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="card-prix">2 200 TND<span>/mois</span></div>
+                <h3 class="card-titre">Appartement lumineux - Lac 2, Tunis</h3>
+                <div class="card-localisation">
+                    <i class="fa-solid fa-location-dot"></i> Lac 2, Tunis
+                </div>
+                <div class="card-infos">
+                    <span><i class="fa-solid fa-bed"></i> 3 ch</span>
+                    <span><i class="fa-solid fa-shower"></i> 2 sdb</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 95 m²</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-voir" onclick="event.stopPropagation(); window.location.href='{{ path('tenant_annonce_detail', {'id': 1}) }}'">
+                        <i class="fa-solid fa-eye"></i> Voir l'annonce
+                    </button>
+                    <button class="btn-visite" onclick="event.stopPropagation(); showModal('modal-visite')">
+                        <i class="fa-solid fa-calendar-check"></i> Visite
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARTE BIEN 2 -->
+        <div class="annonce-card" onclick="window.location.href='{{ path('tenant_annonce_detail', {'id': 2}) }}'">
+            <div class="card-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800" alt="Studio moderne" class="card-img">
+                <span class="badge-statut disponible">Disponible</span>
+                <button class="btn-favori" onclick="event.stopPropagation(); this.classList.toggle('active')">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="card-prix">1 100 TND<span>/mois</span></div>
+                <h3 class="card-titre">Studio moderne - Menzah 6, Tunis</h3>
+                <div class="card-localisation">
+                    <i class="fa-solid fa-location-dot"></i> Menzah 6, Tunis
+                </div>
+                <div class="card-infos">
+                    <span><i class="fa-solid fa-bed"></i> 1 ch</span>
+                    <span><i class="fa-solid fa-shower"></i> 1 sdb</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 45 m²</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-voir" onclick="event.stopPropagation(); window.location.href='{{ path('tenant_annonce_detail', {'id': 2}) }}'">
+                        <i class="fa-solid fa-eye"></i> Voir l'annonce
+                    </button>
+                    <button class="btn-visite" onclick="event.stopPropagation(); showModal('modal-visite')">
+                        <i class="fa-solid fa-calendar-check"></i> Visite
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARTE BIEN 3 -->
+        <div class="annonce-card" onclick="window.location.href='{{ path('tenant_annonce_detail', {'id': 3}) }}'">
+            <div class="card-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800" alt="Villa avec piscine" class="card-img">
+                <span class="badge-statut disponible">Disponible</span>
+                <button class="btn-favori" onclick="event.stopPropagation(); this.classList.toggle('active')">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="card-prix">4 500 TND<span>/mois</span></div>
+                <h3 class="card-titre">Villa avec piscine - La Marsa</h3>
+                <div class="card-localisation">
+                    <i class="fa-solid fa-location-dot"></i> La Marsa
+                </div>
+                <div class="card-infos">
+                    <span><i class="fa-solid fa-bed"></i> 5 ch</span>
+                    <span><i class="fa-solid fa-shower"></i> 3 sdb</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 280 m²</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-voir" onclick="event.stopPropagation(); window.location.href='{{ path('tenant_annonce_detail', {'id': 3}) }}'">
+                        <i class="fa-solid fa-eye"></i> Voir l'annonce
+                    </button>
+                    <button class="btn-visite" onclick="event.stopPropagation(); showModal('modal-visite')">
+                        <i class="fa-solid fa-calendar-check"></i> Visite
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARTE BIEN 4 (RÉSERVÉ) -->
+        <div class="annonce-card" onclick="window.location.href='{{ path('tenant_annonce_detail', {'id': 4}) }}'">
+            <div class="card-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800" alt="Appartement cosy" class="card-img">
+                <span class="badge-statut reserve">Réservé</span>
+                <button class="btn-favori" onclick="event.stopPropagation(); this.classList.toggle('active')">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="card-prix">1 800 TND<span>/mois</span></div>
+                <h3 class="card-titre">Appartement cosy - Les Berges du Lac</h3>
+                <div class="card-localisation">
+                    <i class="fa-solid fa-location-dot"></i> Les Berges du Lac, Tunis
+                </div>
+                <div class="card-infos">
+                    <span><i class="fa-solid fa-bed"></i> 2 ch</span>
+                    <span><i class="fa-solid fa-shower"></i> 1 sdb</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 75 m²</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-voir" onclick="event.stopPropagation(); window.location.href='{{ path('tenant_annonce_detail', {'id': 4}) }}'">
+                        <i class="fa-solid fa-eye"></i> Voir l'annonce
+                    </button>
+                    <button class="btn-visite" onclick="event.stopPropagation();" style="opacity:0.5; pointer-events:none;">
+                        <i class="fa-solid fa-calendar-check"></i> Indisponible
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination-bar">
+        <button class="page-btn"><i class="fa-solid fa-chevron-left"></i> Précédent</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">Suivant <i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <!-- MODAL DEMANDE DE VISITE -->
+    <div id="modal-visite" class="modal-overlay" style="display:none">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-calendar-check"></i> Demander une visite</h3>
+                <button onclick="closeModal('modal-visite')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label>Bien sélectionné</label>
+                <p class="modal-bien-nom">Appartement lumineux - Lac 2, Tunis</p>
+                <label>Date souhaitée</label>
+                <input type="date" class="sakan-input">
+                <label>Heure préférée</label>
+                <input type="time" class="sakan-input">
+                <label>Message au propriétaire (optionnel)</label>
+                <textarea class="sakan-input" rows="3" placeholder="Bonjour, je souhaite visiter..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('modal-visite')">Annuler</button>
+                <button class="btn-primary" onclick="closeModal('modal-visite');showToast('Demande envoyée !')">
+                    <i class="fa-solid fa-check"></i> Confirmer la visite
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+    // Filtrage temps réel par statut (chips)
+    document.querySelectorAll('.chip-statut').forEach(chip => {
+        chip.addEventListener('click', function() {
+            const statut = this.dataset.statut;
+            document.querySelectorAll('.chip-statut').forEach(c => {
+                c.classList.remove('active');
+                c.style.background = 'white';
+                c.style.color = '#334155';
+                c.style.borderColor = '#e2e8f0';
+            });
+            this.classList.add('active');
+            this.style.background = '#5E17EB';
+            this.style.color = 'white';
+            this.style.borderColor = '#5E17EB';
+
+            document.querySelectorAll('.annonce-card').forEach(card => {
+                card.style.display = (statut === 'all' || card.dataset.statut === statut) ? '' : 'none';
+            });
+        });
+    });
+    const FAV_CSRF = {{ csrf_token('tenant_wishlist_toggle')|json_encode|raw }};
+    function paintFav(btn, on) {
+        const icon = btn.querySelector('i');
+        btn.classList.toggle('active', on);
+        btn.style.color = on ? '#ef4444' : '';
+        if (icon) icon.style.color = on ? '#ef4444' : '';
+    }
+    function toggleFav(btn, id) {
+        // Optimistic update — couleur instantanée
+        const wasActive = btn.classList.contains('active');
+        paintFav(btn, !wasActive);
+        const fd = new FormData();
+        fd.append('_token', FAV_CSRF);
+        fetch('/locataire/wishlist/toggle/' + id, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) { paintFav(btn, wasActive); showToast('Erreur wishlist'); return; }
+                paintFav(btn, data.added);
+                showToast(data.added ? '❤ Ajouté à la wishlist' : 'Retiré de la wishlist');
+            })
+            .catch(() => { paintFav(btn, wasActive); showToast('Erreur réseau'); });
+    }
+</script>
+{% endblock %}

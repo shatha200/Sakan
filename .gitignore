@@ -1,0 +1,52 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+*.tmp
+*.temp
+
+# Secrets and local env files
+.env
+.env.*
+.env.local
+.env.local.php
+.env.*.local
+config/secrets/prod/prod.decrypt.private.php
+
+# PHP / Composer / Symfony runtime artifacts
+/vendor/
+/var/
+/.runtime/
+/.phpunit.cache/
+/public/bundles/
+/public/assets/
+/assets/vendor/
+
+# User uploads
+/public/uploads/
+
+# Optional local database dumps/exports
+/dump*.sql
+export from admin sql csv/
+
+# Temporary / Debug files / Notes
+artifacts/
+scratch/
+a faire.txt
+compte bdd.txt
+curl-output.txt
+doctrine_issues.txt
+phpstan_*.txt
+temp_twig*.txt
+SAKAN_CONTEXT_barnding.html
+routes.json
+fix*.php
+.phpunit.result.cache
+.php-cs-fixer.cache
+.php-cs-fixer.dist.php

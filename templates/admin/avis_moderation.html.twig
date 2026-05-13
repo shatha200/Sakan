@@ -1,0 +1,81 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Modération des avis — Admin{% endblock %}
+{% block page_title %}Modération des avis{% endblock %}
+{% block page_subtitle %}Avis masqués automatiquement par le filtre anti-langage inapproprié{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  {% for label_f, messages in app.flashes(['auth_error', 'auth_success']) %}
+    {% for message in messages %}
+      <div style="padding:12px 16px;border-radius:12px;margin-bottom:16px;background:{{ label_f == 'auth_success' ? '#dcfce7' : '#fee2e2' }};color:{{ label_f == 'auth_success' ? '#166534' : '#991b1b' }};font-weight:600;">{{ message }}</div>
+    {% endfor %}
+  {% endfor %}
+
+  <div style="background:white;border-radius:20px;padding:28px;box-shadow:var(--shadow-card);margin-bottom:24px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:44px;height:44px;border-radius:12px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:20px;">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <h2 style="margin:0;font-size:18px;font-weight:800;">{{ masked|length }} avis masqué{{ masked|length > 1 ? 's' : '' }}</h2>
+        <p style="margin:2px 0 0 0;color:var(--text-muted);font-size:13px;">Contenu détecté comme inapproprié par API Ninjas.</p>
+      </div>
+    </div>
+
+    {% if masked|length == 0 %}
+      <div style="padding:32px;text-align:center;color:var(--text-muted);border:1px dashed #e2e8f0;border-radius:12px;">
+        <i class="fa-solid fa-check-circle" style="font-size:36px;color:#10b981;margin-bottom:12px;"></i>
+        <p style="margin:0;font-size:14px;">Aucun avis en attente de modération.</p>
+      </div>
+    {% else %}
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        {% for av in masked %}
+          <div style="border:1.5px solid #fecaca;background:#fef2f2;border-radius:14px;padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+              <div>
+                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#dc2626;color:white;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:8px;">
+                  <i class="fa-solid fa-triangle-exclamation"></i> MASQUÉ
+                </div>
+                <div style="font-weight:700;font-size:14px;">
+                  {{ av.auteur_nom|default('Utilisateur supprimé') }}
+                  {% if av.auteur_email %}<span style="color:var(--text-muted);font-weight:400;font-size:12px;"> — {{ av.auteur_email }}</span>{% endif %}
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                  Sur l'annonce : <strong>{{ av.annonce_titre|default('(annonce supprimée)') }}</strong>
+                  (#{{ av.annonce_id }}) — {{ av.date_creation|date('d/m/Y H:i') }}
+                </div>
+              </div>
+              <div style="color:#f59e0b;font-size:14px;white-space:nowrap;">
+                {% for i in 1..5 %}
+                  <i class="fa-{{ i <= av.note ? 'solid' : 'regular' }} fa-star"></i>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div style="background:white;border-radius:10px;padding:12px 14px;font-style:italic;color:#334155;font-size:14px;line-height:1.6;margin-bottom:12px;">
+              {{ av.commentaire }}
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <form method="post" action="{{ path('admin_avis_unmask', {id: av.id}) }}" style="margin:0;">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_avis_unmask_' ~ av.id) }}">
+                <button type="submit" class="btn-primary" style="background:#10b981;border-color:#10b981;">
+                  <i class="fa-solid fa-check"></i> Réactiver (démasquer)
+                </button>
+              </form>
+              <form method="post" action="{{ path('admin_avis_delete', {id: av.id}) }}" style="margin:0;" onsubmit="return confirm('Supprimer définitivement cet avis ? Cette action est irréversible.');">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_avis_delete_' ~ av.id) }}">
+                <button type="submit" class="btn-outline" style="color:#dc2626;border-color:#fecaca;">
+                  <i class="fa-solid fa-trash"></i> Supprimer définitivement
+                </button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

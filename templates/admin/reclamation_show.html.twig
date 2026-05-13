@@ -1,0 +1,153 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Détails Réclamation - Admin{% endblock %}
+{% block page_title %}Détails de Réclamation{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .admin-premium-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.02);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+        .admin-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-desc-box {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #374151;
+            border: 1px solid #f1f5f9;
+        }
+        .image-proof {
+            border-radius: 12px;
+            object-fit: cover;
+            width: 100%;
+            height: 120px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 2px solid #fff;
+            transition: transform 0.2s ease;
+        }
+        .image-proof:hover {
+            transform: scale(1.05);
+        }
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-fake { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .badge-real { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        
+        .badge-status {
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .b-attente { background-color: #FEF3C7; color: #D97706; }
+        .b-cours { background-color: #DBEAFE; color: #2563EB; }
+        .b-resolu { background-color: #D1FAE5; color: #059669; }
+    </style>
+{% endblock %}
+
+{% block content %}
+  <div class="mb-4 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+          <a href="{{ path('admin_reclamations') }}" class="btn-secondary" style="border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <i class="fa-solid fa-arrow-left"></i>
+          </a>
+          <h2 style="margin: 0; color: #1f2937; font-weight: 800; font-size: 1.5rem;">Détails de Réclamation</h2>
+      </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+      <div class="admin-premium-card" style="flex: 2; min-width: 320px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 1px solid #f3f4f6; padding-bottom: 20px;">
+              <div>
+                  <div style="margin-bottom: 12px;">
+                      {% set sLabel = reclamation.statut|upper %}
+                      <span class="badge-status {{ sLabel == 'EN_ATTENTE' ? 'b-attente' : (sLabel == 'EN_COURS' ? 'b-cours' : 'b-resolu') }}">
+                          {{ sLabel|replace({'_': ' '}) }}
+                      </span>
+                  </div>
+                  <h3 style="margin: 0; font-weight: 800; color: #111827; font-size: 1.4rem;">{{ reclamation.typeId.libelle ?? reclamation.type }}</h3>
+              </div>
+              <div style="text-align: right; background: #f8fafc; padding: 10px 15px; border-radius: 8px;">
+                  <span style="color: #6b7280; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Date de soumission</span><br>
+                  <strong style="color: #374151; font-size: 0.95rem;">{{ reclamation.date|date('d/m/Y') }} à {{ reclamation.date|date('H:i') }}</strong>
+              </div>
+          </div>
+          
+          <h4 class="admin-section-title"><i class="fa-solid fa-align-left text-primary"></i> Description du problème</h4>
+          <div class="admin-desc-box mb-4">
+              {{ reclamation.description|nl2br }}
+          </div>
+
+          {% if reclamation.images|length > 0 %}
+          <h4 class="admin-section-title mt-4"><i class="fa-solid fa-images text-primary"></i> Preuves fournies</h4>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              {% for image in reclamation.images %}
+                  <div style="width: 160px; text-align: center;">
+                      {% if image.imageDataUri %}
+                          <img src="{{ image.imageDataUri }}" class="image-proof" alt="Preuve">
+                      {% endif %}
+                      {% if image.fakeDetectionResult == 'FAKE' %}
+                          <span class="ai-badge badge-fake"><i class="fa-solid fa-triangle-exclamation"></i> Faux / AI</span>
+                      {% elseif image.fakeDetectionResult == 'REAL' %}
+                          <span class="ai-badge badge-real"><i class="fa-solid fa-check-circle"></i> Image Réelle</span>
+                      {% endif %}
+                  </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+      </div>
+      
+      <div class="admin-premium-card" style="flex: 1; min-width: 320px; align-self: flex-start;">
+        <h4 class="admin-section-title" style="border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;"><i class="fa-solid fa-clipboard-check text-success"></i> État du Traitement</h4>
+        
+        {% if reclamation.traitement %}
+           <div style="background: linear-gradient(145deg, #ecfdf5, #d1fae5); padding: 25px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 20px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.05);">
+               <div style="color: #059669; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                   <i class="fa-solid fa-calendar-check"></i> Traité le {{ reclamation.traitement.dateTraitement|date('d/m/Y') }}
+               </div>
+               <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px;">
+                   <p style="margin: 0; color: #065f46; font-size: 0.95rem; line-height: 1.6;">{{ reclamation.traitement.reponse|nl2br }}</p>
+               </div>
+           </div>
+        {% else %}
+           <div style="text-align: center; padding: 30px 10px;">
+               <div style="background: #f3f4f6; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; color: #9ca3af; font-size: 1.5rem;">
+                   <i class="fa-solid fa-clock"></i>
+               </div>
+               <p style="color: #6b7280; font-size: 1rem; font-weight: 500; margin-bottom: 25px;">Cette réclamation est en attente de traitement par l'administration.</p>
+               <a href="{{ path('admin_reclamation_traiter', {'id': reclamation.id}) }}" class="btn-secondary" style="background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); transition: transform 0.2s;">
+                    <i class="fa-solid fa-bolt"></i> Traiter maintenant
+               </a>
+           </div>
+        {% endif %}
+      </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sakan{% endblock %}</title>
+    <link rel="icon" type="image/png" href="/images/sakan-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {% block stylesheets %}
+        {{ importmap('app') }}
+    {% endblock %}
+    <script>
+      (function(){try{var t=localStorage.getItem('sakan-theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+    </script>
+</head>
+<body>
+    {% block body %}{% endblock %}
+    <script>
+      function toggleSakanTheme(){
+        var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', cur);
+        try { localStorage.setItem('sakan-theme', cur); } catch(e) {}
+      }
+    </script>
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

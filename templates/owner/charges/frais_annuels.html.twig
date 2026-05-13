@@ -1,0 +1,203 @@
+{% extends 'layouts/base_charges_owner.html.twig' %}
+{% block charges_content %}
+
+{# ── KPIs Annuels ───────────────────────────────────────── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:28px;">
+    {# Encaissements #}
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:16px;padding:20px 24px;color:white;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-vault" style="color:#4ade80;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:#94a3b8;font-weight:600;text-transform:uppercase;">Encaissé en {{ year }}</div>
+            <div style="font-size:22px;font-weight:800;">
+                {{ kpis.montant_encaisse|number_format(3, '.', ' ') }} <span style="font-size:13px;color:#94a3b8;">TND</span>
+            </div>
+        </div>
+    </div>
+    
+    {# Total charges #}
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:#f8fafc;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-coins" style="color:var(--text-muted);font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Montant total</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text-primary);">
+                {{ kpis.montant_total|number_format(3, '.', ' ') }} <span style="font-size:13px;color:var(--text-muted);">TND</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Sur {{ kpis.total }} charge(s)</div>
+        </div>
+    </div>
+
+    {# Répartition statuts #}
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="flex:1;">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-bottom:8px;">Répartition statuts</div>
+            <div style="display:flex;gap:12px;">
+                <div style="flex:1;text-align:center;">
+                    <div style="font-size:18px;font-weight:800;color:#10b981;">{{ kpis.payees }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500;">Payées</div>
+                </div>
+                <div style="width:1px;background:#f1f5f9;"></div>
+                <div style="flex:1;text-align:center;">
+                    <div style="font-size:18px;font-weight:800;color:#f59e0b;">{{ kpis.partielles }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500;">Part.</div>
+                </div>
+                <div style="width:1px;background:#f1f5f9;"></div>
+                <div style="flex:1;text-align:center;">
+                    <div style="font-size:18px;font-weight:800;color:#ef4444;">{{ kpis.impayees }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500;">Non payées</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Filtres ────────────────────────────────────────────── #}
+<div style="background:white;border-radius:14px;padding:16px 20px;margin-bottom:20px;box-shadow:var(--shadow-card);display:flex;align-items:center;flex-wrap:wrap;gap:12px;">
+    
+    <div style="display:flex;align-items:center;gap:8px;padding-right:12px;border-right:1px solid var(--border);">
+        <i class="fa-solid fa-calendar-days" style="color:var(--text-muted);"></i>
+        <select onchange="window.location.href='?year=' + this.value" style="border:none;outline:none;font-weight:700;font-size:15px;color:var(--primary);background:transparent;cursor:pointer;">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>Année {{ y }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-building" style="color:var(--text-muted);font-size:13px;"></i>
+        <select id="filterBien" onchange="filtrerHistorique()" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;color:var(--text-primary);background:#f8fafc;outline:none;">
+            <option value="">Tous les biens</option>
+            {% for bien in biens %}
+                <option value="{{ bien }}">{{ bien }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;">
+        <select id="filterStatut" onchange="filtrerHistorique()" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;color:var(--text-primary);background:#f8fafc;outline:none;">
+            <option value="">Tous les statuts</option>
+            <option value="PAYE">Payées uniquement</option>
+            <option value="IMPAYEE">Partielles / Non payées</option>
+        </select>
+    </div>
+
+</div>
+
+{# ── Groupes par bien ────────────────────────────────────── #}
+{% if charges is empty %}
+<div style="background:white;border-radius:16px;padding:60px 20px;text-align:center;box-shadow:var(--shadow-card);">
+    <i class="fa-solid fa-box-archive" style="font-size:48px;color:#cbd5e1;margin-bottom:16px;"></i>
+    <h4 style="font-size:16px;font-weight:600;margin:0 0 8px;color:var(--text-primary);">Aucun historique pour {{ year }}</h4>
+    <p style="font-size:14px;color:var(--text-muted);margin:0;">Changez l'année ou ajoutez de nouvelles charges.</p>
+</div>
+{% else %}
+<div id="historiqueContainer">
+    {% for nomBien, chargesBien in grouped %}
+    <div class="bien-group" data-bien="{{ nomBien }}" style="background:white;border-radius:20px;padding:0;box-shadow:var(--shadow-card);overflow:hidden;margin-bottom:24px;">
+        
+        <div style="background:#f8fafc;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:10px;">
+                <i class="fa-solid fa-building" style="color:var(--primary);"></i>
+                {{ nomBien }}
+            </h3>
+            <span style="font-size:13px;color:var(--text-muted);font-weight:600;background:white;padding:4px 10px;border-radius:20px;border:1px solid var(--border);">{{ chargesBien|length }} charges</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding:14px 24px;text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);">Période</th>
+                        <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);">Type</th>
+                        <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);">Locataire</th>
+                        <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);">Montant</th>
+                        <th style="padding:14px 24px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);">Statut</th>
+                        <th style="padding:14px 20px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for charge in chargesBien %}
+                    {% set typeInfo = types[charge.type_charge] ?? types['AUTRE'] %}
+                    <tr class="charge-row" data-statut="{{ charge.statut_paiement }}" style="border-bottom:1px solid #f1f5f9;transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+                        <td style="padding:16px 24px;font-size:13px;font-weight:600;color:var(--text-secondary);">
+                            {{ charge.periode_label|capitalize }}
+                        </td>
+                        <td style="padding:16px 20px;font-size:14px;font-weight:500;color:var(--text-primary);">
+                            <i class="fa-solid {{ typeInfo.icon }}" style="color:{{ typeInfo.color }};margin-right:8px;"></i>
+                            {{ typeInfo.label }}
+                        </td>
+                        <td style="padding:16px 20px;font-size:13px;color:var(--text-secondary);">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div style="width:28px;height:28px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#64748b;">
+                                    {{ charge.nom_locataire|first|upper }}
+                                </div>
+                                {{ charge.nom_locataire }}
+                            </div>
+                        </td>
+                        <td style="padding:16px 20px;text-align:right;font-size:14px;font-weight:700;color:var(--text-primary);">
+                            {{ charge.montant|number_format(3, '.', ' ') }} TND
+                        </td>
+                        <td style="padding:16px 24px;text-align:center;">
+                            {% if charge.statut_paiement == 'PAYE' %}
+                                <span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">PAYÉ</span>
+                            {% elseif charge.statut_paiement == 'PARTIEL' %}
+                                <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">PARTIEL</span>
+                            {% else %}
+                                <span style="background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">NON PAYÉ</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:16px 20px;text-align:center;">
+                            {% if charge.fichier_facture %}
+                                <a href="/uploads/factures/{{ charge.fichier_facture }}" target="_blank" style="color:var(--text-muted);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'" title="Voir la facture">
+                                    <i class="fa-solid fa-file-pdf" style="font-size:18px;"></i>
+                                </a>
+                            {% else %}
+                                <span style="color:#cbd5e1;" title="Aucune facture"><i class="fa-solid fa-ban"></i></span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script>
+function filtrerHistorique() {
+    const filterBien = document.getElementById('filterBien').value;
+    const filterStatut = document.getElementById('filterStatut').value;
+    
+    document.querySelectorAll('.bien-group').forEach(group => {
+        const nomBien = group.getAttribute('data-bien');
+        let groupVisible = false;
+        
+        // Cacher le groupe si filtre bien actif et ne correspond pas
+        if (filterBien && nomBien !== filterBien) {
+            group.style.display = 'none';
+            return;
+        }
+        
+        group.querySelectorAll('.charge-row').forEach(row => {
+            const statut = row.getAttribute('data-statut');
+            let rowVisible = true;
+            
+            if (filterStatut === 'PAYE' && statut !== 'PAYE') rowVisible = false;
+            if (filterStatut === 'IMPAYEE' && statut === 'PAYE') rowVisible = false;
+            
+            row.style.display = rowVisible ? '' : 'none';
+            if (rowVisible) groupVisible = true;
+        });
+        
+        // Cacher le groupe entier si aucune ligne n'est visible
+        group.style.display = groupVisible ? '' : 'none';
+    });
+}
+</script>
+
+{% endblock %}

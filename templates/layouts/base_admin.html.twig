@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-admin-theme.css') }}">
+{% endblock %}
+
+{% block body %}
+  {% set route = app.request.get('_route') %}
+  <div class="sakan-layout admin-shell">
+    <nav class="sakan-sidebar admin-sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Sakan">
+      </div>
+
+      <ul class="sidebar-menu">
+        <li><a href="{{ path('admin_dashboard') }}" class="{{ route == 'admin_dashboard' ? 'active' : '' }}"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+
+        <!-- ═══ Gestion Financière ══ -->
+        <li class="sidebar-group {{ route starts with 'admin_finance' ? 'open' : '' }}">
+          <button class="sidebar-group-toggle" type="button" onclick="this.closest('li').classList.toggle('open')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Gestion Financière</span>
+            <i class="fa-solid fa-chevron-down sidebar-chevron"></i>
+          </button>
+          <ul class="sidebar-submenu">
+            <li><a href="{{ path('admin_finance_loyers') }}" class="{{ route starts with 'admin_finance_loyer' ? 'active' : '' }}"><i class="fa-solid fa-house"></i> Loyers</a></li>
+            <li><a href="{{ path('admin_finance_charges') }}" class="{{ route starts with 'admin_finance_charge' ? 'active' : '' }}"><i class="fa-solid fa-bolt"></i> Charges</a></li>
+            <li><a href="{{ path('admin_finance_cautions') }}" class="{{ route starts with 'admin_finance_caution' ? 'active' : '' }}"><i class="fa-solid fa-shield-halved"></i> Cautions</a></li>
+            <li><a href="{{ path('admin_finance_rapports') }}" class="{{ route == 'admin_finance_rapports' ? 'active' : '' }}"><i class="fa-solid fa-chart-bar"></i> Rapports</a></li>
+          </ul>
+        </li>
+
+        <li><a href="{{ path('admin_users') }}" class="{{ route == 'admin_users' ? 'active' : '' }}"><i class="fa-solid fa-users"></i> Utilisateurs</a></li>
+        <li><a href="{{ path('admin_audit') }}" class="{{ route == 'admin_audit' ? 'active' : '' }}"><i class="fa-solid fa-clipboard-list"></i> Audit</a></li>
+        <li><a href="{{ path('admin_annonces') }}" class="{{ route == 'admin_annonces' ? 'active' : '' }}"><i class="fa-solid fa-bullhorn"></i> Annonces</a></li>
+        <li><a href="{{ path('admin_avis_moderation') }}" class="{{ route == 'admin_avis_moderation' ? 'active' : '' }}"><i class="fa-solid fa-shield-halved"></i> Modération des avis</a></li>
+        <li><a href="{{ path('admin_reservations') }}" class="{{ route == 'admin_reservations' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check"></i> Réservations</a></li>
+        <li><a href="{{ path('admin_contrats') }}" class="{{ route == 'admin_contrats' ? 'active' : '' }}"><i class="fa-solid fa-file-signature"></i> Contrats</a></li>
+        <li><a href="{{ path('admin_reclamations') }}" class="{{ route == 'admin_reclamations' ? 'active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Réclamations</a></li>
+        <li><a href="{{ path('admin_settings') }}" class="{{ route == 'admin_settings' ? 'active' : '' }}"><i class="fa-solid fa-gear"></i> Paramètres</a></li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <a href="{{ path('app_logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+      </div>
+    </nav>
+
+    <div class="sakan-main admin-main">
+      <header class="sakan-topbar admin-topbar">
+        <span class="context-chip"><i class="fa-solid fa-shield"></i> Espace administration</span>
+        <div class="topbar-actions">
+          <button type="button" class="theme-toggle" onclick="toggleSakanTheme()" aria-label="Changer le thème" title="Changer le thème">
+            <span class="knob">
+              <i class="fa-solid fa-sun icon-sun"></i>
+              <i class="fa-solid fa-moon icon-moon"></i>
+            </span>
+          </button>
+          <button class="icon-btn" type="button" aria-label="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="admin-dot"></span>
+          </button>
+          <div class="user-profile">
+            <img src="{{ path('app_profile_avatar') }}" alt="Avatar Admin">
+            <span class="user-name">{{ app.user ? app.user.nom|default('Admin') : 'Admin' }}</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="admin-page-wrap">
+        <div class="page-header">
+          <div><h1 class="page-title">{% block page_title %}{% endblock %}</h1></div>
+          {% block page_actions %}{% endblock %}
+        </div>
+
+        {% for message in app.flashes('auth_success') %}
+          <div class="admin-alert admin-alert-success">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('auth_error') %}
+          <div class="admin-alert admin-alert-error">{{ message }}</div>
+        {% endfor %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

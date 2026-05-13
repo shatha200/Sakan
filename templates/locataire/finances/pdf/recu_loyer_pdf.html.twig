@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quittance de Loyer - {{ loyer.periode }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333333;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .header {
+            width: 100%;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 20px;
+        }
+        .header table {
+            width: 100%;
+        }
+        .logo {
+            text-align: left;
+            width: 50%;
+        }
+        .logo img {
+            max-height: 60px;
+        }
+        .title {
+            text-align: right;
+            width: 50%;
+            vertical-align: top;
+        }
+        .title h1 {
+            color: #1e3a8a;
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .title p {
+            margin: 5px 0 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .info-section {
+            width: 100%;
+            margin-bottom: 40px;
+        }
+        .info-section td {
+            width: 50%;
+            vertical-align: top;
+        }
+        .info-box {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin-right: 20px;
+        }
+        .info-box.last {
+            margin-right: 0;
+            margin-left: 20px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #4b5563;
+            font-size: 14px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #d1d5db;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .details-table th, .details-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        .details-table th {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        .details-table td.amount {
+            text-align: right;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+        .details-table td.amount-label {
+            text-align: right;
+        }
+        .total-row td {
+            background-color: #ecfdf5;
+            color: #065f46;
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 2px solid #10b981;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+        .signature-box {
+            text-align: right;
+            margin-top: 50px;
+            padding-right: 30px;
+        }
+        .signature-text {
+            color: #6b7280;
+            font-style: italic;
+        }
+        .legal-text {
+            font-size: 10px;
+            text-align: justify;
+            margin-top: 30px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td class="logo">
+                    {% if logo_base64 %}
+                        <img src="{{ logo_base64 }}" alt="Sakan Logo">
+                    {% else %}
+                        <h2 style="color: #2563eb; margin: 0;">SAKAN</h2>
+                        <span style="color: #6b7280; font-size: 12px;">Gestion Locative Intelligente</span>
+                    {% endif %}
+                </td>
+                <td class="title">
+                    <h1>Quittance de Loyer</h1>
+                    <p>Référence: PAIEMENT-{{ loyer.id|default('N/A') }}</p>
+                    <p>Généré le: {{ date_generation|date('d/m/Y') }}</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="info-section">
+        <tr>
+            <td>
+                <div class="info-box">
+                    <h3>Propriétaire</h3>
+                    <strong>{{ proprietaire.nom|default('Non renseigné') }}</strong><br>
+                    Email: {{ proprietaire.email|default('N/A') }}<br>
+                </div>
+            </td>
+            <td>
+                <div class="info-box last">
+                    <h3>Locataire</h3>
+                    <strong>{{ locataire.nom|default('Non renseigné') }}</strong><br>
+                    Email: {{ locataire.email|default('N/A') }}<br>
+                    Logement concerné :<br>
+                    {{ logement.titre|default('Non défini') }}<br>
+                    <span style="color: #6b7280; font-size: 12px;">{{ logement.description|default('') }}</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <p style="margin-bottom: 20px;">
+        Le propriétaire soussigné atteste avoir reçu du locataire la somme détaillée ci-dessous au titre du paiement du loyer.
+    </p>
+
+    <table class="details-table">
+        <thead>
+            <tr>
+                <th>Désignation</th>
+                <th>Période</th>
+                <th class="amount-label" style="text-align: right;">Montant (TND)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Loyer principal et charges récupérables</td>
+                <td>{{ loyer.periode|default('N/A') }}</td>
+                <td class="amount">{{ loyer.montant|number_format(3, ',', ' ') }}</td>
+            </tr>
+            {% if loyer.penalite > 0 %}
+            <tr>
+                <td>Pénalités de retard</td>
+                <td>-</td>
+                <td class="amount">{{ loyer.penalite|number_format(3, ',', ' ') }}</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td colspan="2" style="text-align: right; padding-right: 20px; background-color: #ecfdf5;"><strong>TOTAL PAYÉ</strong></td>
+                <td class="amount" style="background-color: #ecfdf5;">
+                    {% set total = loyer.montant + (loyer.penalite|default(0)) %}
+                    {{ total|number_format(3, ',', ' ') }} TND
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 30px;">
+        <p style="margin: 0;">
+            <strong>Moyen de paiement :</strong> {{ loyer.methode_paiement|default('Non précisé') }}<br>
+            <strong>Date de réception du paiement :</strong> {{ loyer.date_paiement ? loyer.date_paiement|date('d/m/Y') : 'N/A' }}
+            {% if loyer.reference_transaction %}
+            <br><strong>Référence de transaction :</strong> {{ loyer.reference_transaction }}
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="signature-box">
+        <p class="signature-text">Document certifié et émis automatiquement via Sakan.</p>
+        <p style="font-weight: bold; margin-top: 10px;">Le Propriétaire</p>
+    </div>
+
+    <div class="legal-text">
+        <p>
+            En application de la loi, cette quittance annule tous les reçus qui auraient pu être donnés pour acomptes versés sur le présent terme, même si ces acomptes n'ont pas été spécifiés. Le paiement du présent loyer n'emporte pas présomption de paiement des termes antérieurs.
+        </p>
+    </div>
+
+    <div class="footer">
+        © {{ 'now'|date('Y') }} Sakan - Gestion Locative. Document généré automatiquement et ne contenant aucune information bancaire sensible.
+    </div>
+
+</body>
+</html>

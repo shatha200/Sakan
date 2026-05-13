@@ -1,0 +1,9 @@
+# Configuration pour désactiver Webpack Encore et utiliser AssetMapper
+framework:
+    assets:
+        enabled: true
+        base_path: '/'
+        version_strategy: ~
+        version: ~
+        json_manifest_path: ~
+        strict_mode: false

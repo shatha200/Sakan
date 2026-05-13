@@ -1,0 +1,308 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="sakan-layout">
+
+    <nav class="sakan-sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Sakan" style="height: 40px; object-fit: contain;">
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="{{ path('tenant_catalogue') }}" 
+                   class="{{ app.request.get('_route') == 'tenant_catalogue' ? 'active' : '' }}">
+                    <i class="fa-solid fa-magnifying-glass"></i> Explorer les biens
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('tenant_visites') }}"
+                   class="{{ app.request.get('_route') == 'tenant_visites' ? 'active' : '' }}">
+                    <i class="fa-solid fa-calendar-check"></i> Mes visites
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('tenant_reservations') }}"
+                   class="{{ app.request.get('_route') == 'tenant_reservations' ? 'active' : '' }}">
+                    <i class="fa-solid fa-check"></i> Mes réservations
+                </a>
+            </li>
+{% set finances_routes = [
+    'tenant_finances',
+    'tenant_finances_loyers',
+    'tenant_finances_charges',
+    'tenant_finances_caution',
+    'tenant_finances_historique'
+] %}
+{% set contrat_routes = [
+    'tenant_contrats',
+    'contrat_voir',
+    'tenant_contrat_finaliser',
+    'contrat_signer',
+    'contrat_pdf'
+] %}
+            <li>
+                <a href="{{ path('tenant_contrats') }}"
+                   class="{{ app.request.get('_route') in contrat_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-file-contract"></i> Mes contrats
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('tenant_finances') }}"
+                   class="{{ app.request.get('_route') in finances_routes ? 'active' : '' }}">
+                    <i class="fa-solid fa-coins"></i> Espace financier
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('tenant_reclamations') }}"
+                   class="{{ app.request.get('_route') == 'tenant_reclamations' ? 'active' : '' }}">
+                    <i class="fa-solid fa-shield-halved"></i> réclamations
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('tenant_profil') }}"
+                   class="{{ app.request.get('_route') == 'tenant_profil' ? 'active' : '' }}">
+                    <i class="fa-solid fa-user"></i> Mon profil
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{{ path('app_logout') }}">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
+    </nav>
+
+    <main class="sakan-main">
+        <!-- TOPBAR avec Role Switcher -->
+        <header class="sakan-topbar" style="margin-bottom: 24px;">
+            {% set displayName = (app.user and app.user.nom is defined and app.user.nom) ? app.user.nom : 'Utilisateur' %}
+            <div class="topbar-context">
+                <span class="context-chip">
+                    <i class="fa-solid fa-circle-user"></i>
+                    Espace personnel
+                </span>
+            </div>
+            <div class="topbar-actions">
+                <button type="button" class="theme-toggle" onclick="toggleSakanTheme()" aria-label="Changer le thème" title="Changer le thème">
+                    <span class="knob">
+                        <i class="fa-solid fa-sun icon-sun"></i>
+                        <i class="fa-solid fa-moon icon-moon"></i>
+                    </span>
+                </button>
+                <a href="{{ path('tenant_wishlist') }}" class="icon-btn" title="Ma wishlist"
+                   style="text-decoration:none;color:{{ app.request.get('_route') == 'tenant_wishlist' ? '#ef4444' : 'inherit' }};">
+                    <i class="fa-solid fa-heart"></i>
+                </a>
+                {% set loc_unread = owner_notif_count() %}
+                {% set loc_recent = owner_notif_recent(6) %}
+                <div class="owner-notif-wrap" style="position:relative;z-index:10000;">
+                    <button type="button" class="icon-btn" onclick="toggleLocNotif()" aria-label="Notifications">
+                        <i class="fa-solid fa-bell"></i>
+                        {% if loc_unread > 0 %}
+                            <span class="owner-notif-badge" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;">{{ loc_unread > 99 ? '99+' : loc_unread }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="owner-notif-dropdown" id="loc-notif-dropdown" aria-hidden="true" style="display:none !important;position:fixed !important;top:auto !important;left:auto !important;right:auto !important;width:340px;background:white;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.15);z-index:2147483647 !important;overflow:hidden;">
+                        <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+                            <strong style="font-size:14px;">Notifications</strong>
+                        </div>
+                        <ul style="list-style:none;margin:0;padding:0;max-height:320px;overflow-y:auto;">
+                            {% for n in loc_recent %}
+                                <li style="padding:12px 16px;border-bottom:1px solid #f8fafc;{{ n.is_read ? '' : 'background:#eff6ff;' }}">
+                                    <p style="margin:0;font-size:13px;color:#334155;">{{ n.message }}</p>
+                                    <time style="font-size:11px;color:#94a3b8;">{{ n.created_at|date('d/m/Y H:i') }}</time>
+                                </li>
+                            {% else %}
+                                <li style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Aucune notification.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% set initial = displayName|slice(0,1)|upper %}
+                <div class="user-profile">
+                    <img src="{{ path('app_profile_avatar') }}" alt="Avatar">
+                    <span class="user-name">{{ displayName|split(' ')|first }}</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">{% block page_title %}Page{% endblock %}</h1>
+                <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+            </div>
+            {% block page_actions %}{% endblock %}
+        </div>
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+    <!-- SAKAN AI CHATBOT (IA Feature) -->
+    <div id="sakan-chatbot" style="position: fixed; bottom: 30px; right: 30px; z-index: 5000; font-family: 'Inter', sans-serif;">
+        <!-- Chat Bubble -->
+        <button id="chatbot-toggle" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: white; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); flex-direction: column; overflow: hidden; border: 1px solid rgba(0,0,0,0.05); transform-origin: bottom right; transition: all 0.3s ease;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #6366f1, #a855f7); padding: 20px; color: white;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 10px; height: 10px; background: #4ade80; border-radius: 50%; border: 2px solid white;"></div>
+                        <span style="font-weight: 700; font-size: 16px;">Assistant Sakan</span>
+                    </div>
+                    <button id="chat-close" style="background: none; border: none; color: white; opacity: 0.8; cursor: pointer; font-size: 18px;">&times;</button>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="chat-messages" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fbfcfe;">
+                <!-- Welcome Message (AJAX) -->
+            </div>
+
+            <!-- Input Area -->
+            <div style="padding: 15px; background: white; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
+                <input type="text" id="chat-input" placeholder="Posez votre question..." style="flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 15px; font-size: 14px; outline: none; transition: border-color 0.2s;">
+                <button id="chat-send" style="background: #6366f1; color: white; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: background 0.2s;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatToggle = document.getElementById('chatbot-toggle');
+        const chatWindow = document.getElementById('chat-window');
+        const chatClose = document.getElementById('chat-close');
+        const chatInput = document.getElementById('chat-input');
+        const chatSend = document.getElementById('chat-send');
+        const chatMessages = document.getElementById('chat-messages');
+
+        let isChatOpen = false;
+
+        chatToggle.onclick = () => {
+            isChatOpen = !isChatOpen;
+            chatWindow.style.display = isChatOpen ? 'flex' : 'none';
+            chatToggle.style.transform = isChatOpen ? 'scale(0.9) rotate(90deg)' : 'scale(1) rotate(0)';
+            if (isChatOpen && chatMessages.children.length === 0) {
+                loadWelcome();
+            }
+        };
+
+        chatClose.onclick = () => {
+            isChatOpen = false;
+            chatWindow.style.display = 'none';
+            chatToggle.style.transform = 'scale(1) rotate(0)';
+        };
+
+        async function loadWelcome() {
+            try {
+                const res = await fetch('{{ path("api_chatbot_welcome") }}');
+                const data = await res.json();
+                addMessage(data.message, 'bot');
+            } catch (e) {
+                addMessage("Bonjour ! Comment puis-je vous aider ?", 'bot');
+            }
+        }
+
+        async function sendMessage() {
+            const msg = chatInput.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, 'user');
+            chatInput.value = '';
+            
+            // Effect de chargement
+            const loadingId = 'loading-' + Date.now();
+            addMessage('<i class="fa-solid fa-circle-notch fa-spin"></i> Réflexion...', 'bot', loadingId);
+
+            try {
+                const res = await fetch('{{ path("api_chatbot_ask") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                document.getElementById(loadingId).closest('.msg-wrap').remove();
+                addMessage(data.response, 'bot');
+            } catch (e) {
+                document.getElementById(loadingId).closest('.msg-wrap').remove();
+                addMessage("Désolé, j'ai rencontré un problème technique. Réessayez plus tard.", 'bot');
+            }
+        }
+
+        function addMessage(text, side, id = null) {
+            const wrap = document.createElement('div');
+            wrap.className = 'msg-wrap';
+            wrap.style.display = 'flex';
+            wrap.style.justifyContent = side === 'user' ? 'flex-end' : 'flex-start';
+            
+            const msg = document.createElement('div');
+            msg.id = id;
+            msg.style.maxWidth = '80%';
+            msg.style.padding = '12px 16px';
+            msg.style.borderRadius = side === 'user' ? '18px 18px 2px 18px' : '18px 18px 18px 2px';
+            msg.style.fontSize = '14px';
+            msg.style.lineHeight = '1.5';
+            msg.style.whiteSpace = 'pre-wrap';
+            
+            if (side === 'user') {
+                msg.style.background = '#6366f1';
+                msg.style.color = 'white';
+            } else {
+                msg.style.background = '#edf2f7';
+                msg.style.color = '#1a202c';
+                msg.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            }
+            
+            msg.innerHTML = text;
+            wrap.appendChild(msg);
+            chatMessages.appendChild(wrap);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatSend.onclick = sendMessage;
+        chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+        // Topbar script (existing)
+        function toggleLocNotif() {
+            var el = document.getElementById('loc-notif-dropdown');
+            if (!el) return;
+            var wrap = el.parentElement;
+            var btn = wrap ? wrap.querySelector('button') : null;
+            var currentlyVisible = el.style.display && el.style.display.indexOf('block') !== -1;
+            if (!currentlyVisible && btn) {
+                var rect = btn.getBoundingClientRect();
+                // Move dropdown to <body> to escape any ancestor stacking context / overflow
+                if (el.parentElement !== document.body) {
+                    document.body.appendChild(el);
+                }
+                el.style.setProperty('position', 'fixed', 'important');
+                el.style.setProperty('top', (rect.bottom + 8) + 'px', 'important');
+                el.style.setProperty('right', (window.innerWidth - rect.right) + 'px', 'important');
+                el.style.setProperty('left', 'auto', 'important');
+                el.style.setProperty('z-index', '2147483647', 'important');
+                el.style.setProperty('display', 'block', 'important');
+                var badge = wrap.querySelector('.owner-notif-badge');
+                if (badge) badge.style.display = 'none';
+            } else {
+                el.style.setProperty('display', 'none', 'important');
+            }
+        }
+        document.addEventListener('click', function(e) {
+            var el = document.getElementById('loc-notif-dropdown');
+            var wrap = el ? el.parentElement : null;
+            if (el && wrap && !wrap.contains(e.target)) el.style.display = 'none';
+            
+            // Close chat if clicked outside
+            const chatWrap = document.getElementById('sakan-chatbot');
+            if (chatWrap && !chatWrap.contains(e.target) && isChatOpen) {
+                isChatOpen = false;
+                chatWindow.style.display = 'none';
+                chatToggle.style.transform = 'scale(1) rotate(0)';
+            }
+        });
+    </script>
+{% endblock %}

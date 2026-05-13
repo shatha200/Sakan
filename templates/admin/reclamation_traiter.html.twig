@@ -1,0 +1,312 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Traiter Réclamation - Admin{% endblock %}
+{% block page_title %}Traitement de Réclamation{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .admin-premium-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.02);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+        .admin-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-desc-box {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #374151;
+            border: 1px solid #f1f5f9;
+        }
+        .image-proof {
+            border-radius: 12px;
+            object-fit: cover;
+            width: 100%;
+            height: 120px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 2px solid #fff;
+            transition: transform 0.2s ease;
+        }
+        .image-proof:hover { transform: scale(1.05); }
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        .badge-fake { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .badge-real { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        
+        .badge-status {
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .b-attente { background-color: #FEF3C7; color: #D97706; }
+        .b-cours { background-color: #DBEAFE; color: #2563EB; }
+        .b-resolu { background-color: #D1FAE5; color: #059669; }
+
+        .badge-relevant { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .badge-not-relevant { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .btn-check-relevance {
+            background: #f3f4f6;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 5px;
+            color: #4b5563;
+            width: 100%;
+        }
+        .btn-check-relevance:hover { background: #e5e7eb; color: #111827; }
+        .relevance-reason {
+            font-size: 0.65rem;
+            color: #6b7280;
+            margin-top: 4px;
+            font-style: italic;
+            line-height: 1.2;
+        }
+
+        .form-premium-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: #f9fafb;
+            color: #1f2937;
+        }
+        .form-premium-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+  <div class="mb-4 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+          <a href="{{ path('admin_reclamations') }}" class="btn-secondary" style="border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <i class="fa-solid fa-arrow-left"></i>
+          </a>
+          <h2 style="margin: 0; color: #1f2937; font-weight: 800; font-size: 1.5rem;">Traitement Spécialisé</h2>
+      </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px;">
+      <!-- Details Section -->
+      <div class="admin-premium-card" style="flex: 1.2; min-width: 320px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 1px solid #f3f4f6; padding-bottom: 20px;">
+              <div>
+                  <div style="margin-bottom: 12px;">
+                      {% set sLabel = reclamation.statut|upper %}
+                      <span class="badge-status {{ sLabel == 'EN_ATTENTE' ? 'b-attente' : (sLabel == 'EN_COURS' ? 'b-cours' : 'b-resolu') }}">
+                          {{ sLabel|replace({'_': ' '}) }}
+                      </span>
+                  </div>
+                  <h3 style="margin: 0; font-weight: 800; color: #111827; font-size: 1.4rem;">{{ reclamation.typeId.libelle ?? reclamation.type }}</h3>
+              </div>
+              <div style="text-align: right; background: #f8fafc; padding: 10px 15px; border-radius: 8px;">
+                  <span style="color: #6b7280; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">Date de soumission</span><br>
+                  <strong style="color: #374151; font-size: 0.95rem;">{{ reclamation.date|date('d/m/Y') }} à {{ reclamation.date|date('H:i') }}</strong>
+              </div>
+          </div>
+          
+          <h4 class="admin-section-title"><i class="fa-solid fa-align-left text-primary"></i> Description du problème</h4>
+          <div class="admin-desc-box mb-4">
+              {{ reclamation.description|nl2br }}
+          </div>
+
+          {% if reclamation.images|length > 0 %}
+          <h4 class="admin-section-title mt-4"><i class="fa-solid fa-images text-primary"></i> Preuves (Photos)</h4>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              {% for image in reclamation.images %}
+                  <div style="width: 160px; text-align: center;">
+                      {% if image.imageDataUri %}
+                          <img src="{{ image.imageDataUri }}" class="image-proof" alt="Preuve">
+                      {% endif %}
+                      {% if image.fakeDetectionResult == 'FAKE' %}
+                          <span class="ai-badge badge-fake"><i class="fa-solid fa-triangle-exclamation"></i> Faux / AI</span>
+                      {% elseif image.fakeDetectionResult == 'REAL' %}
+                          <span class="ai-badge badge-real"><i class="fa-solid fa-check-circle"></i> Image Réelle</span>
+                      {% endif %}
+
+
+                  </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+      </div>
+
+      <!-- Form Section -->
+      <div class="admin-premium-card" style="flex: 1; min-width: 320px; align-self: flex-start; background: linear-gradient(180deg, #ffffff, #f8fafc);">
+          <h3 style="margin-top: 0; margin-bottom: 8px; color: #111827; font-weight: 800;"><i class="fa-solid fa-reply text-primary"></i> Réponse à la réclamation</h3>
+          <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5;">Utilisez cette interface pour formuler la solution. Votre message sera envoyé par mail.</p>
+
+          {{ form_start(form, {'attr': {'class': 'admin-form'}}) }}
+              <!-- Context for AI -->
+              <input type="hidden" id="ai-context-type" value="{{ reclamation.typeId.libelle ?? reclamation.type }}">
+              <input type="hidden" id="ai-context-desc" value="{{ reclamation.description }}">
+
+              <div style="margin-bottom: 20px;">
+                  <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #374151;">Message de réponse</label>
+                  <div style="position: relative;">
+                      <div id="response-ghost-overlay" class="form-premium-input" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; color: #9ca3af; pointer-events: none; z-index: 3; background: transparent; border: 2px solid transparent; white-space: pre-wrap; word-wrap: break-word; overflow: hidden; display: none; padding: 14px 18px; font-size: 0.95rem; line-height: 1.7; font-family: inherit;"></div>
+                      {{ form_widget(form.reponse, {
+                          'attr': {
+                              'class': 'form-premium-input',
+                              'style': 'resize: vertical; min-height: 160px; background-color: transparent !important; position: relative; z-index: 2; line-height: 1.7;',
+                              'placeholder': 'Bonjour, \n\nSuite à votre réclamation constatée, nous avons...',
+                              'id': 'reclamation-reponse'
+                          }
+                      }) }}
+                  </div>
+                  {% if form_errors(form.reponse) %}
+                      <div style="color: #dc2626; font-size: 0.85rem; margin-top: 6px; padding: 8px; background: rgba(239,68,68,0.1); border-radius: 6px;"><i class="fa-solid fa-circle-exclamation"></i> {{ form_errors(form.reponse)|striptags }}</div>
+                  {% endif %}
+              </div>
+
+              <div style="margin-bottom: 30px;">
+                  <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #374151;">Date de traitement</label>
+                  {{ form_widget(form.dateTraitement, {
+                      'attr': {'class': 'form-premium-input'}
+                  }) }}
+              </div>
+
+              <div style="text-align: right;">
+                  <button type="submit" style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; padding: 14px 28px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); transition: all 0.2s; width: 100%;">
+                       <i class="fa-solid fa-paper-plane me-2"></i> Enregistrer et Envoyer
+                  </button>
+              </div>
+          {{ form_end(form) }}
+      </div>
+  </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("AI Response Autocomplete Initializing...");
+    
+    // Find the response field by ID or by name (more robust)
+    let responseField = document.getElementById('reclamation-reponse') || 
+                        document.querySelector('textarea[name*="[reponse]"]');
+    
+    const ghostOverlay = document.getElementById('response-ghost-overlay');
+    
+    if (!responseField) {
+        console.error("AI Error: Could not find response field.");
+        return;
+    }
+
+    console.log("AI Response Autocomplete Active on:", responseField.id);
+
+    let aiSuggestion = '';
+    let fetchTimeout = null;
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function renderGhost() {
+        if (!aiSuggestion) {
+            ghostOverlay.style.display = 'none';
+            return;
+        }
+        
+        const style = window.getComputedStyle(responseField);
+        ghostOverlay.style.width = responseField.clientWidth + 'px';
+        ghostOverlay.style.height = responseField.clientHeight + 'px';
+        ghostOverlay.style.padding = style.padding;
+        ghostOverlay.style.fontSize = style.fontSize;
+        ghostOverlay.style.lineHeight = style.lineHeight;
+        ghostOverlay.style.fontFamily = style.fontFamily;
+        
+        ghostOverlay.style.display = 'block';
+        ghostOverlay.scrollTop = responseField.scrollTop;
+        ghostOverlay.innerHTML = '<span style="color: transparent;">' + escapeHtml(responseField.value) + '</span>' + escapeHtml(aiSuggestion);
+    }
+
+    if (responseField && ghostOverlay) {
+        responseField.addEventListener('input', function() {
+            const currentText = responseField.value;
+            aiSuggestion = ''; 
+            renderGhost();
+
+            if (currentText.trim().length < 5) return;
+
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(() => {
+                const type = document.getElementById('ai-context-type').value;
+                const desc = document.getElementById('ai-context-desc').value;
+
+                console.log("AI Fetching suggestion for context:", type);
+
+                fetch('/api/ai/generate-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: type, description: desc, currentText: currentText })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text && responseField.value === currentText) {
+                        aiSuggestion = data.text;
+                        console.log("AI Suggestion received:", aiSuggestion);
+                        renderGhost();
+                    }
+                })
+                .catch(err => console.error("AI Error:", err));
+            }, 2000); 
+        });
+
+        responseField.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' && aiSuggestion) {
+                e.preventDefault();
+                const lastChar = responseField.value.slice(-1);
+                const prefix = (lastChar !== ' ' && aiSuggestion[0] !== ' ' && lastChar !== '\n' && responseField.value !== '') ? ' ' : '';
+                responseField.value += prefix + aiSuggestion;
+                aiSuggestion = '';
+                renderGhost();
+                responseField.dispatchEvent(new Event('input'));
+            }
+        });
+
+        responseField.addEventListener('scroll', function() {
+            ghostOverlay.scrollTop = responseField.scrollTop;
+        });
+    }
+});
+
+
+</script>
+{% endblock %}

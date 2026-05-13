@@ -1,0 +1,281 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Traiter la Réclamation{% endblock %}
+{% block page_title %}Traitement Spécialisé{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="mb-5 d-flex align-items-center">
+        <a href="{{ path('owner_reclamations') }}" class="btn-back-premium me-4">
+            <i class="bi bi-chevron-left me-2"></i>Retour à la liste
+        </a>
+        <h1 class="dashboard-title h2 mb-0" style="color: #0f172a; font-weight: 800; letter-spacing: -0.5px;">Détails de la réclamation</h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <!-- Main Details -->
+        <div class="col-lg-10">
+            <div class="card-dashboard border-0 shadow-sm mb-4 p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <span class="badge-status {{ 
+                            reclamation.statut == 'EN_ATTENTE' ? 'badge-attente' : 
+                            (reclamation.statut == 'EN_COURS' ? 'badge-cours' : 'badge-resolu') 
+                        }} mb-2">
+                            {{ reclamation.statut|replace({'_': ' '}) }}
+                        </span>
+                        <h3 class="fw-bold text-dark">{{ reclamation.typeId.libelle ?? reclamation.type }}</h3>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Soumis le</small>
+                        <span class="fw-semibold">{{ reclamation.date ? reclamation.date|ago : 'Date inconnue' }}</span>
+                    </div>
+                </div>
+
+                <div class="separator-line"></div>
+
+                <div class="mb-5">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center">
+                        <i class="bi bi-text-left text-primary me-2"></i>Description
+                    </h5>
+                    <div class="bg-light p-4 rounded-4" style="min-height: 120px; line-height: 1.6; font-size: 1.1rem; color: #334155; position: relative;">
+                        {{ reclamation.description|nl2br }}
+                    </div>
+                </div>
+
+                <!-- AI NER Analysis Section (Robust Layout) -->
+                <div class="ai-ner-section mb-5 p-4 rounded-4" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                        <h5 style="font-weight: 800; color: #4f46e5; margin: 0; display: flex; align-items: center;">
+                            <i class="bi bi-robot me-2"></i>Analyse Intelligente
+                        </h5>
+                        <button id="btn-analyze-ner" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" onclick="runAiNerAnalysis({{ reclamation.id }})" style="border-radius: 10px; background: #6366f1; border: none; height: 40px; min-width: 140px;">
+                            <i class="bi bi-cpu-fill me-2"></i>Analyser
+                        </button>
+                    </div>
+
+                    <div id="ner-results" style="display: none; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1; min-width: 250px; background: white; padding: 15px; border-radius: 12px; border-left: 5px solid #ef4444; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Problème détecté</label>
+                            <span id="ner-problem" style="font-weight: 700; color: #b91c1c; font-size: 1rem;">-</span>
+                        </div>
+                        <div style="flex: 1; min-width: 250px; background: white; padding: 15px; border-radius: 12px; border-left: 5px solid #0ea5e9; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Localisation</label>
+                            <span id="ner-location" style="font-weight: 700; color: #0369a1; font-size: 1rem;">-</span>
+                        </div>
+                    </div>
+                    <div id="ner-placeholder" style="text-align: center; padding: 10px; color: #94a3b8; font-size: 0.9rem;">
+                        <i class="bi bi-info-circle me-1"></i>Cliquez sur analyser pour extraire les entités clés.
+                    </div>
+                </div>
+
+                <!-- Action Buttons Row -->
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 40px; margin-top: 25px;">
+                    {% if reclamation.statut != 'RESOLU' %}
+                        <a href="{{ path('owner_reclamation_new', {'id': reclamation.id}) }}" class="btn btn-primary fw-bold shadow-sm" style="border-radius: 12px; background: #4f46e5; border: none; min-width: 200px; padding: 14px 25px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-chat-dots-fill me-2 fs-5"></i>Répondre maintenant
+                        </a>
+                        
+                        <form action="{{ path('owner_reclamation_resolve', {'id': reclamation.id}) }}" method="post" onsubmit="return confirm('Confirmer la résolution ?')" style="display: block; margin: 0;">
+                            <input type="hidden" name="_token" value="{{ csrf_token('resolve' ~ reclamation.id) }}">
+                            <button type="submit" class="btn btn-outline-success fw-bold" style="border-radius: 12px; border: 2px solid #10b981; color: #10b981; min-width: 200px; padding: 14px 25px; display: flex; align-items: center; justify-content: center; background: white;">
+                                <i class="bi bi-check-circle-fill me-2 fs-5"></i>Marquer comme résolu
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+
+                {% if reclamation.images|length > 0 %}
+                <div class="mb-5">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center">
+                        <i class="bi bi-images text-primary me-2"></i>Photos jointes
+                    </h5>
+                    <div style="display: flex; flex-wrap: wrap; gap: 25px;">
+                        {% for image in reclamation.images %}
+                            <div class="image-verify-card" style="width: 180px;">
+                                <div style="width: 180px; height: 180px; border-radius: 20px; overflow: hidden; border: 2px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative;" class="mb-2">
+                                    {% if image.getImageDataUri() %}
+                                        <img src="{{ image.getImageDataUri() }}" 
+                                             style="width: 100%; height: 100%; object-fit: cover;" 
+                                             alt="{{ image.fileName }}">
+                                    {% endif %}
+                                </div>
+                                <div id="badge-{{ image.id }}" class="result-container mb-2" style="display: {{ image.fakeDetectionResult ? 'flex' : 'none' }}; justify-content: center;">
+                                    {% if image.fakeDetectionResult == 'REAL' %}
+                                        <span class="badge shadow-sm w-100" style="padding: 10px; border-radius: 10px; background-color: #22c55e; color: white;"><i class="bi bi-check-circle-fill me-1"></i>Real</span>
+                                    {% elseif image.fakeDetectionResult == 'FAKE' %}
+                                        <span class="badge shadow-sm w-100" style="padding: 10px; border-radius: 10px; background-color: #ef4444; color: white;"><i class="bi bi-exclamation-octagon-fill me-1"></i>Fake</span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if not image.fakeDetectionResult %}
+                                    <button class="btn btn-sm btn-light w-100 fw-bold border shadow-sm btn-verify-ia" 
+                                            onclick="verifyImageAI({{ image.id }}, this)"
+                                            style="border-radius: 10px; padding: 8px 0; color: #6366f1;">
+                                        <i class="bi bi-search-heart me-1"></i>Vérifier IA
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if reclamation.traitement %}
+                <div class="response-section mt-5 border-top pt-5">
+                    <h5 class="fw-bold mb-3 text-success d-flex align-items-center">
+                        <i class="bi bi-reply-all-fill me-2"></i>Solution apportée
+                    </h5>
+                    <div class="response-box bg-success bg-opacity-10 border border-success border-opacity-25 rounded-4 p-4">
+                        <small class="text-success fw-bold d-block mb-2">TRAITÉ LE {{ reclamation.traitement.dateTraitement|date('d/m/Y') }}</small>
+                        <p class="mb-0 text-dark" style="line-height: 1.6;">{{ reclamation.traitement.reponse|nl2br }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .separator-line { height: 1px; background: #f1f5f9; margin: 2rem 0; }
+    .object-fit-cover { object-fit: cover; }
+
+    .btn-back-premium {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .btn-back-premium:hover {
+        background: #f8fafc;
+        color: #0f172a;
+        transform: translateX(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #cbd5e1;
+    }
+
+    .btn-back-premium i {
+        font-size: 1.1rem;
+        transition: transform 0.3s ease;
+    }
+
+    /* AI Image Detection Styles */
+    .status-overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        z-index: 10;
+    }
+    .status-overlay .badge {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .btn-verify-ia:hover {
+        background: #6366f1 !important;
+        color: white !important;
+        border-color: #6366f1 !important;
+    }
+
+    .ner-card {
+        transition: transform 0.2s ease;
+    }
+    .ner-card:hover {
+        transform: translateY(-3px);
+    }
+    .text-indigo { color: #4f46e5; }
+</style>
+
+<script>
+function verifyImageAI(imageId, btn) {
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Vérification...';
+
+    fetch(`/proprietaire/reclamations/verify-image/${imageId}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            const overlay = document.getElementById(`badge-${imageId}`);
+            overlay.style.display = 'flex';
+            
+            if (data.status === 'REAL') {
+                overlay.innerHTML = '<span class="badge shadow-sm w-100" style="padding: 10px; border-radius: 10px; background-color: #22c55e; color: white;"><i class="bi bi-check-circle-fill me-1"></i>Real</span>';
+                btn.parentElement.innerHTML = '<div class="text-center small text-success fw-bold"><i class="bi bi-check2-circle me-1"></i>Image Real</div>';
+            } else if (data.status === 'FAKE') {
+                overlay.innerHTML = '<span class="badge shadow-sm w-100" style="padding: 10px; border-radius: 10px; background-color: #ef4444; color: white;"><i class="bi bi-exclamation-octagon-fill me-1"></i>Fake</span>';
+                btn.parentElement.innerHTML = '<div class="text-center small text-danger fw-bold"><i class="bi bi-exclamation-octagon-fill me-1"></i>Fake Image</div>';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                alert('Erreur lors de la vérification.');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
+}
+
+function runAiNerAnalysis(reclamationId) {
+    const btn = document.getElementById('btn-analyze-ner');
+    const resultsDiv = document.getElementById('ner-results');
+    const placeholder = document.getElementById('ner-placeholder');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Extraction...';
+
+    fetch(`/api/ai/analyze-reclamation/${reclamationId}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('ner-problem').textContent = data.problem || 'Non détecté';
+        document.getElementById('ner-location').textContent = data.location || 'Non précisé';
+        
+        placeholder.style.display = 'none';
+        resultsDiv.style.display = 'flex';
+        
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Analyse complète';
+        btn.classList.replace('btn-primary', 'btn-success');
+        btn.style.background = '#10b981';
+    })
+    .catch(err => {
+        console.error('NER Analysis Error:', err);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Réessayer';
+        alert('Erreur lors de l\'analyse NER.');
+    });
+}
+</script>
+
+
+{% endblock %}

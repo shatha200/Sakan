@@ -1,0 +1,47 @@
+{#
+  Fragment HTML pur — injecté dans la modale AJAX.
+  Variables attendues : visite, error (string|null)
+#}
+<div class="glass-form-fragment" style="padding: 10px;">
+
+    {% if error %}
+        <div style="background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ error }}</span>
+        </div>
+    {% endif %}
+
+    {% if visite.dateHeure < date() %}
+        <div style="background: #fee2e2; border: 1px solid #ef4444; color: #dc2626; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 22px; margin-bottom: 8px; display: block;"></i>
+            <strong>Impossible de modifier une visite passée.</strong><br>
+            Veuillez replanifier une nouvelle visite.
+        </div>
+    {% else %}
+        <form method="post" action="{{ path('tenant_visite_edit', {'id': visite.id}) }}" style="margin: 0;">
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Nouvelle date et heure *</label>
+                <input type="datetime-local"
+                       name="dateHeure"
+                       class="sakan-input"
+                       required
+                       value="{{ visite.dateHeure ? visite.dateHeure|date('Y-m-d\\TH:i') : '' }}"
+                       min="{{ 'now'|date('Y-m-d\\TH:i') }}"
+                       style="width: 100%; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 28px;">
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Commentaire <span style="font-weight: 400; color: var(--text-muted);">(Optionnel)</span></label>
+                <textarea name="commentaire"
+                          class="sakan-input"
+                          rows="3"
+                          placeholder="Commentaire optionnel..."
+                          style="width: 100%; box-sizing: border-box; resize: vertical;">{{ visite.commentaire }}</textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 50px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-check"></i> Confirmer le changement
+            </button>
+        </form>
+    {% endif %}
+</div>

@@ -1,0 +1,77 @@
+{% extends 'layouts/base_auth.html.twig' %}
+
+{% block title %}Vérification 2FA - Sakan{% endblock %}
+
+{% block auth_content %}
+    <div class="brand-title">
+        <img src="{{ asset('images/logo.png') }}" alt="Sakan" style="height: 40px; object-fit: contain;">
+    </div>
+
+    <h1 class="auth-title">Vérification 2FA</h1>
+    <p class="muted">Un code à 6 chiffres a été envoyé à <strong>{{ user_email }}</strong>.</p>
+
+    {% for message in app.flashes('auth_error') %}
+        <p class="field-error">{{ message }}</p>
+    {% endfor %}
+    {% for message in app.flashes('auth_success') %}
+        <p style="color: #16a34a; font-size: 13px; margin-bottom: 8px;">{{ message }}</p>
+    {% endfor %}
+
+    {% set otpKey = 'login-2fa' %}
+    {% set secondsRemaining = otp_status.seconds_remaining|default(0) %}
+    {% set resendCount = otp_status.resend_count|default(0) %}
+    {% set maxResends = otp_status.max_resends|default(5) %}
+    {% set expiresAt = otp_status.expires_at|default('') %}
+
+    <form class="auth-form-card" method="post" action="{{ path('app_2fa') }}">
+        <input type="hidden" name="action" value="verify">
+        <div class="auth-input-wrapper">
+            <i class="fa-solid fa-shield-halved input-icon"></i>
+            <input type="text" name="otp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Code 2FA (6 chiffres)" required autofocus>
+        </div>
+
+        <button type="submit" class="btn-sakan-primary">Vérifier &rarr;</button>
+    </form>
+
+    <div style="margin-top: 16px; text-align: center;">
+        <strong
+            data-otp-countdown
+            data-otp-timer-key="{{ otpKey }}"
+            data-otp-expires-at="{{ expiresAt }}"
+            data-otp-seconds-remaining="{{ secondsRemaining }}"
+            style="font-size: 20px; color: #4a6cf7; display: block; margin-bottom: 6px;"
+        >{{ '%02d:%02d'|format((secondsRemaining / 60)|round(0, 'floor'), secondsRemaining % 60) }}</strong>
+
+        <p style="font-size: 13px; color: #888; margin-bottom: 12px;"
+           data-otp-resend-status="{{ otpKey }}">
+            {% if resendCount >= maxResends and secondsRemaining > 0 %}
+                Limite de renvoi atteinte.
+            {% elseif secondsRemaining > 0 %}
+                Vous pouvez renvoyer le code jusqu'à 5 fois pendant 10 min.
+            {% else %}
+                Le prochain renvoi relancera le minuteur à 10:00.
+            {% endif %}
+        </p>
+
+        <form method="post" action="{{ path('app_2fa') }}" style="display:inline;">
+            <input type="hidden" name="action" value="resend">
+            <button
+                type="submit"
+                class="btn-secondary btn-sm"
+                data-otp-resend-button="{{ otpKey }}"
+                data-otp-maxed="{{ resendCount >= maxResends and secondsRemaining > 0 ? '1' : '0' }}"
+                {{ resendCount >= maxResends and secondsRemaining > 0 ? 'disabled' : '' }}
+                style="font-size: 13px;"
+            >Renvoyer le code</button>
+        </form>
+    </div>
+
+    <p style="text-align: center; margin-top: 16px; font-weight: 500;">
+        <a href="{{ path('app_logout') }}">Se déconnecter</a>
+    </p>
+{% endblock %}
+
+{% block javascripts %}
+    {% include 'auth/_validation_js.html.twig' %}
+    {% include 'shared/_otp_timer_script.html.twig' %}
+{% endblock %}

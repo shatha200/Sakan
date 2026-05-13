@@ -1,0 +1,147 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Dashboard - Réclamations{% endblock %}
+{% block page_title %}Mes Réclamations{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success border-0 shadow-sm mb-4" style="border-radius: 12px;">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% for message in app.flashes('error') %}
+        <div class="access-restricted-alert">
+            <div class="icon-box">
+                <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <div class="alert-content">
+                <h4 style="color: #991b1b; font-weight: 700; font-size: 16px;">Action impossible</h4>
+                <p style="color: #b91c1c; font-size: 14px;">{{ message }}</p>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="stats-row flex-wrap">
+        <div class="stat-card">
+            <div class="stat-label">Total réclamations</div>
+            <div class="stat-value">{{ stats.total }}</div>
+        </div>
+        <div class="stat-card attente">
+            <div class="stat-label">En attente</div>
+            <div class="stat-value">{{ stats.en_attente }}</div>
+        </div>
+        <div class="stat-card cours">
+            <div class="stat-label">En cours</div>
+            <div class="stat-value">{{ stats.en_cours }}</div>
+        </div>
+        <div class="stat-card resolu">
+            <div class="stat-label">Résolues</div>
+            <div class="stat-value">{{ stats.resolus }}</div>
+        </div>
+    </div>
+
+    {# Main Card #}
+    <div class="card-dashboard">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Liste des réclamations</h2>
+            <a href="{{ path('tenant_reclamation_new') }}" class="btn-new-dashboard">Nouvelle réclamation</a>
+        </div>
+
+        <form class="filter-bar" method="GET" action="{{ path('tenant_reclamations') }}">
+            <input type="text" name="q" class="search-box" placeholder="Rechercher..." value="{{ currentSearch }}">
+            
+            <div class="filter-group">
+                <span class="filter-label">Type</span>
+                <select name="type" class="filter-select">
+                    <option value="">Tous</option>
+                    {% for type in types %}
+                        <option value="{{ type.libelle }}" {% if currentType == type.libelle %}selected{% endif %}>{{ type.libelle }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Statut</span>
+                <select name="status" class="filter-select">
+                    <option value="">Tous</option>
+                    <option value="EN_ATTENTE" {% if currentStatus == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
+                    <option value="EN_COURS" {% if currentStatus == 'EN_COURS' %}selected{% endif %}>En cours</option>
+                    <option value="RESOLU" {% if currentStatus == 'RESOLU' %}selected{% endif %}>Résolu</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-modifier" style="margin-left: auto;">Filtrer</button>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for reclamation in reclamations %}
+                    {% set rowType = reclamation.typeId is not null ? reclamation.typeId.libelle : (reclamation.typeAutre ?? 'Autre') %}
+                    <tr class="clickable-row reclamation-row" 
+                        data-type="{{ rowType }}" 
+                        data-status="{{ reclamation.statut }}"
+                        onclick="window.location.href='{{ path('tenant_reclamation_show', {'id': reclamation.id}) }}'">
+                        <td><span class="fw-bold">{{ reclamation.typeId is not null ? reclamation.typeId.libelle : (reclamation.typeAutre ?? 'Autre') }}</span></td>
+                        <td>{{ reclamation.description|length > 60 ? reclamation.description|slice(0, 60) ~ '...' : reclamation.description }}</td>
+                        <td>
+                            <span class="badge-status {{ 
+                                reclamation.statut == 'EN_ATTENTE' ? 'badge-attente' : 
+                                (reclamation.statut == 'EN_COURS' ? 'badge-cours' : 'badge-resolu') 
+                            }}">
+                                {{ reclamation.statut }}
+                            </span>
+                        </td>
+                        <td class="text-muted">{{ reclamation.date ? reclamation.date|ago : '' }}</td>
+                        <td class="text-center" onclick="event.stopPropagation();">
+                            <div class="d-flex justify-content-center gap-2">
+                                {% if reclamation.statut != 'RESOLU' %}
+                                    <a href="{{ path('tenant_reclamation_edit', {'id': reclamation.id}) }}" class="btn-modifier" title="Modifier">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                {% endif %}
+                                <form method="post" action="{{ path('tenant_reclamation_delete', {'id': reclamation.id}) }}" onsubmit="return confirm('Supprimer cette réclamation ?');" style="display:inline-block;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ reclamation.id) }}">
+                                    <button class="btn-supprimer" title="Supprimer">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <p class="text-muted mb-0">Aucune réclamation trouvée.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="navigation d-flex justify-content-center mt-4">
+            {{ knp_pagination_render(reclamations) }}
+        </div>
+
+        <p class="footer-hint">Cliquez sur une ligne pour afficher les détails</p>
+    </div>
+</div>
+
+{% endblock %}

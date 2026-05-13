@@ -1,0 +1,101 @@
+{% extends 'layouts/base_admin.html.twig' %}
+{% block title %}Caution #{{ caution.id }} — Admin Sakan{% endblock %}
+{% block page_title %}<i class="fa-solid fa-shield-halved" ></i> Caution #{{ caution.id }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ path('admin_finance_cautions') }}" style="display:flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none;">
+    <i class="fa-solid fa-arrow-left"></i> Retour
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+.fin-detail-card { background:white;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.fin-row { display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #f3f4f6; }
+.fin-row:last-child { border-bottom:none; }
+.fin-label { font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700; }
+.fin-value { font-size:15px;font-weight:600;color:#111827; }
+.fin-btn-full { display:block;width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;border:none;margin-bottom:10px;transition:all 0.2s;text-decoration:none; }
+.fin-btn-full.green { background:linear-gradient(135deg,#16a34a,#15803d);color:white; }
+.fin-btn-full.green:hover { box-shadow:0 4px 15px rgba(22,163,74,0.3); }
+.fin-btn-full.gray { background:#f3f4f6;color:#374151; }
+.fin-btn-full.gray:hover { background:#e5e7eb; }
+.balance-bar { height:10px;border-radius:20px;background:#e5e7eb;overflow:hidden;margin-top:8px; }
+.balance-bar-fill { height:100%;border-radius:20px;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width 0.5s; }
+</style>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 280px; gap:20px; align-items:start;">
+
+  {# Col 1: Informations #}
+  <div class="fin-detail-card">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px;"><i class="fa-solid fa-info-circle"></i> Informations</div>
+    <div class="fin-row"><span class="fin-label">Locataire</span><span class="fin-value">{{ caution.nom_locataire }}</span></div>
+    <div class="fin-row"><span class="fin-label">Email</span><span style="font-size:13px;">{{ caution.email_locataire }}</span></div>
+    <div class="fin-row"><span class="fin-label">Téléphone</span><span style="font-size:13px;">{{ caution.tel_locataire ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Propriétaire</span><span class="fin-value">{{ caution.nom_proprietaire ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Bien</span><span class="fin-value">{{ caution.bien_titre ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Contrat du</span><span style="font-size:13px;">{{ caution.date_debut ? caution.date_debut|date('d/m/Y') : '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Fin contrat</span><span style="font-size:13px;">{{ caution.date_fin ? caution.date_fin|date('d/m/Y') : 'En cours' }}</span></div>
+    {% if caution.jours_restants_contrat is defined and caution.jours_restants_contrat > 0 %}
+    <div class="fin-row"><span class="fin-label">Jours restants</span>
+      <span style="padding:4px 10px; border-radius:8px; font-weight:700;">{{ caution.jours_restants_contrat }} j</span>
+    </div>
+    {% endif %}
+    {% if caution.notes %}<div class="fin-row" style="flex-direction:column; gap:6px;"><span class="fin-label">Notes</span><span style="font-size:13px;">{{ caution.notes }}</span></div>{% endif %}
+  </div>
+
+  {# Col 2: Situation financière #}
+  <div class="fin-detail-card">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px;"><i class="fa-solid fa-scale-balanced"></i> Situation Financière</div>
+    <div class="fin-row">
+      <span class="fin-label">Statut</span>
+      <span>
+        {% if caution.statut in ['DETENU','DÉTENU'] %}
+          <span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">🟢 DÉTENU</span>
+        {% elseif 'REMBOURSE' in caution.statut %}
+          <span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">🔵 {{ caution.statut|replace({'_': ' '}) }}</span>
+        {% else %}
+          <span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">🔴 {{ caution.statut|replace({'_': ' '}) }}</span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="fin-row"><span class="fin-label">Dépôt initial</span><span style="font-size:20px; font-weight:800;">{{ caution.montant_initial|number_format(3,',', ' ') }} TND</span></div>
+    <div class="fin-row"><span class="fin-label">Montant retenu</span>
+      <span style="color:{{ caution.montant_retention > 0 ? '#dc2626' : '#9ca3af' }}; font-weight:{{ caution.montant_retention > 0 ? '700' : '400' }};">
+        {{ caution.montant_retention > 0 ? '-' ~ caution.montant_retention|number_format(3,',', ' ') ~ ' TND' : '—' }}
+      </span>
+    </div>
+    <div class="fin-row"><span class="fin-label">Déjà remboursé</span>
+      <span style="color:{{ caution.montant_rembourse > 0 ? '#3b82f6' : '#9ca3af' }}; font-weight:{{ caution.montant_rembourse > 0 ? '700' : '400' }};">
+        {{ caution.montant_rembourse > 0 ? '-' ~ caution.montant_rembourse|number_format(3,',', ' ') ~ ' TND' : '—' }}
+      </span>
+    </div>
+
+    <div style="padding:16px 0; border-bottom:1px solid #f3f4f6;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="fin-label">Solde disponible</span>
+        <span style="font-size:22px; font-weight:800;">{{ caution.montant_disponible|number_format(3,',', ' ') }} TND</span>
+      </div>
+      {% if caution.montant_initial > 0 %}
+      {% set pct = ((caution.montant_disponible / caution.montant_initial) * 100)|round %}
+      <div class="balance-bar"><div class="balance-bar-fill" style="width:{{ pct }}%;"></div></div>
+      <div style="font-size:11px; text-align:right; margin-top:4px;">{{ pct }}% disponible</div>
+      {% endif %}
+    </div>
+
+    <div class="fin-row"><span class="fin-label">Créée le</span><span class="fin-value">{{ caution.date_creation ? caution.date_creation|date('d/m/Y') : '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Date remboursement prévue</span><span class="fin-value">{{ caution.date_remboursement ? caution.date_remboursement|date('d/m/Y') : '—' }}</span></div>
+  </div>
+
+  {# Col 3: Actions #}
+  <div class="fin-detail-card">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px;"><i class="fa-solid fa-bolt"></i> Actions</div>
+    <a href="mailto:{{ caution.email_locataire }}" class="fin-btn-full gray"><i class="fa-solid fa-envelope"></i> Email locataire</a>
+    <a href="{{ path('admin_finance_cautions') }}" class="fin-btn-full gray"><i class="fa-solid fa-list"></i> Toutes les cautions</a>
+    {% if caution.montant_disponible > 0 %}
+    <div style="margin-top:12px; padding:12px; border-radius:10px; font-size:12px; text-align:center;">
+      <i class="fa-solid fa-info-circle"></i> Le remboursement est géré par le Propriétaire depuis son espace.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

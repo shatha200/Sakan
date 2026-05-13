@@ -1,0 +1,249 @@
+{% extends 'layouts/base_charges_owner.html.twig' %}
+{% block charges_content %}
+
+{# ═══ EXCLUSIF SAKAN : BANNERS ALERTES RISQUE CAUTION ══════════════ #}
+{% if caution_risk_alerts is defined and caution_risk_alerts|length > 0 %}
+<div style="margin-bottom:28px; display:flex; flex-direction:column; gap:12px;">
+    {% for alert in caution_risk_alerts %}
+        <div style="background:linear-gradient(to right, {{ alert.couleur }}0A, white); border-left:4px solid {{ alert.couleur }}; border-radius:8px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.03);">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div style="font-size:28px;">{{ alert.emoji }}</div>
+                <div>
+                    <h4 style="margin:0; font-size:16px; font-weight:800; color:#1f2937; display:flex; align-items:center; gap:8px;">
+                        Risque Caution : {{ alert.titre_bien }}
+                        {% if alert.niveau == 'critique' %}
+                            <span style="font-size:10px; background:#fecaca; color:#b91c1c; padding:2px 8px; border-radius:12px; font-weight:800; text-transform:uppercase;">Dépassement</span>
+                        {% endif %}
+                    </h4>
+                    <p style="margin:4px 0 0; font-size:13px; color:#4b5563;">Les charges impayées menacent le dépôt de garantie de ce bien.</p>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:13px; color:var(--text-muted); margin-bottom:2px;">Impayés / Caution</div>
+                <div style="font-size:18px; font-weight:900; color:{{ alert.couleur }};">
+                    {{ alert.total_impaye }} <span style="font-size:14px; color:#9ca3af;">/ {{ alert.montant_caution }} TND</span>
+                </div>
+                <div style="font-size:12px; font-weight:700; color:{{ alert.couleur }}; margin-top:2px;">
+                    Soit {{ alert.pct }}% de la caution
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# ── Stats ───────────────────────────────────────── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+    <div style="background:white;border-radius:16px;padding:20px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-file-invoice-dollar" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Total ce mois</div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-primary);">
+                {{ totalMontant|number_format(3, '.', ' ') }} <span style="font-size:12px;color:var(--text-muted);">TND</span>
+            </div>
+        </div>
+    </div>
+    
+    <div style="background:white;border-radius:16px;padding:20px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Total impayé</div>
+            <div style="font-size:20px;font-weight:800;color:#ef4444;">
+                {{ totalImpaye|number_format(3, '.', ' ') }} <span style="font-size:12px;">TND</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="background:white;border-radius:16px;padding:20px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-hourglass-half" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Non payées / Part.</div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-primary);">
+                {{ nbNonPaye + nbPartiel }} <span style="font-size:14px;color:var(--text-muted);font-weight:500;">charges</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── En-tête ───────────────────────── #}
+<div style="margin-bottom:20px;">
+    <h3 style="font-size:18px;font-weight:700;margin:0;display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-gears" style="color:var(--primary);"></i>
+        Charges actives
+    </h3>
+</div>
+
+{# ── Liste des charges (Cards SAKAN 2026) ───────────── #}
+{% if charges is empty %}
+<div style="background:white;border-radius:16px;padding:60px 20px;text-align:center;box-shadow:var(--shadow-card);">
+    <i class="fa-solid fa-check-circle" style="font-size:48px;color:#cbd5e1;margin-bottom:16px;"></i>
+    <h4 style="font-size:16px;font-weight:600;margin:0 0 8px;color:var(--text-primary);">Tout est à jour !</h4>
+    <p style="font-size:14px;color:var(--text-muted);margin:0;">Vous n'avez aucune charge en attente pour ce mois-ci.</p>
+</div>
+{% else %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+    {% for charge in charges %}
+        {% set typeInfo = types[charge.type_charge] ?? types['AUTRE'] %}
+        {% set isPaid = charge.statut_paiement == 'PAYE' %}
+        
+        <div style="background:white;border-radius:16px;box-shadow:var(--shadow-card);overflow:hidden;display:flex;flex-direction:column;border:1px solid {% if isPaid %}#e2e8f0{% else %}{{ typeInfo.color }}40{% endif %};transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 10px 25px -5px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-card)'">
+            
+            {# Header Card #}
+            <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;background:{% if isPaid %}#f8fafc{% else %}white{% endif %};">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:{{ typeInfo.color }}15;color:{{ typeInfo.color }};display:flex;align-items:center;justify-content:center;font-size:16px;">
+                        <i class="fa-solid {{ typeInfo.icon }}"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:14px;color:var(--text-primary);">{{ typeInfo.label }}</div>
+                        <div style="font-size:12px;color:var(--text-muted);">{{ charge.periode|date('M Y') }}</div>
+                    </div>
+                </div>
+                <div>
+                    {% if charge.statut_paiement == 'PAYE' %}
+                        <span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">PAYÉ</span>
+                    {% elseif charge.statut_paiement == 'PARTIEL' %}
+                        <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">PARTIEL</span>
+                    {% else %}
+                        <span style="background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">NON PAYÉ</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Body Card #}
+            <div style="padding:20px;flex:1;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <div style="font-size:13px;color:var(--text-muted);">Bien loué :</div>
+                    <div style="font-size:13px;font-weight:600;color:var(--text-primary);"><i class="fa-solid fa-building" style="color:#94a3b8;margin-right:4px;"></i> {{ charge.nom_bien }}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <div style="font-size:13px;color:var(--text-muted);">Locataire :</div>
+                    <div style="font-size:13px;font-weight:600;color:var(--text-primary);"><i class="fa-solid fa-user" style="color:#94a3b8;margin-right:4px;"></i> {{ charge.nom_locataire }}</div>
+                </div>
+                
+                <div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <span style="font-size:12px;color:var(--text-muted);">Montant total :</span>
+                        <span style="font-size:13px;font-weight:600;">{{ charge.montant|number_format(3, '.', ' ') }} TND</span>
+                    </div>
+                    {% if charge.partage_coloc %}
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <span style="font-size:12px;color:var(--text-muted);">Dont locataire (1/{{ charge.nombre_colocataires }}) :</span>
+                        <span style="font-size:13px;font-weight:600;color:var(--primary);">{{ charge.part_locataire|number_format(3, '.', ' ') }} TND</span>
+                    </div>
+                    {% endif %}
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;">
+                        <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Reste à payer :</span>
+                        <span style="font-size:14px;font-weight:700;color:{% if charge.reste_a_payer > 0 %}#ef4444{% else %}#10b981{% endif %};">{{ charge.reste_a_payer|number_format(3, '.', ' ') }} TND</span>
+                    </div>
+                </div>
+                
+                {% if charge.description %}
+                    <p style="font-size:12px;color:var(--text-muted);margin:0;line-height:1.4;"><i class="fa-solid fa-note-sticky" style="margin-right:4px;"></i> {{ charge.description }}</p>
+                {% endif %}
+            </div>
+
+            {# Actions #}
+            <div style="padding:16px 20px;border-top:1px solid #f1f5f9;display:flex;gap:10px;background:#f8fafc;">
+                {% if charge.fichier_facture %}
+                    <a href="/uploads/factures/{{ charge.fichier_facture }}" target="_blank" style="flex:1;text-align:center;padding:10px;background:white;border:1px solid #cbd5e1;border-radius:8px;color:var(--text-primary);font-size:13px;font-weight:600;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                        <i class="fa-solid fa-file-pdf" style="color:#ef4444;margin-right:4px;"></i> Facture
+                    </a>
+                {% else %}
+                    <button onclick="document.getElementById('modalUploadFacture{{ charge.charge_id }}').showModal()" style="flex:1;text-align:center;padding:10px;background:white;border:1px dashed #cbd5e1;border-radius:8px;color:var(--text-muted);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.background='white';this.style.borderColor='#cbd5e1';this.style.color='var(--text-muted)'">
+                        <i class="fa-solid fa-upload" style="margin-right:4px;"></i> Ajouter
+                    </button>
+                {% endif %}
+                
+                {% if charge.statut_paiement == 'PAYE' %}
+                    <button disabled style="flex:1;text-align:center;padding:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#94a3b8;font-size:13px;font-weight:600;cursor:not-allowed;">
+                        <i class="fa-solid fa-check-double" style="margin-right:4px;"></i> Réglé
+                    </button>
+                {% else %}
+                    <button disabled style="flex:1;text-align:center;padding:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;color:#d97706;font-size:13px;font-weight:600;cursor:not-allowed;">
+                        <i class="fa-solid fa-clock" style="margin-right:4px;"></i> Attente Locataire
+                    </button>
+                {% endif %}
+            </div>
+
+        </div>
+
+        {# Modal Upload Facture pour cette charge #}
+        <dialog id="modalUploadFacture{{ charge.charge_id }}" style="border:none;border-radius:16px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);width:100%;max-width:400px;background:white;">
+            <div style="padding:20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;font-size:18px;font-weight:700;"><i class="fa-solid fa-upload" style="color:var(--primary);margin-right:8px;"></i> Joindre Facture</h3>
+                <button onclick="this.closest('dialog').close()" style="background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;">&times;</button>
+            </div>
+            <div style="padding:24px;">
+                <p style="font-size:14px;color:var(--text-muted);margin:0 0 16px;">Veuillez télécharger le document justifiant cette charge (PDF, JPG, PNG).</p>
+                <form onsubmit="handleUpload(event, {{ charge.charge_id }})">
+                    <input type="file" id="factureFile{{ charge.charge_id }}" name="facture" accept=".pdf,image/*" required style="width:100%;padding:10px;border:1px dashed #cbd5e1;border-radius:8px;margin-bottom:20px;background:#f8fafc;">
+                    <button type="submit" style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Envoyer</button>
+                </form>
+            </div>
+        </dialog>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+
+{# ── Scripts ─────────────────────────────────────────── #}
+<script>
+async function handleUpload(e, chargeId) {
+    e.preventDefault();
+    const fileInput = document.getElementById('factureFile' + chargeId);
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
+    
+    if(!fileInput.files[0]) return;
+    const file = fileInput.files[0];
+
+    // -- VALIDATION CLIENT-SIDE --
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Le fichier dépasse la taille limite de 5 MB.');
+        fileInput.value = '';
+        return;
+    }
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        alert('Veuillez sélectionner un format valide (PDF, JPG, PNG).');
+        fileInput.value = '';
+        return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi...';
+    
+    const formData = new FormData();
+    formData.append('facture', file);
+    
+    try {
+        const res = await fetch(`/proprietaire/charges/api/upload-facture/${chargeId}`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if(data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Erreur upload.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch(err) {
+        alert('Erreur réseau.');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,970 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}{{ a.titre }} — Sakan{% endblock %}
+{% block page_title %}{{ a.titre }}{% endblock %}
+
+{% block content %}
+{% set badge = a.statut == 'bientot' ? 'bientot' : 'disponible' %}
+{% set is_fav = is_fav|default(false) %}
+{% set badge_label = a.statut == 'bientot' ? 'Bientôt' : 'Disponible' %}
+{% set _raw_addr = a.adresse_text ?? '' %}
+{% set _parts = _raw_addr|split(',')|map(p => p|trim)|filter(p => p != '') %}
+{% set adresse_short = _parts|length > 3 ? (_parts|slice(0, 2)|join(', ') ~ ', ' ~ _parts|last) : _parts|join(', ') %}
+
+<button class="btn-retour" onclick="window.location.href='{{ path('tenant_catalogue') }}'">
+    <i class="fa-solid fa-chevron-left"></i> Retour au catalogue
+</button>
+
+{# Flash messages #}
+{% for label, messages in app.flashes %}
+    {% if label != 'agenda_url' %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'error' ? 'danger' : label }}" style="padding: 12px 20px; margin-bottom: 20px; border-radius: 12px; background: {{ label == 'success' ? '#d1fae5' : (label == 'error' or label == 'danger' ? '#fee2e2' : '#fef3c7') }}; color: {{ label == 'success' ? '#065f46' : (label == 'error' or label == 'danger' ? '#991b1b' : '#92400e') }}; border: 1px solid {{ label == 'success' ? '#a7f3d0' : (label == 'error' or label == 'danger' ? '#fecaca' : '#fde68a') }}; z-index: 100; position: relative;">
+                <i class="fa-solid {{ label == 'success' ? 'fa-check-circle' : (label == 'error' or label == 'danger' ? 'fa-exclamation-circle' : 'fa-info-circle') }}"></i> {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endfor %}
+
+<!-- HERO IMAGE -->
+<div class="detail-hero" style="position:relative;">
+    {% if a.images|length > 0 %}
+        <img id="hero-img" data-index="0" src="{{ a.images|first | imagine_filter('annonce_watermark') }}" alt="{{ a.titre }}">
+        {% if a.images|length > 1 %}
+            <button type="button" onclick="navGallery(-1)" aria-label="Précédente"
+                    style="position:absolute;top:50%;left:16px;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:none;background:rgba(255,255,255,0.92);color:#5E17EB;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;z-index:5;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button type="button" onclick="navGallery(1)" aria-label="Suivante"
+                    style="position:absolute;top:50%;right:16px;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:none;background:rgba(255,255,255,0.92);color:#5E17EB;font-size:18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;z-index:5;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <div id="gallery-counter" style="position:absolute;bottom:16px;left:16px;background:rgba(0,0,0,0.6);color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;z-index:5;">
+                1 / {{ a.images|length }}
+            </div>
+        {% endif %}
+    {% else %}
+        <div style="width:100%;height:400px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fa-solid fa-image" style="font-size:48px;"></i></div>
+    {% endif %}
+    {% if a.images|length > 0 %}
+        <img src="/images/watermark.png" alt="" aria-hidden="true"
+             style="position:absolute !important;bottom:14px !important;right:14px !important;width:65px !important;height:auto !important;object-fit:contain !important;cursor:default !important;opacity:0.8;pointer-events:none;z-index:3;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+    {% endif %}
+    <div class="hero-overlay">
+        <div>
+            <h1>{{ a.titre }}</h1>
+            <span class="badge-statut {{ badge }}" style="position:static; margin-top:8px;">{{ badge_label }}</span>
+        </div>
+        <div class="hero-prix">{{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }} TND <span style="font-size:16px;font-weight:normal;color:white;">/ mois</span></div>
+    </div>
+</div>
+
+{% if a.images|length > 1 %}
+    <div style="display:flex;gap:8px;padding:12px 0;overflow-x:auto;">
+        {% for img in a.images %}
+            <img src="{{ img | imagine_filter('annonce_thumb_watermark') }}" onclick="setGallery({{ loop.index0 }})" data-thumb="{{ loop.index0 }}" style="width:110px;height:80px;object-fit:cover;border-radius:10px;cursor:pointer;border:2px solid {{ loop.first ? '#5E17EB' : 'transparent' }};transition:border-color .15s;">
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- LAYOUT 2 COLONNES -->
+<div class="detail-layout">
+
+    <!-- COLONNE GAUCHE -->
+    <div class="detail-left">
+
+        <div class="infos-chips">
+            <span><i class="fa-solid fa-bed"></i> {{ a.nombreChambres ?: 0 }} chambres</span>
+            <span><i class="fa-solid fa-ruler-combined"></i> {{ a.superficie ?: '—' }} m²</span>
+            {% if a.bien_type %}<span><i class="fa-solid fa-house"></i> {{ a.bien_type }}</span>{% endif %}
+            <span><i class="fa-solid fa-location-dot"></i> {{ adresse_short ?: '—' }}</span>
+        </div>
+
+        {% if a.statut == 'bientot' %}
+            {% if a.total_seconds is defined and a.total_seconds %}
+                <div id="loc-countdown" data-seconds="{{ a.total_seconds }}" style="padding:16px;border-radius:14px;margin-bottom:16px;background:#fffbeb;border:1.5px solid #fcd34d;text-align:center;">
+                    <div style="font-size:12px;color:#a16207;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">
+                        <i class="fa-solid fa-clock"></i> Ce bien sera disponible dans
+                    </div>
+                    <div style="display:flex;justify-content:center;gap:12px;">
+                        <div><div id="lc-j" style="font-size:26px;font-weight:800;color:#92400e;">{{ a.jours_restants }}</div><div style="font-size:10px;color:#a16207;">jours</div></div>
+                        <div style="font-size:26px;font-weight:300;color:#d97706;">:</div>
+                        <div><div id="lc-h" style="font-size:26px;font-weight:800;color:#92400e;">{{ '%02d'|format(a.heures_restantes) }}</div><div style="font-size:10px;color:#a16207;">heures</div></div>
+                        <div style="font-size:26px;font-weight:300;color:#d97706;">:</div>
+                        <div><div id="lc-m" style="font-size:26px;font-weight:800;color:#92400e;">{{ '%02d'|format(a.minutes_restantes) }}</div><div style="font-size:10px;color:#a16207;">min</div></div>
+                        <div style="font-size:26px;font-weight:300;color:#d97706;">:</div>
+                        <div><div id="lc-s" style="font-size:26px;font-weight:800;color:#92400e;">00</div><div style="font-size:10px;color:#a16207;">sec</div></div>
+                    </div>
+                    <div style="font-size:12.5px;color:#a16207;margin-top:8px;">Vous pourrez réserver dès sa disponibilité</div>
+                </div>
+            {% else %}
+                <div style="padding:14px 18px;border-radius:14px;margin-bottom:16px;background:#fffbeb;border:1.5px solid #fcd34d;display:flex;align-items:center;gap:10px;">
+                    <i class="fa-solid fa-clock" style="font-size:20px;color:#d97706;"></i>
+                    <div>
+                        <div style="font-weight:700;color:#92400e;font-size:15px;">La date de disponibilité est imprévue</div>
+                        <div style="font-size:12.5px;color:#a16207;margin-top:2px;">Le propriétaire n'a pas encore défini de date de disponibilité</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <section class="detail-section">
+            <p style="font-size:13px; color:gray; margin-bottom:6px;">
+              Partager cette annonce
+            </p>
+            <!-- ShareThis BEGINS -->
+            <div class="sharethis-share-buttons"
+                 data-type="inline-share-buttons"
+                 data-labels="cta"
+                 data-show_total="false"
+                 data-size="small"
+                 data-url="{{ absolute_url(path('tenant_annonce_detail', {id: id})) }}"
+                 data-title="{{ a.titre|e('html_attr') }}"
+                 data-description="{{ a.description|slice(0, 200)|e('html_attr') }}"
+                 {% if a.images|length > 0 %}data-image="{{ absolute_url('/' ~ a.images|first) }}"{% endif %}>
+                <span data-network="facebook"></span>
+                <span data-network="messenger"></span>
+                <span data-network="sharethis"></span>
+                <span data-network="whatsapp"></span>
+            </div>
+            <!-- ShareThis ENDS -->
+        </section>
+
+        <section class="detail-section">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+                <h2 style="margin:0;">Description</h2>
+                <button type="button" id="btn-translate-desc"
+                        style="background:#5E17EB;color:white;border:none;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fa-solid fa-language"></i>
+                    <span id="btn-translate-label">Traduire en anglais</span>
+                </button>
+            </div>
+            <p id="desc-text" data-original="{{ a.description|e('html_attr') }}" style="color: var(--text-muted); line-height: 1.6; white-space:pre-wrap;">{{ a.description }}</p>
+            <p id="desc-translate-error" style="display:none;margin-top:8px;padding:8px 12px;background:#fef2f2;color:#991b1b;border-radius:8px;font-size:12px;"></p>
+
+            <script>
+            (function() {
+                var btn   = document.getElementById('btn-translate-desc');
+                var label = document.getElementById('btn-translate-label');
+                var desc  = document.getElementById('desc-text');
+                var errEl = document.getElementById('desc-translate-error');
+                if (!btn || !desc) return;
+
+                var state = 'original';    // 'original' | 'translated'
+                var cache = null;          // stocke la traduction après premier appel
+
+                btn.addEventListener('click', async function() {
+                    errEl.style.display = 'none';
+
+                    // Toggle retour à l'original
+                    if (state === 'translated') {
+                        desc.textContent = desc.dataset.original;
+                        label.textContent = 'Traduire en anglais';
+                        state = 'original';
+                        return;
+                    }
+
+                    // Si on a déjà traduit une fois, on réutilise le cache (pas de 2e appel API)
+                    if (cache) {
+                        desc.textContent = cache;
+                        label.textContent = 'Afficher l\'original';
+                        state = 'translated';
+                        return;
+                    }
+
+                    label.textContent = 'Traduction...';
+                    btn.disabled = true;
+
+                    try {
+                        var fd = new FormData();
+                        fd.append('q', desc.dataset.original);
+                        fd.append('source', 'fr');
+                        fd.append('target', 'en');
+                        fd.append('format', 'text');
+
+                        var res = await fetch('/translate', { method: 'POST', body: fd });
+                        var data = await res.json();
+
+                        if (data.translated) {
+                            cache = data.translated;
+                            desc.textContent = cache;
+                            label.textContent = 'Afficher l\'original';
+                            state = 'translated';
+                        } else {
+                            errEl.textContent = data.error || 'Traduction échouée.';
+                            errEl.style.display = 'block';
+                            label.textContent = 'Traduire en anglais';
+                        }
+                    } catch (e) {
+                        errEl.textContent = 'Erreur réseau : ' + (e.message || 'inconnue');
+                        errEl.style.display = 'block';
+                        label.textContent = 'Traduire en anglais';
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+            })();
+            </script>
+        </section>
+
+        {% if a.equipements is defined and a.equipements %}
+        <section class="detail-section">
+            <h2>Équipements & Services</h2>
+            <div class="equipements-grid">
+                <span class="equip-tag"><i class="fa-solid fa-couch"></i> {{ a.equipements }}</span>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if a.adresse_text %}
+        <section class="detail-section">
+            <h2>Localisation</h2>
+            <div class="map-placeholder">
+                <div style="padding:16px;background:#f8fafc;border-radius:16px;">
+                    <i class="fa-solid fa-location-dot" style="color:#5E17EB;"></i> {{ adresse_short ?: a.adresse_text }}
+                </div>
+                <div id="map-detail" style="height:350px; border-radius:8px; margin-top:12px;"></div>
+                <div id="map-detail-fallback" style="display:none;margin-top:8px;padding:10px 14px;background:#fee2e2;color:#991b1b;border-radius:10px;font-size:13px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Adresse non localisée
+                </div>
+                <div class="map-actions">
+                    <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('{{ a.adresse_text|e('js') }}'), '_blank')">
+                        <i class="fa-solid fa-map"></i> Voir sur Maps
+                    </button>
+                    <button onclick="copyAddress()">
+                        <i class="fa-solid fa-copy"></i> Copier l'adresse
+                    </button>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- SECTION AVIS -->
+        <section class="detail-section" id="section-avis">
+            <h2><i class="fa-solid fa-star" style="color:var(--warning);"></i> Avis des locataires</h2>
+
+            <!-- Résumé global -->
+            {% if avis_count > 0 %}
+            <div class="rating-global">
+                <span class="rating-score">{{ avis_avg }}</span>
+                <div>
+                    <div class="stars">
+                        {% for i in 1..5 %}
+                            {% if avis_avg >= i %}
+                                <i class="fa-solid fa-star"></i>
+                            {% elseif avis_avg >= i - 0.5 %}
+                                <i class="fa-solid fa-star-half-stroke"></i>
+                            {% else %}
+                                <i class="fa-regular fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="rating-count">{{ avis_count }} avis</span>
+                </div>
+            </div>
+            {% else %}
+            <p style="color:var(--text-muted); margin-bottom:20px;">Aucun avis pour le moment. Soyez le premier a donner votre avis !</p>
+            {% endif %}
+
+            <!-- Formulaire d'avis -->
+            {% if app.user and app.user.roleName == 'LOCATAIRE' %}
+            <div class="avis-form-card">
+                <h3>{{ user_avis ? 'Modifier votre avis' : 'Laisser un avis' }}</h3>
+                <form method="post" action="{{ path('tenant_annonce_avis', {id: id}) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('avis_annonce_' ~ id) }}">
+
+                    <div class="avis-stars-input">
+                        <label>Votre note :</label>
+                        <div class="star-rating" id="star-rating">
+                            {% for i in 1..5 %}
+                                <i class="fa-regular fa-star star-btn" data-value="{{ i }}" title="{{ i }} etoile{{ i > 1 ? 's' : '' }}"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="note" id="note-input" value="{{ user_avis ? user_avis.note : '' }}" required>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <label>Votre commentaire :</label>
+                        <textarea name="commentaire" class="sakan-input" rows="3"
+                                  placeholder="Partagez votre experience..."
+                                  required minlength="5" maxlength="1000">{{ user_avis ? user_avis.commentaire : '' }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top:12px;">
+                        <i class="fa-solid fa-paper-plane"></i> {{ user_avis ? 'Mettre a jour' : 'Publier' }}
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Résumé Intelligent (IA Feature) -->
+            {% if avis_topics|length > 0 %}
+            <div id="smart-summary" style="margin-bottom: 30px; padding: 24px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 20px; border: 1px solid #bae6fd;">
+                <h3 style="color: #0369a1; margin-top: 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-brain"></i> Analyse Intelligente Sakan
+                </h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px;">
+                    {% for topic, count in avis_topics %}
+                        <div style="background: white; padding: 8px 16px; border-radius: 50px; border: 1px solid #bae6fd; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 700; color: #0369a1;">{{ topic }}</span>
+                            <span style="background: #bae6fd; color: #0369a1; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800;">{{ count }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Liste des avis -->
+            {% if avis_count > 0 %}
+            <div class="avis-list" style="margin-top:24px;">
+                {% for avis in avis_list %}
+                <div class="avis-item" style="position: relative;">
+                    {% if avis.is_masked %}
+                        <div style="position: absolute; top: 15px; right: 15px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 50px; background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; font-size: 11px; font-weight: 700;" title="Commentaire signalé automatiquement">
+                            <i class="fa-solid fa-ban"></i> Suspendu
+                        </div>
+                    {% endif %}
+                    <div class="avis-avatar-placeholder">
+                        {{ avis.auteur_nom|first|upper }}
+                    </div>
+                    <div class="avis-content">
+                        <div class="avis-header">
+                            <strong>{{ avis.auteur_nom ?: 'Anonyme' }}</strong>
+                            <span class="avis-date">{{ avis.date_creation|date('d/m/Y') }}</span>
+                        </div>
+                        <div class="avis-stars">
+                            {% for i in 1..5 %}
+                                <i class="fa-{{ i <= avis.note ? 'solid' : 'regular' }} fa-star"></i>
+                            {% endfor %}
+                        </div>
+                        {% if avis.is_masked %}
+                            <p class="avis-text" style="font-style:italic;color:#94a3b8;display:flex;align-items:center;gap:8px;">
+                                <i class="fa-solid fa-eye-slash"></i> Commentaire masqué — contenu inapproprié détecté, en attente de modération.
+                            </p>
+                        {% else %}
+                            <p class="avis-text">{{ avis.commentaire }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+    </div>
+
+    <!-- COLONNE DROITE -->
+    <div class="detail-right">
+        <div class="action-card">
+
+            <!-- Bloc propriétaire : avatar + nom + badge vérifié -->
+            <div style="display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;margin-bottom:16px;">
+                <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5E17EB,#4a11c7);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;">
+                    {{ (a.proprietaire_nom ?: 'P')|first|upper }}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:15px;color:#1e293b;line-height:1.2;">{{ a.proprietaire_nom ?: 'Propriétaire' }}</div>
+                    <div style="font-size:12px;color:#10b981;display:flex;align-items:center;gap:4px;margin-top:2px;">
+                        <i class="fa-solid fa-circle-check"></i> Propriétaire vérifié
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prix — bloc héros dégradé -->
+            <div style="padding:16px 18px;background:linear-gradient(135deg,#5E17EB,#4a11c7);border-radius:14px;color:white;margin-bottom:12px;box-shadow:0 4px 12px rgba(94,23,235,0.25);">
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.6px;opacity:0.85;margin-bottom:4px;font-weight:600;">Loyer mensuel</div>
+                <div style="font-size:28px;font-weight:800;line-height:1;">
+                    {{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }}
+                    <span style="font-size:14px;font-weight:500;opacity:0.85;">TND</span>
+                </div>
+            </div>
+
+            <!-- Grille 2 colonnes : Caution + Disponibilité -->
+            <div style="display:grid;grid-template-columns:{% if a.caution_mois is defined and a.caution_mois %}1fr 1fr{% else %}1fr{% endif %};gap:8px;margin-bottom:14px;">
+                {% if a.caution_mois is defined and a.caution_mois %}
+                    <div style="padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+                        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">
+                            <i class="fa-solid fa-shield-halved" style="color:#5E17EB;"></i> Caution
+                        </div>
+                        <div style="font-weight:700;font-size:15px;color:#1e293b;line-height:1.2;">{{ a.caution_mois }} mois</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ (a.prix * a.caution_mois)|number_format(0, ',', ' ') }} TND</div>
+                    </div>
+                {% endif %}
+                <div style="padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+                    <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">
+                        <i class="fa-solid fa-calendar-check" style="color:{% if a.statut == 'disponible' %}#10b981{% elseif a.statut == 'bientot' %}#d97706{% else %}#6b7280{% endif %};"></i> Disponibilité
+                    </div>
+                    {% if a.statut == 'disponible' %}
+                        <div style="font-weight:700;font-size:15px;color:#10b981;line-height:1.2;">Disponible</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">dès maintenant</div>
+                    {% elseif a.statut == 'bientot' %}
+                        <div style="font-weight:700;font-size:15px;color:#d97706;line-height:1.2;">Bientôt</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                            {% if a.dateDisponibilite %}{{ a.dateDisponibilite|date('d/m/Y') }}{% else %}Date imprévue{% endif %}
+                        </div>
+                    {% else %}
+                        <div style="font-weight:700;font-size:15px;color:#6b7280;line-height:1.2;">Occupé</div>
+                        {% if a.dateDisponibilite %}
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">libre {{ a.dateDisponibilite|date('d/m/Y') }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Market analysis (IA) -->
+            {% if market_analysis is defined %}
+                <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:{{ market_analysis.color }}12;border:1px solid {{ market_analysis.color }}33;">
+                    <i class="fa-solid {{ market_analysis.icon }}" style="color:{{ market_analysis.color }};font-size:18px;flex-shrink:0;"></i>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:800;font-size:11px;color:{{ market_analysis.color }};text-transform:uppercase;letter-spacing:0.3px;">{{ market_analysis.label }}</div>
+                        <div style="font-size:11px;color:var(--text-muted);line-height:1.3;">{{ market_analysis.desc }}</div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- CTAs -->
+            {% if a.statut == 'disponible' %}
+                <button class="btn-primary btn-full" onclick="showModal('modal-reservation')">
+                    <i class="fa-solid fa-house-circle-check"></i> Réserver
+                </button>
+                <button class="btn-secondary btn-full" onclick="showModal('modal-visite')" style="margin-top:8px;">
+                    <i class="fa-solid fa-calendar-check"></i> Visiter
+                </button>
+            {% else %}
+                <div style="padding:12px;background:#fffbeb;color:#92400e;border:1px solid #fcd34d;border-radius:12px;text-align:center;font-weight:600;font-size:13px;">
+                    <i class="fa-solid fa-clock"></i> Réservation indisponible pour l'instant
+                </div>
+            {% endif %}
+            {% if a.proprietaire_telephone %}
+                <button class="btn-outline btn-full" onclick="showToast('📞 {{ a.proprietaire_telephone }}')" style="margin-top:10px;">
+                    <i class="fa-solid fa-phone"></i> Contacter
+                </button>
+            {% endif %}
+            <button type="button" id="btn-fav" class="btn-outline btn-full" onclick="toggleFavDetail({{ id }})"
+                    style="margin-top:10px;{{ is_fav ? 'color:#ef4444;border-color:#ef4444;' : '' }}">
+                <i class="fa-solid fa-heart"></i> <span id="fav-label">{{ is_fav ? 'Retirer de la wishlist' : 'Ajouter à la wishlist' }}</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Réservation -->
+<div id="modal-reservation" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-card" style="background: white; width: 90%; max-width: 500px; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+        <div class="modal-header" style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <h3 style="margin: 0; color: var(--blue-dark);"><i class="fa-solid fa-house-circle-check"></i> Réserver</h3>
+            <button type="button" onclick="closeModal('modal-reservation')" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="post" action="{{ path('tenant_reservation_create', {id: id}) }}" onsubmit="submitModalAjax(event, this)" style="display: flex; flex-direction: column; overflow: hidden;">
+            <div class="modal-body" style="padding: 24px; overflow-y: auto; flex: 1; scrollbar-width: thin;">
+                <div id="reservation-error" style="display:none; color: var(--danger); background: var(--danger-light, #fee2e2); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;"></div>
+                <div class="modal-bien-recap">
+                    {% if a.images|length > 0 %}<img src="{{ a.images|first | imagine_filter('annonce_thumb') }}" alt="{{ a.titre }}">{% endif %}
+                    <div>
+                        <strong>{{ a.titre }}</strong>
+                        <span>{{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }} TND / mois</span>
+                    </div>
+                </div>
+                <label>Date de début souhaitée *</label>
+                <input type="date" name="dateDebut" id="res-date-start" class="sakan-input" required min="{{ "now"|date("Y-m-d") }}">
+                
+                <label>Date de fin souhaitée *</label>
+                <input type="date" name="dateFin" id="res-date-end" class="sakan-input" required min="{{ "now"|date("Y-m-d") }}">
+
+                <div id="budget-simulator" style="display:none; margin: 20px 0; padding: 15px; border-radius: 12px; background: #f8fafc; border: 1px solid var(--border);">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--blue-dark); text-transform: uppercase; margin-bottom: 10px;">Simulation du budget (Expert Logic)</div>
+                    <div id="budget-details" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            <div style="font-size: 10px; color: var(--text-muted);">Estimation TND</div>
+                            <div id="total-tnd" style="font-weight: 800; color: var(--blue-dark);">--</div>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            <div style="font-size: 10px; color: var(--text-muted);">Estimation EUR</div>
+                            <div id="total-eur" style="font-weight: 800; color: #10b981;">--</div>
+                        </div>
+                    </div>
+                    <div id="budget-loader" style="display: none; text-align: center; margin-top: 10px;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--blue);"></i>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #fffbeb; border-radius: 12px; border: 1px solid #fef3c7;">
+                    <label style="color: #92400e; font-weight: 700; margin-bottom: 8px; display: block;">
+                        Sécurité : {{ captcha.question }} *
+                    </label>
+                    <input type="number" name="captcha_answer" class="sakan-input" placeholder="{{ captcha.placeholder }}" required style="border-color: #fde68a;">
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0; background: #fdfdfd;">
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-reservation')">Annuler</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i> Confirmer ma demande
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Visite -->
+<div id="modal-visite" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-calendar-check"></i> Demander une visite</h3>
+            <button type="button" onclick="closeModal('modal-visite')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="post" action="{{ path('tenant_visite_create', {id: id}) }}" onsubmit="submitModalAjax(event, this)">
+            <div class="modal-body">
+                <div id="visite-error" style="display:none; color: var(--danger); background: var(--danger-light, #fee2e2); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;"></div>
+                <label>Date et heure souhaitées *</label>
+                <input type="datetime-local" name="dateHeure" class="sakan-input" required>
+                <label style="margin-top:12px;">Commentaire (optionnel)</label>
+                <textarea name="commentaire" class="sakan-input" rows="3" placeholder="Précisez vos disponibilités..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-visite')">Annuler</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-check"></i> Confirmer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="canonical" href="{{ absolute_url(path('tenant_annonce_detail', {id: id})) }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ a.titre|e('html_attr') }}">
+<meta property="og:description" content="{{ a.description|slice(0, 200)|e('html_attr') }}">
+<meta property="og:url" content="{{ absolute_url(path('tenant_annonce_detail', {id: id})) }}">
+{% if a.images|length > 0 %}<meta property="og:image" content="{{ absolute_url('/' ~ a.images|first) }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function() {
+    var mapDiv  = document.getElementById('map-detail');
+    var fallbck = document.getElementById('map-detail-fallback');
+    if (!mapDiv || typeof L === 'undefined') return;
+
+    var addr  = {{ ((a.adresse_text ?? '')|trim)|json_encode|raw }};
+    var titre = {{ (a.titre ?? '')|json_encode|raw }};
+
+    var map = L.map('map-detail', { zoomControl: true }).setView([33.8869, 9.5375], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // --- Overpass API: nearby places (1km radius) ---
+    var nearbyCategories = [
+        { label: 'Supermarché',       icon: '🏪', query: 'shop~"supermarket|convenience"' },
+        { label: 'Boulangerie',       icon: '🥖', query: 'shop=bakery' },
+        { label: 'École',             icon: '🏫', query: 'amenity~"school|university|college"' },
+        { label: 'Pharmacie',         icon: '🏥', query: 'amenity=pharmacy' },
+        { label: 'Mosquée',           icon: '🕌', query: 'amenity=place_of_worship' },
+        { label: 'Arrêt de bus',      icon: '🚌', query: 'highway=bus_stop' },
+        { label: 'Banque / ATM',      icon: '🏦', query: 'amenity~"bank|atm"' },
+        { label: 'Café / Restaurant', icon: '☕', query: 'amenity~"cafe|restaurant"' }
+    ];
+
+    function matchCategory(tags) {
+        if (!tags) return null;
+        if (tags.shop === 'supermarket' || tags.shop === 'convenience') return nearbyCategories[0];
+        if (tags.shop === 'bakery') return nearbyCategories[1];
+        if (tags.amenity === 'school' || tags.amenity === 'university' || tags.amenity === 'college') return nearbyCategories[2];
+        if (tags.amenity === 'pharmacy') return nearbyCategories[3];
+        if (tags.amenity === 'place_of_worship') return nearbyCategories[4];
+        if (tags.highway === 'bus_stop') return nearbyCategories[5];
+        if (tags.amenity === 'bank' || tags.amenity === 'atm') return nearbyCategories[6];
+        if (tags.amenity === 'cafe' || tags.amenity === 'restaurant') return nearbyCategories[7];
+        return null;
+    }
+
+    function showNearbyLegend() {
+        if (document.getElementById('nearby-legend')) return;
+        var legend = document.createElement('div');
+        legend.id = 'nearby-legend';
+        legend.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding:10px;background:#f8f9fa;border-radius:8px;font-size:13px;';
+        nearbyCategories.forEach(function(cat) {
+            var item = document.createElement('span');
+            item.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:white;border-radius:20px;border:1px solid #dee2e6;';
+            item.innerHTML = cat.icon + ' ' + cat.label;
+            legend.appendChild(item);
+        });
+        mapDiv.parentNode.insertBefore(legend, mapDiv.nextSibling);
+    }
+
+    function showNearbyLoading() {
+        if (document.getElementById('nearby-loading')) return;
+        var loading = document.createElement('p');
+        loading.id = 'nearby-loading';
+        loading.style.cssText = 'font-size:13px;color:gray;margin-top:8px;';
+        loading.innerText = '📍 Chargement des lieux à proximité...';
+        mapDiv.parentNode.insertBefore(loading, mapDiv.nextSibling);
+    }
+    function hideNearbyLoading() {
+        var el = document.getElementById('nearby-loading');
+        if (el) el.remove();
+    }
+
+    function fetchNearbyPlaces(lat, lon) {
+        var radius = 1000;
+        var parts = nearbyCategories.map(function(cat) {
+            return 'node[' + cat.query + '](around:' + radius + ',' + lat + ',' + lon + ');'
+                 + 'way['  + cat.query + '](around:' + radius + ',' + lat + ',' + lon + ');';
+        }).join('\n');
+        var overpassQuery = '[out:json][timeout:25];(' + parts + ');out center;';
+        return fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: overpassQuery
+        }).then(function(r) { return r.json(); })
+          .then(function(data) { return data.elements || []; })
+          .catch(function() { return []; });
+    }
+
+    function addNearbyMarkers(lat, lon) {
+        if (!lat || !lon || lat === 0 || lon === 0) return;
+        showNearbyLoading();
+        fetchNearbyPlaces(lat, lon).then(function(elements) {
+            elements.forEach(function(el) {
+                var elLat = el.lat || (el.center && el.center.lat);
+                var elLon = el.lon || (el.center && el.center.lon);
+                var name  = (el.tags && el.tags.name) ? el.tags.name : 'Sans nom';
+                var cat = matchCategory(el.tags);
+                if (!cat || !elLat || !elLon) return;
+                var icon = L.divIcon({
+                    html: '<div style="font-size:20px;filter:drop-shadow(1px 1px 2px rgba(0,0,0,0.4));">' + cat.icon + '</div>',
+                    className: '',
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+                L.marker([elLat, elLon], { icon: icon })
+                    .addTo(map)
+                    .bindPopup('<strong>' + cat.icon + ' ' + cat.label + '</strong><br>' + name.replace(/</g, '&lt;'));
+            });
+            if (elements.length > 0) showNearbyLegend();
+        }).catch(function() {}).then(function() { hideNearbyLoading(); });
+    }
+    // --- end Overpass ---
+
+    if (!addr) { if (fallbck) fallbck.style.display = 'block'; return; }
+
+    var parts = addr.split(',').map(function(p){ return p.trim(); }).filter(function(p){ return p.length > 0; });
+    var queries = [addr];
+    if (parts.length > 3) {
+        queries.push(parts[0] + ', ' + parts[parts.length - 1]);
+    }
+    if (parts.length > 0) {
+        queries.push(parts[0]);
+        queries.push(parts[parts.length - 1]);
+    }
+
+    function tryGeocode(i) {
+        if (i >= queries.length) {
+            if (fallbck) fallbck.style.display = 'block';
+            return;
+        }
+        fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(queries[i]) + '&countrycodes=tn&format=json&limit=1', {
+            headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(results) {
+            if (results && results.length > 0) {
+                var lat = parseFloat(results[0].lat);
+                var lng = parseFloat(results[0].lon);
+                map.setView([lat, lng], 14);
+                L.marker([lat, lng], { draggable: false })
+                    .addTo(map)
+                    .bindPopup('<strong>' + titre.replace(/</g,'&lt;') + '</strong><br>' + addr.replace(/</g,'&lt;'))
+                    .openPopup();
+                setTimeout(function() { addNearbyMarkers(lat, lng); }, 1000);
+            } else {
+                tryGeocode(i + 1);
+            }
+        })
+        .catch(function() {
+            tryGeocode(i + 1);
+        });
+    }
+    tryGeocode(0);
+})();
+</script>
+<script>
+    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
+    // --- Logic Système Expert : Simulateur de Budget ---
+    const startDateInput = document.getElementById('res-date-start');
+    const endDateInput = document.getElementById('res-date-end');
+    const budgetDiv = document.getElementById('budget-simulator');
+    const budgetDetails = document.getElementById('budget-details');
+    const budgetLoader = document.getElementById('budget-loader');
+
+    const updateBudget = async () => {
+        const start = startDateInput.value;
+        const end = endDateInput.value;
+        const price = {{ a.prix|default(0) }};
+
+        if (start && end && price > 0) {
+            budgetDiv.style.display = 'block';
+            budgetDetails.style.opacity = '0.3';
+            budgetLoader.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('price', price);
+                formData.append('start', start);
+                formData.append('end', end);
+
+                const response = await fetch('{{ path('api_reservation_simulate') }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const data = await response.json();
+                budgetLoader.style.display = 'none';
+                budgetDetails.style.opacity = '1';
+
+                if (data.total_tnd) {
+                    document.getElementById('total-tnd').innerText = data.total_tnd.toLocaleString() + ' TND';
+                    document.getElementById('total-eur').innerText = data.total_eur ? data.total_eur.toLocaleString() + ' EUR' : '--';
+                    
+                    if (typeof showSakanToast === 'function' && data.duration_months < 1) {
+                        showSakanToast("Expert Conseil : Notez que cette réservation est courte (moins d'un mois).", "info");
+                    }
+                } else if (data.error) {
+                    document.getElementById('total-tnd').innerText = 'Dates invalides';
+                }
+            } catch (err) {
+                console.error("Budget Simulation Error:", err);
+                budgetLoader.style.display = 'none';
+                budgetDetails.style.opacity = '1';
+            }
+        }
+    };
+
+    if (startDateInput) startDateInput.addEventListener('change', updateBudget);
+    if (endDateInput) endDateInput.addEventListener('change', updateBudget);
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3500);
+    }
+    
+    // Ajax Interceptor for Create Modals
+    async function submitModalAjax(e, form) {
+        e.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Traitement...';
+        
+        const isVisite = form.action.includes('visiter');
+        const errorDiv = isVisite ? document.getElementById('visite-error') : document.getElementById('reservation-error');
+        errorDiv.style.display = 'none';
+        
+        let successState = false;
+
+        try {
+            const formData = new FormData(form);
+            const ajaxUrl = form.action + (form.action.includes('?') ? '&' : '?') + 'ajax=1';
+            
+            const req = await fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            if (!req.ok) throw new Error("Erreur serveur ou de connexion.");
+            
+            const data = await req.json();
+            
+            if (data.success) {
+                successState = true;
+                if (data.agenda_url) {
+                    // Inject Success Modal
+                    form.innerHTML = `
+                        <div class="modal-body" style="text-align: center; padding: 30px;">
+                            <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 64px; margin-bottom: 20px;"></i>
+                            <h2 style="color: var(--blue-dark); margin-bottom: 10px;">Visite planifiée !</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 25px;">Votre demande a été envoyée au propriétaire.</p>
+                            
+                            <div style="background: linear-gradient(135deg, #4285f4, #34a853); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 15px -3px rgba(66, 133, 244, 0.3);">
+                                <i class="fa-solid fa-calendar-check" style="font-size: 32px; margin-bottom: 10px;"></i>
+                                <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 700;">Ajoutez ce rendez-vous à votre agenda</h3>
+                                <a href="${data.agenda_url}" target="_blank" class="btn-primary" style="background: white; color: #4285f4; border: none; padding: 10px 20px; font-weight: 700; border-radius: 8px; text-decoration: none; width: 100%; text-align: center;">
+                                    <i class="fa-solid fa-plus"></i> Ouvrir Google Agenda
+                                </a>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="justify-content: center; border-top: 1px solid var(--border); padding-top: 20px;">
+                            <a href="${data.redirect || '{{ path('tenant_catalogue') }}'}" class="btn-secondary" style="width: 100%; text-align: center; text-decoration: none;">Continuer vers Mes Visites</a>
+                        </div>
+                    `;
+                } else {
+                    // Inject Success Modal for Reservations
+                    form.innerHTML = `
+                        <div class="modal-body" style="text-align: center; padding: 30px;">
+                            <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 64px; margin-bottom: 20px;"></i>
+                            <h2 style="color: var(--blue-dark); margin-bottom: 10px;">Réservation envoyée !</h2>
+                            <p style="color: var(--text-muted); margin-bottom: 25px;">Le propriétaire examinera votre demande très bientôt.</p>
+                        </div>
+                        <div class="modal-footer" style="justify-content: center; border-top: 1px solid var(--border); padding-top: 20px;">
+                            <a href="${data.redirect || '{{ path('tenant_catalogue') }}'}" class="btn-primary" style="width: 100%; text-align: center; text-decoration: none;">Voir mes réservations</a>
+                        </div>
+                    `;
+                }
+            } else {
+                if (data.is_holiday_warning) {
+                    errorDiv.innerHTML = '<i class="fa-solid fa-bell"></i> ' + (data.error);
+                    errorDiv.style.background = '#fffbeb';
+                    errorDiv.style.color = '#b45309';
+                    // Allow the user to bypass on next click
+                    if (!form.querySelector('input[name="ignore_holiday"]')) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'ignore_holiday';
+                        input.value = '1';
+                        form.appendChild(input);
+                    }
+                } else {
+                    errorDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + (data.error || "Une erreur inattendue est survenue.");
+                }
+                errorDiv.style.display = 'block';
+            }
+        } catch (err) {
+            errorDiv.textContent = err.message;
+            errorDiv.style.display = 'block';
+        }
+
+        if (!successState) {
+            submitBtn.disabled = false;
+            // Ne pas réécraser le bouton s'il a été changé en bypass
+            if (!form.querySelector('input[name="ignore_holiday"]')) {
+                submitBtn.innerHTML = originalHtml;
+            } else {
+                submitBtn.innerHTML = '<i class="fa-solid fa-forward"></i> Confirmer (Forcer)';
+            }
+        }
+    }
+
+    const FAV_CSRF = {{ csrf_token('tenant_wishlist_toggle')|json_encode|raw }};
+    function toggleFavDetail(id) {
+        const fd = new FormData();
+        fd.append('_token', FAV_CSRF);
+        fetch('/locataire/wishlist/toggle/' + id, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) { showToast('Erreur wishlist'); return; }
+                const btn = document.getElementById('btn-fav');
+                const lbl = document.getElementById('fav-label');
+                if (data.added) {
+                    btn.style.color = '#ef4444';
+                    btn.style.borderColor = '#ef4444';
+                    lbl.textContent = 'Retirer de la wishlist';
+                    showToast('❤ Ajouté à la wishlist');
+                } else {
+                    btn.style.color = '';
+                    btn.style.borderColor = '';
+                    lbl.textContent = 'Ajouter à la wishlist';
+                    showToast('Retiré de la wishlist');
+                }
+            });
+    }
+    function copyAddress() {
+        navigator.clipboard.writeText({{ (a.adresse_text ?: '')|json_encode|raw }});
+        showToast('📋 Adresse copiée !');
+    }
+
+    // Sélecteur d'étoiles interactif
+    (function() {
+        const container = document.getElementById('star-rating');
+        if (!container) return;
+        const input = document.getElementById('note-input');
+        const stars = container.querySelectorAll('.star-btn');
+        let current = parseInt(input.value) || 0;
+
+        function renderStars(val) {
+            stars.forEach(s => {
+                const v = parseInt(s.dataset.value);
+                s.className = v <= val ? 'fa-solid fa-star star-btn' : 'fa-regular fa-star star-btn';
+            });
+        }
+        renderStars(current);
+
+        stars.forEach(s => {
+            s.addEventListener('mouseenter', () => renderStars(parseInt(s.dataset.value)));
+            s.addEventListener('mouseleave', () => renderStars(current));
+            s.addEventListener('click', () => {
+                current = parseInt(s.dataset.value);
+                input.value = current;
+                renderStars(current);
+            });
+        });
+    })();
+
+    // Galerie photos avec flèches
+    (function() {
+        const images = [{% for img in a.images %}{{ (img | imagine_filter('annonce_watermark'))|json_encode|raw }}{% if not loop.last %},{% endif %}{% endfor %}];
+        const total = images.length;
+        if (total === 0) return;
+        const hero = document.getElementById('hero-img');
+        const counter = document.getElementById('gallery-counter');
+        let idx = 0;
+
+        window.setGallery = function(i) {
+            idx = ((i % total) + total) % total;
+            hero.src = images[idx];
+            hero.dataset.index = idx;
+            if (counter) counter.textContent = (idx + 1) + ' / ' + total;
+            document.querySelectorAll('[data-thumb]').forEach(t => {
+                t.style.borderColor = parseInt(t.dataset.thumb) === idx ? '#5E17EB' : 'transparent';
+            });
+        };
+        window.navGallery = function(delta) { setGallery(idx + delta); };
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft')  navGallery(-1);
+            if (e.key === 'ArrowRight') navGallery(1);
+        });
+    })();
+
+    // Minuteur temps réel
+    (function() {
+        const el = document.getElementById('loc-countdown');
+        if (!el) return;
+        let sec = parseInt(el.dataset.seconds) || 0;
+        const jEl = document.getElementById('lc-j');
+        const hEl = document.getElementById('lc-h');
+        const mEl = document.getElementById('lc-m');
+        const sEl = document.getElementById('lc-s');
+        if (!jEl || !hEl || !mEl || !sEl) return;
+        function pad(n) { return String(n).padStart(2, '0'); }
+        const timer = setInterval(function() {
+            sec--;
+            if (sec <= 0) {
+                clearInterval(timer);
+                el.style.background = '#dcfce7';
+                el.style.borderColor = '#86efac';
+                el.innerHTML = '<div style="padding:12px;text-align:center;font-weight:700;color:#166534;font-size:16px;"><i class="fa-solid fa-check-circle"></i> Ce bien est maintenant disponible ! <a href="" style="color:#166534;text-decoration:underline;">Rafraîchir</a></div>';
+                return;
+            }
+            jEl.textContent = Math.floor(sec / 86400);
+            hEl.textContent = pad(Math.floor((sec % 86400) / 3600));
+            mEl.textContent = pad(Math.floor((sec % 3600) / 60));
+            sEl.textContent = pad(sec % 60);
+        }, 1000);
+    })();
+</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js" defer></script>
+{% endblock %}

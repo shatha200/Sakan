@@ -1,0 +1,657 @@
+{# templates/contrat/detail.html.twig #}
+{# Vue détaillée d'un contrat avec onglets et intégration finance (SaaS 2026) #}
+
+{% extends isLocataire ? 'layouts/base_locataire.html.twig' : 'layouts/base_owner.html.twig' %}
+
+{% block title %}Contrat #{{ contrat.id }} - Sakan{% endblock %}
+
+{% block content %}
+<style>
+/* ═══════════════════════════════════════════════
+   PREMIUM SaaS UI 2026 - STYLE INTEGRE SAKAN
+   ═══════════════════════════════════════════════ */
+:root {
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 40px rgba(79,70,229,0.15);
+}
+
+.gc {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+}
+
+.sec-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sec-label.primary { color: var(--primary); }
+
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+.badge-actif { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+.badge-attente { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+.badge-termine { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+.btn-action-primary {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-action-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(79,70,229,0.3); color: white; }
+
+.btn-action-secondary {
+    background: rgba(107,114,128,0.1);
+    color: #4b5563;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-action-secondary:hover { background: rgba(107,114,128,0.2); color: #374151;}
+
+/* Custom Tabs */
+.sakan-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 12px;
+    overflow-x: auto;
+}
+.sakan-tab {
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+.sakan-tab:hover { background: #f8fafc; color: #374151; }
+.sakan-tab.active { background: rgba(79,70,229,0.1); color: var(--primary); }
+.tab-content { display: none; animation: fadeIn 0.3s; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards intérieures */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e5e7eb;
+    height: 100%;
+}
+.info-card-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #374151;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dl-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    font-size: 14px;
+}
+.dl-grid dt { font-weight: 600; color: #9ca3af; }
+.dl-grid dd { font-weight: 700; color: #111827; margin: 0; }
+</style>
+
+<div style="padding: 24px 32px;">
+
+    <!-- Navigation rapide -->
+    <div style="margin-bottom: 16px;">
+        <a href="{{ path(isLocataire ? 'tenant_contrats' : 'proprietaire_contrats_liste') }}" style="color: #6b7280; text-decoration: none; font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-arrow-left"></i> Retour aux contrats
+        </a>
+    </div>
+
+    <!-- En-tête Contrat -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;">
+        <div>
+            <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #111827;">
+                <i class="fa-solid fa-file-contract" style="color: var(--primary);"></i> Contrat #{{ contrat.id }}
+            </h1>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-house"></i> {{ contrat.annonce.titre ?? 'Bien #' ~ contrat.annonce.id }}
+            </p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ path('contrat_pdf', {id: contrat.id}) }}" class="btn-action-secondary">
+                <i class="fa-solid fa-download"></i> PDF
+            </a>
+            {% set canSignHeader = false %}
+            {% if isLocataire and not contrat.signeLocataire %}
+                {% set canSignHeader = true %}
+            {% elseif isProprietaire and not contrat.signeProprietaire %}
+                {% set canSignHeader = true %}
+            {% endif %}
+
+            {% if canSignHeader and contrat.statut == 'EN_ATTENTE_SIGNATURE' %}
+                {% if isLocataire %}
+                    <a href="{{ path('tenant_contrat_finaliser', {id: contrat.id}) }}" class="btn-action-primary" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fa-solid fa-file-signature"></i> Finaliser le contrat
+                    </a>
+                {% else %}
+                    <a href="{{ path('contrat_voir', {id: contrat.id}) }}#signatures" class="btn-action-primary" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fa-solid fa-signature"></i> Signer le contrat
+                    </a>
+                {% endif %}
+            {% endif %}
+            
+            {# Boutons pour propriétaire quand contrat est PROPOSE #}
+            {% if contrat.statut == 'PROPOSE' and isProprietaire %}
+                <form method="post" action="{{ path('contrat_refuser', {id: contrat.id}) }}" style="margin: 0; display: inline;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('refuser_contrat_' ~ contrat.id) }}">
+                    <button type="submit" class="btn-action-secondary" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+                        <i class="fa-solid fa-xmark"></i> Refuser le bail
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Status Banner #}
+    {% set estActif = contrat.statut == 'ACTIF' %}
+    {% set estAttente = contrat.statut == 'EN_ATTENTE_SIGNATURE' %}
+    {% set estPropose = contrat.statut == 'PROPOSE' %}
+    {% set estRefuse = contrat.statut == 'REFUSE' %}
+    {% set estTermine = contrat.statut == 'TERMINE' %}
+    
+    <div style="padding: 16px 20px; border-radius: 12px; margin-bottom: 32px; display: flex; align-items: center; gap: 16px; background: {{ estActif ? '#f0fdf4' : (estAttente ? '#fffbeb' : (estPropose ? '#e0e7ff' : (estRefuse ? '#fef2f2' : '#f3f4f6'))) }}; border: 1px solid {{ estActif ? '#bbf7d0' : (estAttente ? '#fde68a' : (estPropose ? '#c7d2fe' : (estRefuse ? '#fecaca' : '#e5e7eb'))) }};">
+        <i class="fa-solid {{ estActif ? 'fa-check-circle' : (estAttente ? 'fa-circle-exclamation' : (estPropose ? 'fa-paper-plane' : (estRefuse ? 'fa-xmark-circle' : 'fa-box-archive'))) }}" style="font-size: 24px; color: {{ estActif ? '#16a34a' : (estAttente ? '#d97706' : (estPropose ? '#4f46e5' : (estRefuse ? '#dc2626' : '#6b7280'))) }};"></i>
+        <div>
+            <div style="font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Statut du contrat</div>
+            <div style="font-size: 15px; font-weight: 800; color: {{ estActif ? '#166534' : (estAttente ? '#92400e' : (estPropose ? '#4f46e5' : (estRefuse ? '#dc2626' : '#374151'))) }};">
+                {% if estActif %} Contrat actif - Signé par les deux parties
+                {% elseif estAttente %} En attente de signature
+                {% elseif estPropose %} Proposé par le locataire - En attente de confirmation
+                {% elseif estRefuse %} Contrat refusé par le propriétaire
+                {% elseif estTermine %} Contrat terminé
+                {% else %} {{ contrat.statut }} {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if isLocataire and estAttente and not contrat.signeLocataire %}
+    <div style="margin-bottom: 24px; padding: 18px 20px; border-radius: 14px; background: linear-gradient(135deg, #ecfdf5, #f0fdf4); border: 1px solid #86efac; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="font-size: 14px; color: #166534; font-weight: 600;">
+            <i class="fa-solid fa-circle-info"></i> Complétez votre identité, CIN (OCR) et signature pour activer le bail.
+        </div>
+        <a href="{{ path('tenant_contrat_finaliser', {id: contrat.id}) }}" class="btn-action-primary" style="background: linear-gradient(135deg, #059669, #10b981);">
+            <i class="fa-solid fa-file-signature"></i> Finaliser le contrat
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Onglets Sakan -->
+    <div class="sakan-tabs">
+        <button class="sakan-tab active" onclick="switchTab('info', this)">
+            <i class="fa-solid fa-info-circle"></i> Informations
+        </button>
+        <button class="sakan-tab" onclick="switchTab('finance', this)">
+            <i class="fa-solid fa-euro-sign"></i> Finance
+            {% if dashboard.paiements.retard > 0 %}
+                <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px;">!</span>
+            {% endif %}
+        </button>
+        <button class="sakan-tab" onclick="switchTab('signatures', this)">
+            <i class="fa-solid fa-signature"></i> Signatures
+        </button>
+        <button class="sakan-tab" onclick="switchTab('documents', this)">
+            <i class="fa-solid fa-folder"></i> Documents
+        </button>
+    </div>
+
+    <!-- Contenu des Onglets -->
+    <div class="gc" style="background: rgba(255,255,255,0.9);">
+        
+        <!-- ONGLET INFO -->
+        <div id="tab-info" class="tab-content active">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fa-solid fa-house text-primary"></i> Bien loué</div>
+                    <div class="dl-grid">
+                        <dt>Propriété</dt>  <dd>{{ contrat.annonce.titre ?? 'Non spécifié' }}</dd>
+                        <dt>Description</dt> <dd>{{ contrat.annonce.description ?? 'Non spécifiée' }}</dd>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fa-solid fa-calendar-alt text-primary"></i> Durée du contrat</div>
+                    <div class="dl-grid">
+                        <dt>Date début</dt> <dd>{{ contrat.dateDebut|date('d/m/Y') }}</dd>
+                        <dt>Date fin</dt>   <dd>{{ contrat.dateFin|date('d/m/Y') }}</dd>
+                        <dt>Durée totale</dt> <dd>{{ contrat.getDureeMois }} mois</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ONGLET FINANCE -->
+        <div id="tab-finance" class="tab-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                
+                <!-- Bloc Loyer -->
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fa-solid fa-money-bill-wave" style="color: #10b981;"></i> Loyer Mensuel</div>
+                    <h3 style="font-size: 28px; font-weight: 800; color: #10b981; margin: 0;">{{ contrat.montant|number_format(3, ',', ' ') }} <span style="font-size:14px;">TND</span></h3>
+                    <p style="font-size: 13px; color: #9ca3af; margin-bottom: 20px;">/ mois</p>
+                    
+                    <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 14px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span style="color:#6b7280;">Total dû</span> <strong>{{ dashboard.paiements.total|number_format(3, ',', ' ') }} TND</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span style="color:#6b7280;">Payé</span> <strong style="color:#10b981;">{{ (dashboard.paiements.total - dashboard.paiements.en_attente)|number_format(3, ',', ' ') }} TND</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:#6b7280;">En attente</span> <strong style="color:#f59e0b;">{{ dashboard.paiements.en_attente|number_format(3, ',', ' ') }} TND</strong>
+                        </div>
+                    </div>
+                    {% if dashboard.paiements.retard > 0 %}
+                        <div style="background: #fef2f2; color: #ef4444; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 13px; font-weight: 700;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> {{ dashboard.paiements.retard|number_format(3, ',', ' ') }} TND de retard
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Bloc Charges -->
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Historique Charges</div>
+                    <h3 style="font-size: 28px; font-weight: 800; color: #f59e0b; margin: 0;">{{ dashboard.charges.total|number_format(3, ',', ' ') }} <span style="font-size:14px;">TND</span></h3>
+                    <p style="font-size: 13px; color: #9ca3af; margin-bottom: 20px;">total des charges générées</p>
+                    
+                    <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 14px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span style="color:#6b7280;">Payées</span> <strong style="color:#10b981;">{{ dashboard.charges.paye|number_format(3, ',', ' ') }} TND</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:#6b7280;">En attente</span> <strong style="color:#f59e0b;">{{ dashboard.charges.en_attente|number_format(3, ',', ' ') }} TND</strong>
+                        </div>
+                    </div>
+                    <a href="{{ path(isLocataire ? 'tenant_finances_charges' : 'owner_charges') }}" style="display:block; text-align:center; padding:10px; background:#fffbeb; color:#d97706; border-radius:8px; font-weight:700; font-size:13px; margin-top:16px; text-decoration:none;">
+                        Voir le détail
+                    </a>
+                </div>
+
+                <!-- Bloc Caution -->
+                <div class="info-card">
+                    <div class="info-card-title"><i class="fa-solid fa-shield-halved" style="color: #3b82f6;"></i> Dépôt de garantie</div>
+                    {% if dashboard.caution %}
+                        <h3 style="font-size: 28px; font-weight: 800; color: #3b82f6; margin: 0;">{{ dashboard.caution.montant_initial|number_format(3, ',', ' ') }} <span style="font-size:14px;">TND</span></h3>
+                        <p style="font-size: 13px; color: #9ca3af; margin-bottom: 20px;">déposée initialement</p>
+                        
+                        <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 14px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <span style="color:#6b7280;">Retenue</span> <strong style="color:#ef4444;">-{{ dashboard.caution.montant_retenu|number_format(3, ',', ' ') }} TND</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <span style="color:#6b7280;">Remboursée</span> <strong style="color:#10b981;">+{{ dashboard.caution.montant_rembourse|number_format(3, ',', ' ') }} TND</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:12px; padding-top:12px; border-top:1px dashed #e5e7eb;">
+                                <span><strong>Solde actuel</strong></span> <strong style="color:#3b82f6;">{{ dashboard.caution.solde|number_format(3, ',', ' ') }} TND</strong>
+                            </div>
+                        </div>
+                        <div style="margin-top:16px; text-align:center;">
+                            <span style="background: rgba(59,130,246,0.1); color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;">
+                                {{ dashboard.caution.statut }}
+                            </span>
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 20px 0;">
+                            <i class="fa-solid fa-shield-halved" style="font-size:32px; color:#cbd5e1; margin-bottom:12px;"></i>
+                            <p style="color:#9ca3af; font-size:13px;">Aucune caution associée à ce contrat.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Récap Global -->
+            <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 16px; padding: 24px; margin-top: 24px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Solde Global du Contrat</div>
+                    <div style="font-size: 32px; font-weight: 800; color: {{ dashboard.solde_global > 0 ? '#f87171' : '#4ade80' }};">
+                        {{ dashboard.solde_global|number_format(3, ',', ' ') }} <span style="font-size:16px;">TND {{ dashboard.solde_global > 0 ? 'à payer' : 'créditeur/à jour' }}</span>
+                    </div>
+                </div>
+                <a href="{{ path(isLocataire ? 'tenant_finances' : 'owner_revenus') }}" class="btn-action-primary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                    <i class="fa-solid fa-wallet"></i> Portail Financier Sakan
+                </a>
+            </div>
+        </div>
+
+        <!-- ONGLET SIGNATURES -->
+        <div id="tab-signatures" class="tab-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                <!-- Locataire -->
+                <div class="info-card" style="border: 2px solid {{ contrat.signeLocataire ? '#10b981' : '#f59e0b' }}; background: {{ contrat.signeLocataire ? '#f0fdf4' : '#fffbeb' }}; min-height: 200px; display: flex; flex-direction: column;">
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: {{ contrat.signeLocataire ? '#10b981' : '#f59e0b' }}; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <i class="fa-solid {{ contrat.signeLocataire ? 'fa-check' : 'fa-hourglass-half' }}"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 16px; font-weight: 800; color: #111827;">Signature Locataire</div>
+                            <div style="font-size: 13px; color: #6b7280;">{{ contrat.locataire.email ?? 'Non assigné' }}</div>
+                            {% if contrat.dateSignatureLocataire %}
+                                <div style="font-size: 11px; color: #9ca3af; margin-top:2px;"><i class="fa-solid fa-clock"></i> {{ contrat.dateSignatureLocataire }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if contrat.locataireSignatureImage %}
+                        <div style="flex-grow: 1; display:flex; align-items:center; justify-content:center; padding: 10px; background: white; border: 1px dashed #d1d5db; border-radius: 12px; margin-top: 10px;">
+                            <img src="{{ contrat.locataireSignatureImage }}" style="max-height: 100px; max-width: 100%;" alt="Signature électronique du locataire">
+                        </div>
+                    {% else %}
+                        <div style="font-size: 14px; font-weight: 700; color: {{ contrat.signeLocataire ? '#059669' : '#b45309' }}; margin-top: auto;">
+                            {{ contrat.signeLocataire ? 'Contractuellement signé et validé.' : 'En attente d\'engagement.' }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Proprietaire -->
+                <div class="info-card" style="border: 2px solid {{ contrat.signeProprietaire ? '#10b981' : '#f59e0b' }}; background: {{ contrat.signeProprietaire ? '#f0fdf4' : '#fffbeb' }}; min-height: 200px; display: flex; flex-direction: column;">
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: {{ contrat.signeProprietaire ? '#10b981' : '#f59e0b' }}; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <i class="fa-solid {{ contrat.signeProprietaire ? 'fa-check' : 'fa-hourglass-half' }}"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 16px; font-weight: 800; color: #111827;">Signature Propriétaire</div>
+                            <div style="font-size: 13px; color: #6b7280;">{{ contrat.annonce.proprietaire.email ?? 'Non spécifié' }}</div>
+                            {% if contrat.dateSignatureProprietaire %}
+                                <div style="font-size: 11px; color: #9ca3af; margin-top:2px;"><i class="fa-solid fa-clock"></i> {{ contrat.dateSignatureProprietaire }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if contrat.proprietaireSignatureImage %}
+                        <div style="flex-grow: 1; display:flex; align-items:center; justify-content:center; padding: 10px; background: white; border: 1px dashed #d1d5db; border-radius: 12px; margin-top: 10px;">
+                            <img src="{{ contrat.proprietaireSignatureImage }}" style="max-height: 100px; max-width: 100%;" alt="Signature électronique du propriétaire">
+                        </div>
+                    {% else %}
+                        <div style="font-size: 14px; font-weight: 700; color: {{ contrat.signeProprietaire ? '#059669' : '#b45309' }}; margin-top: auto;">
+                            {{ contrat.signeProprietaire ? 'Contractuellement signé et validé.' : 'En attente d\'engagement.' }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% set canSign = false %}
+            {% if isLocataire and not contrat.signeLocataire %}
+                {% set canSign = true %}
+            {% elseif isProprietaire and not contrat.signeProprietaire %}
+                {% set canSign = true %}
+            {% endif %}
+
+            {% if canSign and (contrat.statut == 'EN_ATTENTE_SIGNATURE' or (contrat.statut == 'PROPOSE' and isProprietaire)) %}
+                <div style="margin-top: 32px; padding-top: 32px; border-top: 1px solid #e5e7eb;">
+                    <form method="post" action="{{ path('contrat_signer', {id: contrat.id}) }}" id="form-signature-pad" enctype="multipart/form-data">
+                        <input type="hidden" name="_token" value="{{ csrf_token('signer_contrat_' ~ contrat.id) }}">
+                        <input type="hidden" name="signature_data" id="signature-data" value="">
+                        
+                        <div style="max-width: 500px; margin: 0 auto 24px;">
+                            {% if isProprietaire %}
+                            
+                            {% if contrat.statut == 'PROPOSE' %}
+                                <div style="font-size: 14px; font-weight: 700; color: #dc2626; margin-bottom: 12px; text-align: center;">
+                                    <i class="fa-solid fa-gavel"></i> Règles de Pénalité de Retard
+                                </div>
+                                <div style="border: 1px solid #fecaca; border-radius: 12px; background: #fef2f2; padding: 16px; margin-bottom: 24px;">
+                                    <p style="font-size: 13px; color: #991b1b; margin-bottom: 12px; text-align: center;">Définissez les pénalités à appliquer avant validation de ce bail locataire.</p>
+                                    
+                                    <div style="margin-bottom: 12px;">
+                                        <label style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">Délai de grâce (Jours)</label>
+                                        <input type="number" name="penalite_jourRemise" class="form-control" value="5" min="0" required style="font-size: 13px;">
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                                        <div>
+                                            <label style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">Fixe (TND)</label>
+                                            <input type="number" step="0.01" name="penalite_montant" class="form-control" value="0" min="0" style="font-size: 13px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">% par jour</label>
+                                            <input type="number" step="0.01" name="penalite_pourcentage" class="form-control" value="0" min="0" style="font-size: 13px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">Plafond %</label>
+                                            <input type="number" step="0.01" name="penalite_plafond" class="form-control" value="10" min="0" max="100" style="font-size: 13px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div style="font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 12px; text-align: center;">
+                                <i class="fa-solid fa-id-card"></i> Pièce d'identité Propriétaire (CIN)
+                            </div>
+                            <div style="border: 2px dashed #fcd34d; border-radius: 12px; background: rgba(251,191,36,0.1); padding: 16px; margin-bottom: 24px; text-align: center;">
+                                <p style="font-size: 13px; color: #b45309; margin-bottom: 12px;">Veuillez télécharger un scan ou une photo de votre CIN pour vérification d'identité avant signature.</p>
+                                <input type="file" name="cin_file_proprietaire" id="cin_file_proprietaire" accept="image/*,.pdf" class="form-control" style="font-size: 13px;" required>
+                            </div>
+                            {% endif %}
+                            <div style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px; text-align: center;">
+                                <i class="fa-solid fa-signature"></i> Dessinez votre signature ci-dessous
+                            </div>
+                            <div style="border: 2px solid #e5e7eb; border-radius: 12px; background: white; padding: 16px;">
+                                <canvas id="signature-canvas" style="width: 100%; height: 150px; border: 1px dashed #d1d5db; border-radius: 8px; cursor: crosshair; touch-action: none;"></canvas>
+                                <div style="display: flex; justify-content: center; margin-top: 12px;">
+                                    <button type="button" class="btn-action-secondary" onclick="clearSignature()" style="padding: 6px 12px; font-size: 12px;">
+                                        <i class="fa-solid fa-eraser"></i> Effacer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <button type="submit" class="btn-action-primary" style="padding: 14px 28px; font-size: 16px; background: linear-gradient(135deg, #10b981, #059669);">
+                                <i class="fa-solid fa-file-signature"></i> Confirmer & Signer le contrat
+                            </button>
+                            <p style="font-size: 13px; color: #9ca3af; margin-top: 12px;">En signant ce contrat, vous acceptez juridiquement les conditions de location.</p>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ONGLET DOCUMENTS -->
+        <div id="tab-documents" class="tab-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                <!-- PDF CONTRAT -->
+                <div class="info-card" style="text-align: center; padding: 40px 20px;">
+                    <i class="fa-solid fa-file-pdf" style="font-size: 48px; color: #ef4444; margin-bottom: 16px;"></i>
+                    <h4 style="font-size: 18px; font-weight: 700; color: #374151; margin-bottom: 8px;">Version Numérisée du Contrat</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin-bottom: 24px;">Le bail au format PDF sécurisé.</p>
+                    
+                    <a href="{{ path('contrat_pdf', {id: contrat.id}) }}" class="btn-action-primary">
+                        <i class="fa-solid fa-download"></i> Télécharger le PDF
+                    </a>
+                </div>
+
+                <!-- CIN DOCUMENT LOCATAIRE -->
+                {% if contrat.cinImage %}
+                <div class="info-card" style="text-align: center; padding: 40px 20px;">
+                    <i class="fa-solid fa-id-card" style="font-size: 48px; color: #3b82f6; margin-bottom: 16px;"></i>
+                    <h4 style="font-size: 18px; font-weight: 700; color: #374151; margin-bottom: 8px;">CIN Locataire</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px;">Pièce d'identité jointe par le locataire lors de la proposition de bail.</p>
+                    
+                    {% if not contrat.isFullySigned() %}
+                        <span style="display: inline-block; background: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 16px;">En attente de confirmation</span>
+                    {% else %}
+                        <span style="display: inline-block; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 16px;">Validé par l'engagement</span>
+                    {% endif %}
+
+                    <div style="margin-top: 12px;">
+                        <a href="{{ asset('uploads/cin/' ~ contrat.cinImage) }}" target="_blank" class="btn-action-secondary">
+                            <i class="fa-solid fa-eye"></i> Visualiser la CIN
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- CIN DOCUMENT PROPRIETAIRE -->
+                {% if contrat.cinImageProprietaire %}
+                <div class="info-card" style="text-align: center; padding: 40px 20px;">
+                    <i class="fa-solid fa-id-card" style="font-size: 48px; color: #8b5cf6; margin-bottom: 16px;"></i>
+                    <h4 style="font-size: 18px; font-weight: 700; color: #374151; margin-bottom: 8px;">CIN Propriétaire</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px;">Pièce d'identité jointe par le propriétaire lors de l'activation du bail.</p>
+                    
+                    <span style="display: inline-block; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 16px;">Validé par l'engagement</span>
+
+                    <div style="margin-top: 12px;">
+                        <a href="{{ asset('uploads/cin/' ~ contrat.cinImageProprietaire) }}" target="_blank" class="btn-action-secondary">
+                            <i class="fa-solid fa-eye"></i> Visualiser la CIN
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function switchTab(tabId, btnElement) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    // Remove active class from all buttons
+    document.querySelectorAll('.sakan-tab').forEach(b => b.classList.remove('active'));
+    
+    // Show selected tab content
+    document.getElementById('tab-' + tabId).classList.add('active');
+    // Set button as active
+    btnElement.classList.add('active');
+}
+
+// Signature Canvas Logic
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('signature-canvas');
+    if (!canvas) return; // if user not authorized to sign, canvas won't exist
+
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let hasSignature = false;
+
+    // Responsive setup
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        e.preventDefault();
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        hasSignature = true;
+        e.preventDefault();
+    }
+
+    function stopDrawing() { isDrawing = false; }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    canvas.addEventListener('touchend', stopDrawing);
+
+    window.clearSignature = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasSignature = false;
+    };
+
+    const form = document.getElementById('form-signature-pad');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Control Saisie 1: Signature Canvas
+            if (!hasSignature) {
+                e.preventDefault();
+                alert('Veuillez dessiner votre signature avant de valider le contrat.');
+                return false;
+            }
+            
+            // Control Saisie 2: CIN File for Proprietaire
+            const cinInput = document.getElementById('cin_file_proprietaire');
+            if (cinInput && !cinInput.value) {
+                e.preventDefault();
+                alert('La pièce d\'identité (CIN) est obligatoire pour valider le contrat.');
+                return false;
+            }
+
+            document.getElementById('signature-data').value = canvas.toDataURL('image/png');
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Modifier ma réservation — Sakan{% endblock %}
+{% block page_title %}Modifier la réservation{% endblock %}
+{% block page_subtitle %}Ajustez les dates de votre futur séjour{% endblock %}
+
+{% block content %}
+    <div class="glass-card" style="max-width: 600px; margin: 0 auto; padding: 40px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i class="fa-solid fa-pen-to-square" style="font-size: 48px; color: var(--blue); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--blue-dark);">{{ reservation.annonce.titre }}</h3>
+            <p style="color: var(--text-muted);">{{ reservation.annonce.prix }} TND / mois</p>
+        </div>
+
+        <form method="post" action="{{ path('tenant_reservation_edit', {'id': reservation.id}) }}">
+            <div style="margin-bottom: 24px;">
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Date de début du bail *</label>
+                <input type="datetime-local" name="dateDebut" class="sakan-input" required
+                       value="{{ reservation.dateDebut ? reservation.dateDebut|date('Y-m-d\\TH:i') : '' }}"
+                       min="{{ "now"|date('Y-m-d\\TH:i') }}">
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Date de fin du bail *</label>
+                <input type="datetime-local" name="dateFin" class="sakan-input" required
+                       value="{{ reservation.dateFin ? reservation.dateFin|date('Y-m-d\\TH:i') : '' }}"
+                       min="{{ "now"|date('Y-m-d\\TH:i') }}">
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn-primary" style="flex: 2; justify-content: center;">
+                    <i class="fa-solid fa-check"></i> Enregistrer les modifications
+                </button>
+                <a href="{{ path('tenant_reservations') }}" class="btn-secondary" style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateDebut = document.querySelector('input[name*="dateDebut"]');
+            const dateFin = document.querySelector('input[name*="dateFin"]');
+            
+            function validate() {
+                const start = new Date(dateDebut.value);
+                const end = new Date(dateFin.value);
+                if (dateDebut.value && dateFin.value && end <= start) {
+                    showSakanToast("Attention : La date de fin doit être après le début.", "danger");
+                }
+            }
+            dateDebut.addEventListener('change', validate);
+            dateFin.addEventListener('change', validate);
+        });
+    </script>
+{% endblock %}

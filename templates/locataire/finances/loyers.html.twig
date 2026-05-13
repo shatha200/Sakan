@@ -1,0 +1,418 @@
+{% extends 'layouts/base_finances_locataire.html.twig' %}
+{% block title %}Mes Loyers — Sakan{% endblock %}
+
+{% block finances_content %}
+
+<style>
+/* ═══════════════════════════════════════════════
+   PREMIUM SaaS UI 2026
+   ═══════════════════════════════════════════════ */
+:root {
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 40px rgba(79,70,229,0.15);
+}
+
+/* Glass Cards */
+.gc {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.2s;
+}
+.gc:hover { box-shadow: var(--shadow-hover); }
+
+/* Section Label */
+.sec-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Housing Switcher */
+.housing-switcher {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.h-tab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    background: rgba(79,70,229,0.08);
+    color: var(--primary);
+}
+.h-tab:hover { background: rgba(79,70,229,0.16); }
+.h-tab.active { background: var(--primary); color: #fff; }
+
+.btn-payer-stripe {
+    background: linear-gradient(135deg, var(--primary), #7c3aed) !important;
+}
+.btn-payer-stripe:hover {
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4) !important;
+    transform: translateY(-2px);
+}
+</style>
+
+<!-- ═══ Hero Header 2026: Loyers ════════════════════════════════════ -->
+<div class="gc" style="background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6)); border: 1px solid rgba(255,255,255,0.8);">
+    <div style="display:flex; flex-direction:column; gap:28px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+            <div style="display:flex;align-items:center;gap:18px;">
+                <div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);display:flex;align-items:center;justify-content:center;color:white;font-size:32px;box-shadow:0 12px 30px rgba(59,130,246,0.25);">
+                    <i class="fa-solid fa-house-chimney"></i>
+                </div>
+                <div>
+                    <h1 style="font-size:36px;font-weight:900;margin:0;color:#0a2540;letter-spacing:-1px;">Mes Loyers</h1>
+                    <p style="margin:4px 0 0;font-size:15px;color:{{ stats.paiements_en_retard > 0 ? '#d97706' : '#10b981' }};font-weight:600;">
+                        {% if stats.paiements_en_retard > 0 %}
+                            <i class="fa-solid fa-bell fa-shake"></i> Vous avez <strong>{{ stats.paiements_en_retard }} loyer(s)</strong> nécessitant votre attention.
+                        {% else %}
+                            <i class="fa-solid fa-shield-check"></i> Vos échéances locatives sont à jour.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {# Hero Stats Premium #}
+            <div style="display:flex; gap:12px; align-items:center;">
+                <div style="background:linear-gradient(135deg, #eff6ff, #dbeafe); padding: 16px 24px; border-radius: 20px; box-shadow: 0 8px 24px rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.15);">
+                    <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2563eb;display:flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-clock"></i> Prochaine Échéance
+                    </div>
+                    <div style="font-size:24px;font-weight:900;color:#1e3a8a;margin-top:4px;">
+                        {{ stats.paiements_a_venir }} <span style="font-size:14px;opacity:0.8;">à régler</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Housing switcher / Navigation #}
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+            {% if logements|length > 1 %}
+            <div class="housing-switcher" style="margin:0;">
+                {% for log in logements %}
+                    <a href="{{ path('tenant_finances_loyers', {logement: log.contrat_id}) }}"
+                       class="h-tab {{ log.contrat_id == selectedContratId ? 'active' : '' }}"
+                       title="{{ log.description }}" style="border-radius:12px; font-size:14px; padding: 10px 20px;">
+                        <i class="fa-solid fa-building"></i> {{ log.titre }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div></div>
+            {% endif %}
+
+            {# Stats mini chips #}
+            <div class="stats-bar" style="margin:0; display:flex; gap:12px;">
+                <div class="stat-chip" style="background:#f0fdf4; color:#16a34a; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:10px 16px; border-radius:12px;">
+                    <i class="fa-solid fa-check"></i> <b style="margin:0 4px;">{{ stats.paiements_effectues }}</b> Payés
+                </div>
+                <div class="stat-chip" style="background:#fef2f2; color:#dc2626; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:10px 16px; border-radius:12px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> <b style="margin:0 4px;">{{ stats.paiements_en_retard }}</b> En retard
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Alerte Retard ════════════════════════════════════════════ -->
+{% if alertCount > 0 %}
+<div class="alert alert-danger" style="
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #dc2626;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+">
+    <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626; font-size: 20px;"></i>
+    <span style="color: #dc2626; font-weight: 600;">
+        {{ alertCount }} loyer(s) en retard - Paiement urgent requis
+    </span>
+</div>
+{% endif %}
+
+<!-- Flash Messages -->
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label }}" style="
+            background: {{ label == 'success' ? '#f0fdf4' : (label == 'error' ? '#fef2f2' : '#eff6ff') }};
+            border: 1px solid {{ label == 'success' ? '#bbf7d0' : (label == 'error' ? '#fecaca' : '#bfdbfe') }};
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        ">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endfor %}
+
+<!-- ═══ 🔴 EN RETARD 🔴 ════════════════════════════════════════════ -->
+{% if enRetard|length > 0 %}
+<div class="gc" style="border:1px solid #fecaca; box-shadow:0 10px 40px rgba(220,38,38,0.06); background:linear-gradient(180deg, #fff5f5, #ffffff);">
+    <div class="sec-label" style="color:#b91c1c; font-size:14px; margin-bottom:20px;">
+        <i class="fa-solid fa-triangle-exclamation fa-beat-fade"></i> Action Requise : Loyers en Retard
+        <span style="background:#fee2e2; color:#b91c1c; padding:4px 12px; border-radius:20px; font-size:12px; margin-left:12px;">Paiements urgents</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:16px;">
+        {% for l in enRetard %}
+            <div class="loyer-card" style="border: 1px solid #fecaca; border-radius: 20px; background: white; padding: 24px; position: relative; box-shadow: 0 4px 16px rgba(220,38,38,0.04);">
+                <!-- Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:48px;height:48px;border-radius:14px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:20px;">
+                            <i class="fa-regular fa-calendar-xmark"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #111827;">{{ l.periode|format_periode }}</h4>
+                            <div style="font-size:13px; color:#64748b; font-weight:600;"><i class="fa-solid fa-house"></i> {{ l.logement_titre|default('Logement') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Détails -->
+                <div style="background:#f8fafc; border-radius:14px; padding:16px; margin-bottom:16px; font-size:14px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom:8px;">
+                        <span style="color: #64748b;">Loyer Initial</span>
+                        <strong style="color: #1e293b;">{{ l.montant|number_format(3, ',', ' ') }} TND</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom:8px;">
+                        <span style="color: #64748b;">Échéance</span>
+                        <span style="color: #475569; font-weight:600;">{{ l.date_echeance|date('d/m/Y') }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom:8px;">
+                        <span style="color: #dc2626; font-weight: 600;">Retard</span>
+                        <span style="color: #dc2626; background:#fee2e2; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:700;">{{ l.jours_retard }} jours</span>
+                    </div>
+                    {% if l.penalite > 0 %}
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #dc2626;">Pénalité</span>
+                            <span style="color: #dc2626; font-weight: 600;">+{{ l.penalite|number_format(3, ',', ' ') }} TND</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Total -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <span style="font-size:13px; font-weight:800; color:#dc2626; letter-spacing:0.5px; text-transform:uppercase;">Total Dû</span>
+                    <strong style="font-size:24px; font-weight:900; color:#dc2626; letter-spacing:-0.5px;">{{ l.total|number_format(3, ',', ' ') }} TND</strong>
+                </div>
+
+                <!-- Action -->
+                <button class="btn-payer-stripe" data-loyer-id="{{ l.id }}" style="width:100%; padding:14px; background:linear-gradient(135deg, #dc2626, #b91c1c); color:white; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 15px rgba(220,38,38,0.3);">
+                    <i class="fa-solid fa-credit-card"></i> Payer maintenant
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ 🔵 EN ATTENTE (À VENIR) 🔵 ═══════════════════════════════════════════ -->
+{% if enAttente|length > 0 %}
+<div class="gc" style="border:1px solid #bfdbfe; box-shadow:0 10px 40px rgba(59,130,246,0.04); background:linear-gradient(180deg, #eff6ff, #ffffff);">
+    <div class="sec-label" style="color:#1d4ed8; font-size:14px; margin-bottom:20px;">
+        <i class="fa-regular fa-calendar-check"></i> À Régler Prochainement
+        <span style="background:#dbeafe; color:#1d4ed8; padding:4px 12px; border-radius:20px; font-size:12px; margin-left:12px;">Échéances futures</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:16px;">
+        {% for l in enAttente %}
+            <div class="loyer-card" style="background:white; border:1px solid #e2e8f0; border-radius:20px; padding:24px; position:relative; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
+                <!-- Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:48px;height:48px;border-radius:14px;background:#f8fafc;border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:20px;">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #1e293b;">{{ l.periode|format_periode }}</h4>
+                            <div style="font-size:13px; color:#64748b; font-weight:600;"><i class="fa-solid fa-house"></i> {{ l.logement_titre|default('Logement') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Détails -->
+                <div style="background:#f8fafc; border-radius:14px; padding:16px; margin-bottom:16px; font-size:14px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom:8px;">
+                        <span style="color: #64748b;">Échéance</span>
+                        <span style="color: #475569; font-weight:600;">{{ l.date_echeance ? l.date_echeance|date('d/m/Y') : '-' }}</span>
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <span style="font-size:13px; font-weight:800; color:#3b82f6; letter-spacing:0.5px; text-transform:uppercase;">Montant</span>
+                    <strong style="font-size:24px; font-weight:900; color:#3b82f6; letter-spacing:-0.5px;">{{ l.montant|number_format(3, ',', ' ') }} TND</strong>
+                </div>
+
+                <!-- Action -->
+                <button class="btn-payer-stripe" data-loyer-id="{{ l.id }}" style="width:100%; padding:14px; background:#eff6ff; color:#3b82f6; border:1px solid #bfdbfe; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s;">
+                    <i class="fa-solid fa-credit-card"></i> Payer dès maintenant
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ 🟢 LOYERS RÉGLÉS 🟢 ════════════════════════════════════════════════ -->
+<div class="gc" style="border:none; box-shadow:0 10px 40px rgba(0,0,0,0.03);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div class="sec-label success" style="margin-bottom:0; font-size:14px; color:#16a34a;">
+            <i class="fa-solid fa-check-double"></i> Historique des Loyers Payés
+        </div>
+    </div>
+
+    {% if payes is empty %}
+        <div class="empty-state" style="text-align: center; padding: 30px; color: var(--text-muted);">
+            <i class="fa-solid fa-receipt" style="font-size: 40px; margin-bottom: 12px; opacity: 0.5;"></i>
+            <p style="margin: 0; font-weight: 500;">Aucun historique de paiement pour le moment.</p>
+        </div>
+    {% else %}
+        <div style="display:grid; gap:12px;">
+            {% for l in payes %}
+                <div class="charge-card paid" style="border-radius:18px; padding:16px 20px; background:white; border: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                    <div style="display:flex;align-items:center;gap:16px;flex:1;">
+                        <div style="width:46px;height:46px;border-radius:14px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fa-solid fa-file-invoice-dollar" style="font-size:20px;color:#16a34a;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700;font-size:15px;color:#334155;">Loyer {{ l.periode|format_periode }}</div>
+                            <div style="font-size:13px;color:#64748b;margin-top:2px;">
+                                {% if l.date_paiement %}Payé le {{ l.date_paiement|date('d/m/Y') }}{% endif %}
+                                {% if l.methode_paiement %} • Via {{ l.methode_paiement }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex;align-items:center;gap:24px;">
+                        <div style="text-align:right;">
+                            <div style="font-size:18px;font-weight:800;color:#10b981;letter-spacing:-0.5px;">{{ l.montant|number_format(3, ',', ' ') }} TND</div>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            {% if l.quittance_url %}
+                                <a href="{{ l.quittance_url }}" target="_blank" style="background:#f0fdfa; border:1px solid #ccfbf1; color:#0d9488; padding:8px 12px; border-radius:10px; font-weight:600; font-size:13px; text-decoration:none;">
+                                    <i class="fa-solid fa-eye"></i> Quittance
+                                </a>
+                            {% else %}
+                                <button onclick="generateReceipt({{ l.id }})" style="background:#f8fafc; border:1px solid #e2e8f0; color:#64748b; padding:8px 12px; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer;">
+                                    <i class="fa-solid fa-download"></i> Télécharger
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Loading Overlay -->
+<div id="payment-loading" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+">
+    <div style="
+        background: white;
+        padding: 40px 60px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    ">
+        <div class="spinner" style="
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        "></div>
+        <p style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text);">
+            Redirection vers Stripe...
+        </p>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    // Gestion des paiements Stripe
+    document.querySelectorAll('.btn-payer-stripe').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const loyerId = this.dataset.loyerId;
+            const loading = document.getElementById('payment-loading');
+
+            loading.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/locataire/loyers/${loyerId}/stripe/checkout`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    loading.style.display = 'none';
+                    alert(data.error || 'Erreur lors de la création du paiement');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                alert('Erreur de connexion. Veuillez réessayer.');
+            }
+        });
+    });
+
+    // Génération de reçu via DomPdf
+    function generateReceipt(loyerId) {
+        window.open('/locataire/finances/loyers/' + loyerId + '/recu', '_blank');
+    }
+</script>
+
+{# ── Validation des formulaires financiers ── #}
+<script src="{{ asset('js/validation-finances-locataire.js') }}"></script>
+{% endblock %}

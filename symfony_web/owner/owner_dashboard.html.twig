@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Tableau de bord (Owner)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-components.css">
+  <link rel="stylesheet" href="../../css_web/sakan-owner.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR OWNER -->
+  <nav class="sakan-sidebar owner" id="sidebar-owner">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span>
+      <span class="role-badge">PRO</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="owner_dashboard.html" class="active"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+      <li><a href="owner_biens.html"><i class="fa-solid fa-building"></i> Mes propriétés</a></li>
+      <li><a href="owner_loyers.html"><i class="fa-solid fa-coins"></i> Suivi des loyers</a></li>
+      <li><a href="owner_cautions.html"><i class="fa-solid fa-money-bill-wave"></i> Gestion des cautions</a></li>
+      <li><a href="owner_contrats.html"><i class="fa-solid fa-file-contract"></i> Contrats</a></li>
+      <li><a href="owner_visites.html"><i class="fa-solid fa-calendar-check"></i> Demandes de visite</a></li>
+      <li><a href="owner_reservations.html"><i class="fa-solid fa-check"></i> Réservations</a></li>
+      <li><a href="owner_reclamations.html"><i class="fa-solid fa-shield-halved"></i> Alertes / Réclamations</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="../auth/login.html">
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <main class="sakan-main">
+    <div class="sakan-content">
+
+      <!-- EN-TÊTE PAGE -->
+      <div class="page-header" style="align-items: center;">
+        <div>
+          <h1 style="display:flex; align-items:center; gap:12px;">Tableau de bord</h1>
+          <p style="color:var(--text-muted); margin-top: 4px;">
+            Bonjour, <strong>Karim</strong> 👋 Voici la synthèse de votre parc immobilier
+          </p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <!-- SÉLECTEUR DEVISE -->
+          <select id="devise-selector" onchange="convertDevise(this.value)" class="sakan-input" style="width:auto;padding:8px 16px;">
+            <option value="TND">🇹🇳 TND</option>
+            <option value="EUR">🇪🇺 EUR</option>
+            <option value="USD">🇺🇸 USD</option>
+          </select>
+          <button class="btn-primary" onclick="window.location.href='owner_ajouter_bien.html'">
+            <i class="fa-solid fa-plus"></i> Ajouter un bien
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 KPI CARDS -->
+      <div class="kpi-owner-grid">
+
+        <!-- KPI 1 — Revenus du mois -->
+        <div class="kpi-owner-card green">
+          <div class="kpi-icon-circle" style="background:rgba(16,185,129,0.1)">
+            <i class="fa-solid fa-money-bill-wave" style="color:#10b981"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Revenus du mois</div>
+            <div class="kpi-value" id="val-revenus">6 700 TND</div>
+            <div class="kpi-tendance" style="color:#10b981">
+              <i class="fa-solid fa-arrow-trend-up"></i> +12% vs mois dernier
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 2 — Taux d'occupation -->
+        <div class="kpi-owner-card violet">
+          <div class="kpi-icon-circle" style="background:rgba(94,23,235,0.1)">
+            <i class="fa-solid fa-percent" style="color:#5E17EB"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Taux d'occupation</div>
+            <div class="kpi-value">60%</div>
+            <div style="margin-top:8px;">
+              <!-- BARRE PROGRESSION 60% -->
+              <div style="background:#e5e7eb;border-radius:4px;height:6px; margin-bottom: 4px;">
+                <div style="width:60%;background:#5E17EB;border-radius:4px;height:100%;"></div>
+              </div>
+              <span style="font-size:12px;color:var(--text-muted);">
+                3 biens sur 5 occupés
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 3 — Biens actifs -->
+        <div class="kpi-owner-card blue">
+          <div class="kpi-icon-circle" style="background:rgba(37,99,235,0.1)">
+            <i class="fa-solid fa-building" style="color:#2563eb"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Parc immobilier</div>
+            <div class="kpi-value">5</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px; line-height: 1.4;">
+              2 loués • 2 disponibles • 1 en révision
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 4 — Note moyenne -->
+        <div class="kpi-owner-card orange">
+          <div class="kpi-icon-circle" style="background:rgba(217,119,6,0.1)">
+            <i class="fa-solid fa-star" style="color:#d97706"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-label">Note moyenne parc</div>
+            <div class="kpi-value">4.5 ★</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+              Sur 36 avis au total
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LAYOUT 2 COLONNES -->
+      <div style="display:grid;grid-template-columns:65fr 35fr; gap:24px;margin-top:24px;">
+
+        <!-- GRAPHIQUE REVENUS -->
+        <div class="chart-container" style="background:white;border-radius:20px; padding:24px;box-shadow:var(--shadow-card);">
+          <div class="chart-header" style="display:flex;justify-content:space-between; align-items:center;margin-bottom:20px;">
+            <h3 style="font-size:16px;font-weight:700; margin:0;">
+              <i class="fa-solid fa-chart-bar"></i> Revenus des 6 derniers mois
+            </h3>
+            <select class="sakan-input" style="width:auto; padding:6px 12px;font-size:13px;">
+              <option>6 derniers mois</option>
+              <option>Cette année</option>
+              <option>2023</option>
+            </select>
+          </div>
+          <canvas id="revenusChart" height="250"></canvas>
+        </div>
+
+        <!-- PANNEAU ALERTES -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <h3 style="font-size:16px;font-weight:700;margin: 0 0 4px 0;">
+            <i class="fa-solid fa-bell"></i> Alertes & Actions
+          </h3>
+
+          <!-- ALERTE 1 -->
+          <div class="alert-card warning" style="background:white;border-radius:16px; border-left:4px solid #d97706;padding:16px; box-shadow:var(--shadow-card);">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="background:rgba(217,119,6,0.1);border-radius:10px; padding:10px;flex-shrink:0;">
+                <i class="fa-solid fa-clock" style="color:#d97706"></i>
+              </div>
+              <div>
+                <strong style="font-size:14px; display:block;">Contrat expire bientôt</strong>
+                <p style="font-size:13px;color:var(--text-muted);margin:4px 0;">
+                  Villa La Marsa — dans 32 jours
+                </p>
+                <button class="btn-outline btn-sm" style="margin-top:8px;" onclick="window.location.href='owner_contrats.html'">
+                  Renouveler
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALERTE 2 -->
+          <div class="alert-card info" style="background:white;border-radius:16px; border-left:4px solid #2563eb;padding:16px; box-shadow:var(--shadow-card);">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="background:rgba(37,99,235,0.1);border-radius:10px; padding:10px;flex-shrink:0;">
+                <i class="fa-solid fa-calendar-check" style="color:#2563eb"></i>
+              </div>
+              <div>
+                <strong style="font-size:14px; display:block;">3 visites à approuver</strong>
+                <p style="font-size:13px;color:var(--text-muted);margin:4px 0;">
+                  Studio Menzah 6, Duplex Ennasr 2...
+                </p>
+                <button class="btn-outline btn-sm" style="margin-top:8px;" onclick="window.location.href='owner_visites.html'">
+                  Voir les demandes
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALERTE 3 -->
+          <div class="alert-card danger" style="background:white;border-radius:16px; border-left:4px solid #dc2626;padding:16px; box-shadow:var(--shadow-card);">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="background:rgba(220,38,38,0.1);border-radius:10px; padding:10px;flex-shrink:0;">
+                <i class="fa-solid fa-money-bill-wave" style="color:#dc2626"></i>
+              </div>
+              <div>
+                <strong style="font-size:14px; display:block;">Loyer non encaissé</strong>
+                <p style="font-size:13px;color:var(--text-muted);margin:4px 0;">
+                  Bien 1 — Août 2025 — 2 200 TND
+                </p>
+                <button class="btn-outline btn-sm" style="margin-top:8px;" onclick="window.location.href='owner_loyers.html'">
+                  Relancer locataire
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION APERÇU RAPIDE DES BIENS -->
+      <div style="margin-top:24px;">
+        <div style="display:flex;justify-content:space-between; align-items:center;margin-bottom:16px;">
+          <h3 style="font-size:16px;font-weight:700; margin:0;">
+            <i class="fa-solid fa-building"></i> Mes propriétés (aperçu)
+          </h3>
+          <a href="owner_biens.html" style="color:#5E17EB;font-size:14px;font-weight:600; text-decoration:none;">
+            Voir tout &rarr;
+          </a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+          <!-- CARTE BIEN 1 — LOUÉ -->
+          <div class="bien-owner-card" style="background:white;border-radius:20px;overflow:hidden; box-shadow:var(--shadow-card);">
+            <div style="height:5px;background:#10b981;"></div>
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600" style="width:100%;height:180px;object-fit:cover;" alt="Bien 1">
+            <div style="padding:16px;">
+              <div style="display:flex;justify-content:space-between; align-items:flex-start;margin-bottom:8px;">
+                <h4 style="font-size:14px;font-weight:700;line-height:1.3; margin:0;">Appartement lumineux<br>Lac 2, Tunis</h4>
+                <span style="background:#dcfce7;color:#16a34a;padding:3px 10px; border-radius:20px;font-size:11px;font-weight:600; white-space:nowrap;">
+                  ● LOUÉ
+                </span>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:12px;">
+                <span style="font-size:13px;color:var(--text-muted);"><i class="fa-solid fa-coins" style="color:#5E17EB"></i> 2 200 TND/mois</span>
+                <span style="font-size:13px;color:var(--text-muted);"><i class="fa-solid fa-star" style="color:#f59e0b"></i> 4.8/5</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px; padding:8px;background:#f8fafc;border-radius:10px; margin-bottom:12px;">
+                <img src="https://i.pravatar.cc/36?img=5" style="width:28px;height:28px;border-radius:50%;" alt="Fatma">
+                <span style="font-size:12px;color:var(--text-muted);">Fatma Trabelsi &middot; jusqu'au 31/08/2025</span>
+              </div>
+              <button class="btn-outline btn-sm" style="width:100%;" onclick="window.location.href='owner_biens.html'">
+                <i class="fa-solid fa-eye"></i> Gérer ce bien
+              </button>
+            </div>
+          </div>
+
+          <!-- CARTE BIEN 2 — DISPONIBLE -->
+          <div class="bien-owner-card" style="background:white;border-radius:20px;overflow:hidden; box-shadow:var(--shadow-card);">
+            <div style="height:5px;background:#5E17EB;"></div>
+            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600" style="width:100%;height:180px;object-fit:cover;" alt="Bien 2">
+            <div style="padding:16px;">
+              <div style="display:flex;justify-content:space-between; align-items:flex-start;margin-bottom:8px;">
+                <h4 style="font-size:14px;font-weight:700;line-height:1.3; margin:0;">Studio moderne<br>Menzah 6, Tunis</h4>
+                <span style="background:rgba(94,23,235,0.1);color:#5E17EB; padding:3px 10px;border-radius:20px; font-size:11px;font-weight:600; white-space:nowrap;">
+                  ● DISPONIBLE
+                </span>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:12px;">
+                <span style="font-size:13px;color:var(--text-muted);"><i class="fa-solid fa-coins" style="color:#5E17EB"></i> 1 100 TND/mois</span>
+                <span style="font-size:13px;color:var(--text-muted);"><i class="fa-solid fa-star" style="color:#f59e0b"></i> 4.3/5</span>
+              </div>
+              <div style="padding:8px;background:#f8fafc;border-radius:10px; margin-bottom:12px;font-size:12px;color:var(--text-muted);">
+                <i class="fa-solid fa-magnifying-glass"></i> 3 candidatures en cours d'examen
+              </div>
+              <button class="btn-primary btn-sm" style="width:100%;" onclick="window.location.href='owner_biens.html'">
+                <i class="fa-solid fa-eye"></i> Gérer ce bien
+              </button>
+            </div>
+          </div>
+
+          <!-- CARTE BIEN 3 — LOUÉ -->
+          <div class="bien-owner-card" style="background:white;border-radius:20px;overflow:hidden; box-shadow:var(--shadow-card);">
+            <div style="height:5px;background:#10b981;"></div>
+            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600" style="width:100%;height:180px;object-fit:cover;" alt="Bien 3">
+            <div style="padding:16px;">
+              <div style="display:flex;justify-content:space-between; align-items:flex-start;margin-bottom:8px;">
+                <h4 style="font-size:14px;font-weight:700;line-height:1.3; margin:0;">Villa avec piscine<br>La Marsa</h4>
+                <span style="background:#dcfce7;color:#16a34a;padding:3px 10px; border-radius:20px;font-size:11px;font-weight:600; white-space:nowrap;">
+                  ● LOUÉ
+                </span>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:12px;">
+                <span style="font-size:13px;color:var(--text-muted);"><i class="fa-solid fa-coins" style="color:#5E17EB"></i> 4 500 TND/mois</span>
+                <span style="font-size:13px;color:var(--text-muted);"><i class="fa-solid fa-star" style="color:#f59e0b"></i> 4.9/5</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px; padding:8px;background:#fee2e2;border-radius:10px; margin-bottom:12px;">
+                <i class="fa-solid fa-clock" style="color:#dc2626;"></i>
+                <span style="font-size:12px;color:#dc2626;font-weight:600;">⚠ Contrat expire dans 32 jours</span>
+              </div>
+              <button class="btn-outline btn-sm" style="width:100%;" onclick="window.location.href='owner_biens.html'">
+                <i class="fa-solid fa-eye"></i> Gérer ce bien
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+  // Graphique revenus
+  const ctx = document.getElementById('revenusChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul'],
+      datasets: [{
+        label: 'Revenus (TND)',
+        data: [4400, 6700, 6700, 8500, 6700, 6700],
+        backgroundColor: 'rgba(94,23,235,0.15)',
+        borderColor: '#5E17EB',
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw.toLocaleString('fr-FR') + ' TND'
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: {
+            callback: val => val.toLocaleString('fr-FR') + ' TND'
+          }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Conversion devise
+  const rates = { TND: 1, EUR: 0.29, USD: 0.32 };
+  const baseVal = 6700;
+  function convertDevise(devise) {
+    const converted = (baseVal * rates[devise]).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const symbols = { TND: 'TND', EUR: '€', USD: '$' };
+    document.getElementById('val-revenus').textContent = converted + ' ' + symbols[devise];
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+</script>
+</body>
+</html>

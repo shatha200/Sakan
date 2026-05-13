@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f8f9fa;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        var lat = __LAT__;
+        var lon = __LON__;
+        var titre = '__TITRE__';
+        var adresse = '__ADRESSE__';
+
+        // Initialize map with a default size
+        var map = L.map('map', {
+            zoomControl: true,
+            scrollWheelZoom: false, // Better for scrolling pages
+            attributionControl: false
+        }).setView([lat, lon], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        var marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup('<b>' + titre + '</b><br>' + adresse);
+
+        function triggerInvalidate() {
+            if (map) {
+                map.invalidateSize();
+                // Optional: recenter if needed
+                // map.panTo([lat, lon]);
+            }
+        }
+
+        // Modern fix: ResizeObserver catches ANY layout change
+        var observer = new ResizeObserver(function () {
+            triggerInvalidate();
+        });
+        observer.observe(document.getElementById('map'));
+
+        // Legacy fallback for JavaFX
+        window.onload = function () {
+            setTimeout(triggerInvalidate, 100);
+            setTimeout(triggerInvalidate, 500);
+            setTimeout(triggerInvalidate, 1500);
+        };
+
+        // Public API for Java
+        function forceRefresh() {
+            triggerInvalidate();
+            marker.openPopup();
+        }
+    </script>
+</body>
+
+</html>

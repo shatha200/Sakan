@@ -1,0 +1,606 @@
+﻿{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Mon profil - Sakan{% endblock %}
+
+{% block page_title %}Mon profil{% endblock %}
+{% block page_subtitle %}Gérez vos informations personnelles{% endblock %}
+
+{% block content %}
+<div class="profil-hero profil-hero-soft">
+  <div class="profil-hero-content">
+    <div class="profil-avatar-wrapper profil-avatar-wrapper--soft">
+      <img src="{{ path('app_profile_avatar') }}" alt="{{ profil.full_name|default('Utilisateur') }}" style="width:120px;height:120px;border-radius:50%; border:4px solid white;object-fit:cover;">
+      <button class="profil-btn-camera" type="button" onclick="openPhotoPicker()" aria-label="Changer la photo de profil">
+        <i class="fa-solid fa-camera"></i>
+      </button>
+    </div>
+
+    <div class="profil-identity">
+      <h2>{{ profil.full_name|default('Utilisateur') }}</h2>
+      <p>
+        Membre depuis
+        {% if profil.member_since %}
+          {{ profil.member_since|month_year_fr }}
+        {% else %}
+          -
+        {% endif %}
+      </p>
+      <div class="profil-badges">
+        <span class="profil-role-badge">{{ profil.role|default('LOCATAIRE') }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form id="photo-upload-form" class="profil-hidden-form" method="post" action="{{ path('tenant_profil') }}" enctype="multipart/form-data">
+  <input type="hidden" name="action" value="upload_photo">
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token('upload_profile_photo_' ~ app.user.id) }}">
+  <input type="file" id="photo-file-input" name="profile_photo" accept="image/png,image/jpeg,image/jpg,image/gif,image/bmp,image/webp" onchange="onPhotoPicked(this)">
+</form>
+
+<div class="sakan-content profil-page">
+  {% for message in app.flashes('auth_success') %}
+    <div class="profil-alert profil-alert-success">{{ message }}</div>
+  {% endfor %}
+
+  {% for message in app.flashes('auth_error') %}
+    <div class="profil-alert profil-alert-error">{{ message }}</div>
+  {% endfor %}
+
+  {% include 'profile/_email_change_otp.html.twig' with { route_name: 'tenant_profil_email_change' } %}
+
+  <div class="profil-grid">
+    <section class="profil-section-card">
+      <div class="profil-section-header">
+        <h3><i class="fa-solid fa-user-pen"></i> Informations personnelles</h3>
+        <button id="btn-edit" type="button" onclick="toggleEdit()" class="btn-outline btn-sm profil-btn-edit">
+          <i class="fa-solid fa-pen"></i> Modifier le profil
+        </button>
+      </div>
+
+      <form id="profile-form" class="profil-form" method="post" action="{{ path('tenant_profil') }}">
+        <input type="hidden" name="action" value="update_profile">
+
+        <div class="profil-fields">
+          <div class="profil-field">
+            <label>Prénom</label>
+            <input type="text" id="f-prenom" name="prenom" value="{{ profil.prenom|default('') }}" class="sakan-input" readonly required>
+          </div>
+          <div class="profil-field">
+            <label>Nom</label>
+            <input type="text" id="f-nom" name="nom" value="{{ profil.nom|default('') }}" class="sakan-input" readonly required>
+          </div>
+          <div class="profil-field">
+            <label>Adresse email</label>
+            <input type="email" id="f-email" name="email" value="{{ profil.email|default('') }}" class="sakan-input" readonly required>
+          </div>
+          <div class="profil-field">
+            <label>Téléphone</label>
+            <input type="tel" id="f-tel" name="telephone" value="{{ profil.telephone|default('') }}" pattern="[2-9][0-9]{7}" class="sakan-input" readonly required>
+          </div>
+          <div class="profil-field">
+            <label>Membre depuis</label>
+            <input type="text" value="{% if profil.member_since %}{{ profil.member_since|date('d/m/Y') }}{% else %}-{% endif %}" class="sakan-input" readonly>
+          </div>
+        </div>
+
+        <div id="edit-actions" class="profil-edit-actions">
+          <button type="button" class="btn-secondary" onclick="cancelEdit()">Annuler</button>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-check"></i> Sauvegarder
+          </button>
+        </div>
+      </form>
+
+      {# ── Signature électronique ─────────────────────────────────── #}
+      <div style="margin-top:28px;padding-top:24px;border-top:1px solid #e5e7eb;">
+        <h4 style="margin:0 0 4px;font-size:15px;color:#1e293b;">
+          <i class="fa-solid fa-signature" style="color:#4a6cf7;margin-right:8px;"></i>
+          Signature électronique
+        </h4>
+        <p style="color:#6b7280;font-size:13px;margin:0 0 14px;">
+          Dessinez votre signature. Elle sera vérifiée lors de la signature d'un contrat.
+        </p>
+
+        {% if profil.signature is defined and profil.signature %}
+          <div id="sig-saved-preview" style="margin-bottom:14px;">
+            <p style="font-size:12px;color:#16a34a;font-weight:600;margin-bottom:6px;">
+              <i class="fa-solid fa-circle-check"></i> Signature enregistrée
+            </p>
+            <img src="{{ profil.signature }}" alt="Signature enregistrée"
+                 style="max-width:100%;height:100px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;object-fit:contain;">
+          </div>
+        {% endif %}
+
+        <div style="border:2px dashed #c7d2fe;border-radius:12px;padding:14px;background:#fafafa;">
+          <canvas id="profil-signature-pad"
+                  style="width:100%;height:160px;background:white;border-radius:8px;border:1px solid #e2e8f0;touch-action:none;cursor:crosshair;display:block;">
+          </canvas>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px;">
+            <div id="sig-save-status" style="font-size:13px;"></div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" onclick="clearProfilSignature()"
+                      style="background:none;border:1px solid #d1d5db;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;color:#6b7280;">
+                <i class="fa-solid fa-eraser"></i> Effacer
+              </button>
+              <button type="button" onclick="saveProfilSignature()"
+                      style="background:#4a6cf7;color:white;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;">
+                <i class="fa-solid fa-floppy-disk"></i> Enregistrer
+              </button>
+              {% if profil.signature is defined and profil.signature %}
+              <button type="button" onclick="deleteProfilSignature()"
+                      style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="profil-section-card">
+      <div class="profil-section-header">
+        <h3><i class="fa-solid fa-lock"></i> Sécurité</h3>
+        <div class="profil-section-actions">
+          <form method="post" action="{{ path('tenant_profil') }}" class="profil-inline-form">
+            <input type="hidden" name="action" value="toggle_2fa">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('toggle_2fa_' ~ app.user.id) }}">
+            <button type="submit" class="btn-outline btn-sm profil-btn-2fa {{ profil.two_factor_enabled ? 'profil-btn-2fa--enabled' : 'profil-btn-2fa--disabled' }}">
+              {% if profil.two_factor_enabled %}
+                Désactiver la vérification 2FA
+              {% else %}
+                Activer la vérification 2FA
+              {% endif %}
+            </button>
+          </form>
+
+          <form method="post" action="{{ path('tenant_profil_phone_verification') }}" class="profil-inline-form">
+            <input type="hidden" name="action" value="start_phone_verification">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('phone_verification_' ~ app.user.id) }}">
+            <button
+              type="submit"
+              id="phone-verify-button"
+              class="btn-outline btn-sm profil-btn-phone {{ profil.phone_verified ? 'profil-btn-phone--verified' : 'profil-btn-phone--unverified' }}"
+              data-phone-verification-button
+              data-phone-verified="{{ profil.phone_verified ? '1' : '0' }}"
+              data-phone-verified-label="Numéro vérifié"
+              data-phone-unverified-label="Vérifier le numéro de téléphone"
+              data-phone-save-label="Enregistrez d'abord le numéro"
+              {{ profil.phone_verified ? 'disabled' : '' }}
+            >
+              {{ profil.phone_verified ? 'Numéro vérifié' : 'Vérifier le numéro de téléphone' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {% include 'profile/_phone_verification.html.twig' with {
+        route_name: 'tenant_profil_phone_verification',
+        phone_verification_pending: phone_verification_pending
+      } %}
+
+      <div class="profil-fields" style="margin-bottom: 18px;">
+        <div class="profil-field">
+          <label>Derniere connexion reussie</label>
+          <input type="text" value="{{ profil.last_login_at ?: 'Aucune connexion enregistree' }}" class="sakan-input" readonly>
+        </div>
+        <div class="profil-field">
+          <label>Derniere adresse IP</label>
+          <input type="text" value="{{ profil.last_login_ip ?: '-' }}" class="sakan-input" readonly>
+        </div>
+      </div>
+
+      <form class="profil-form" method="post" action="{{ path('tenant_profil') }}">
+        <input type="hidden" name="action" value="change_password">
+
+        <div class="profil-fields">
+          <div class="profil-field">
+            <label>Mot de passe actuel</label>
+            <div class="sakan-input-wrapper">
+              <input type="password" id="pwd-current" name="current_password" placeholder="........" class="sakan-input" required>
+              <button type="button" class="profil-pwd-toggle" onclick="togglePwd('pwd-current')" aria-label="Afficher ou masquer le mot de passe actuel">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="profil-field">
+            <label>Nouveau mot de passe</label>
+            <div class="sakan-input-wrapper">
+              <input type="password" id="pwd-new" name="new_password" placeholder="Min. 6 caractères" class="sakan-input" oninput="updateStrength(this.value)" required>
+            </div>
+            <div class="password-strength">
+              <div id="strength-bar" class="password-strength-bar">
+                <div id="strength-fill" class="password-strength-fill"></div>
+              </div>
+              <span id="strength-label" class="password-strength-label"></span>
+            </div>
+          </div>
+          <div class="profil-field">
+            <label>Confirmer nouveau mot de passe</label>
+            <div class="sakan-input-wrapper">
+              <input type="password" id="pwd-confirm" name="confirm_password" placeholder="........" class="sakan-input" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary profil-password-submit">
+          <i class="fa-solid fa-lock"></i> Mettre à jour le mot de passe
+        </button>
+      </form>
+
+      <div style="margin-bottom:24px;padding:18px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h4 style="margin:0;font-size:15px;color:#1e293b;">
+            <i class="fa-solid fa-fingerprint" style="color:#2563eb;margin-right:8px;"></i>
+            Authentification biométrique
+          </h4>
+          <button id="btn-register-webauthn" type="button" onclick="registerWebAuthn()"
+                  style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;">
+            <i class="fa-solid fa-plus"></i> Ajouter un appareil
+          </button>
+        </div>
+        <p style="color:#6b7280;font-size:13px;margin:0 0 12px;">
+          Connectez-vous sans mot de passe. Aucune image n'est capturée.
+        </p>
+        <div id="webauthn-credentials-list"><p style="color:#9ca3af;font-size:13px;">Chargement…</p></div>
+        <div id="webauthn-register-status" style="display:none;"></div>
+      </div>
+
+      <div style="margin-bottom:24px;padding:18px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h4 style="margin:0;font-size:15px;color:#1e293b;">
+            <i class="fa-solid fa-face-smile" style="color:#7c3aed;margin-right:8px;"></i>
+            Reconnaissance faciale
+          </h4>
+          <div style="display:flex;gap:8px;">
+            <button id="btn-enroll-face" type="button" onclick="enrollFaceRecognition()"
+                    style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;">
+              <i class="fa-solid fa-plus"></i> Configurer
+            </button>
+            <button id="btn-remove-face" type="button" onclick="removeFaceDescriptor()"
+                    style="display:none;background:none;border:1px solid #dc2626;color:#dc2626;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;">
+              <i class="fa-solid fa-trash"></i> Supprimer
+            </button>
+          </div>
+        </div>
+        <p style="color:#6b7280;font-size:13px;margin:0 0 12px;">
+          Connectez-vous via votre webcam. Aucune photo n'est stockée — seulement un vecteur mathématique de 128 valeurs.
+        </p>
+        <div id="face-status-display"><p style="color:#9ca3af;font-size:13px;">Chargement…</p></div>
+      </div>
+
+      <div class="profil-danger-zone">
+        <h4><i class="fa-solid fa-triangle-exclamation"></i> Gestion du compte</h4>
+        <p class="profil-muted-text">La suppression de votre compte est irréversible.</p>
+        <p class="profil-muted-text">La réactivation de votre compte est possible. Merci de contacter notre support.</p>
+        <div class="profil-danger-actions">
+          <form method="post" action="{{ path('tenant_profil') }}" class="profil-inline-form" onsubmit="return confirm('Voulez-vous vraiment désactiver votre compte ?');">
+            <input type="hidden" name="action" value="deactivate_account">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('deactivate_account_' ~ app.user.id) }}">
+            <button class="btn-secondary btn-sm profil-btn-warning" type="submit">Désactiver mon compte</button>
+          </form>
+          <button class="btn-primary btn-sm profil-btn-danger" type="button" onclick="openDeleteModal()">Supprimer mon compte</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="profil-section-card">
+    <div class="profil-section-header">
+      <h3><i class="fa-solid fa-chart-bar"></i> Récapitulatif de mon activité</h3>
+    </div>
+    <div class="profil-stats-grid">
+      <div class="kpi-stat">
+        <div class="kpi-stat-value">1</div>
+        <div class="kpi-stat-label">Contrat actif</div>
+      </div>
+      <div class="kpi-stat">
+        <div class="kpi-stat-value">3</div>
+        <div class="kpi-stat-label">Visites effectuées</div>
+      </div>
+      <div class="kpi-stat">
+        <div class="kpi-stat-value">24 350 TND</div>
+        <div class="kpi-stat-label">Total payé</div>
+      </div>
+      <div class="kpi-stat">
+        <div class="kpi-stat-value">2</div>
+        <div class="kpi-stat-label">Réclamations</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<div id="delete-modal" class="profil-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+  <div class="profil-delete-card">
+    <div class="profil-delete-head">
+      <h4 id="delete-modal-title"><i class="fa-solid fa-triangle-exclamation"></i> Confirmation</h4>
+      <button type="button" class="profil-delete-close" onclick="closeDeleteModal()" aria-label="Fermer">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="profil-delete-body">
+      <p>Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.</p>
+
+      <form method="post" action="{{ path('tenant_profil') }}">
+        <input type="hidden" name="action" value="delete_profile">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('delete_profile_' ~ app.user.id) }}">
+
+        <div class="profil-delete-actions">
+          <button type="button" class="btn-secondary btn-sm" onclick="closeDeleteModal()">Annuler</button>
+          <button type="submit" class="btn-primary btn-sm profil-btn-danger">Confirmer la suppression</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+{% include 'shared/_otp_timer_script.html.twig' %}
+<script src="{{ asset('js/webauthn.js') }}"></script>
+<script src="{{ asset('js/face-recognition.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+<script>
+  var _profilSigPad;
+  document.addEventListener('DOMContentLoaded', function () {
+    var canvas = document.getElementById('profil-signature-pad');
+    if (!canvas) return;
+    function resizeSig() {
+      var ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width  = canvas.offsetWidth  * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      canvas.getContext('2d').scale(ratio, ratio);
+      if (_profilSigPad) _profilSigPad.clear();
+    }
+    window.addEventListener('resize', resizeSig);
+    resizeSig();
+    _profilSigPad = new SignaturePad(canvas, { penColor: 'rgb(30,30,30)', backgroundColor: 'rgb(255,255,255)' });
+  });
+
+  function clearProfilSignature() {
+    if (_profilSigPad) _profilSigPad.clear();
+    document.getElementById('sig-save-status').textContent = '';
+  }
+
+  function saveProfilSignature() {
+    if (!_profilSigPad || _profilSigPad.isEmpty()) {
+      document.getElementById('sig-save-status').innerHTML = '<span style="color:#dc2626;">Veuillez dessiner une signature.</span>';
+      return;
+    }
+    var data = _profilSigPad.toDataURL('image/png');
+    var status = document.getElementById('sig-save-status');
+    status.innerHTML = '<span style="color:#6b7280;">Enregistrement…</span>';
+    fetch('{{ path("tenant_signature_save") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'signature_data=' + encodeURIComponent(data)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        status.innerHTML = '<span style="color:#16a34a;font-weight:600;"><i class="fa-solid fa-circle-check"></i> Signature enregistrée !</span>';
+        var preview = document.getElementById('sig-saved-preview');
+        if (preview) {
+          preview.querySelector('img').src = data;
+        } else {
+          var div = document.createElement('div');
+          div.id = 'sig-saved-preview';
+          div.style.marginBottom = '14px';
+          div.innerHTML = '<p style="font-size:12px;color:#16a34a;font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-circle-check"></i> Signature enregistrée</p><img src="'+data+'" style="max-width:100%;height:100px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;object-fit:contain;">';
+          canvas.parentElement.parentElement.insertBefore(div, canvas.parentElement);
+        }
+      } else {
+        status.innerHTML = '<span style="color:#dc2626;">' + (res.error || 'Erreur') + '</span>';
+      }
+    })
+    .catch(function() { status.innerHTML = '<span style="color:#dc2626;">Erreur réseau.</span>'; });
+  }
+
+  function deleteProfilSignature() {
+    if (!confirm('Supprimer la signature enregistrée ?')) return;
+    fetch('{{ path("tenant_signature_delete") }}', { method: 'POST' })
+    .then(function(r){ return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        var prev = document.getElementById('sig-saved-preview');
+        if (prev) prev.remove();
+        document.getElementById('sig-save-status').innerHTML = '<span style="color:#6b7280;">Signature supprimée.</span>';
+      }
+    });
+  }
+</script>
+<script>
+  function toggleEdit() {
+    const form = document.getElementById('profile-form');
+    const inputs = document.querySelectorAll('#f-prenom,#f-nom,#f-email,#f-tel');
+    const editActions = document.getElementById('edit-actions');
+    const editButton = document.getElementById('btn-edit');
+
+    if (!inputs.length) {
+      return;
+    }
+
+    const isReadonly = inputs[0].readOnly;
+
+    inputs.forEach((input) => {
+      input.readOnly = !isReadonly;
+    });
+
+    if (form) {
+      form.classList.toggle('is-editing', isReadonly);
+    }
+
+    if (editActions) {
+      editActions.style.display = isReadonly ? 'flex' : 'none';
+    }
+
+    if (editButton) {
+      editButton.innerHTML = isReadonly
+        ? '<i class="fa-solid fa-xmark"></i> Annuler'
+        : '<i class="fa-solid fa-pen"></i> Modifier le profil';
+    }
+  }
+
+  function cancelEdit() {
+    const form = document.getElementById('profile-form');
+    if (form) {
+      form.reset();
+      form.classList.remove('is-editing');
+    }
+
+    const inputs = document.querySelectorAll('#f-prenom,#f-nom,#f-email,#f-tel');
+    inputs.forEach((input) => {
+      input.readOnly = true;
+    });
+
+    const editActions = document.getElementById('edit-actions');
+    if (editActions) {
+      editActions.style.display = 'none';
+    }
+
+    const editButton = document.getElementById('btn-edit');
+    if (editButton) {
+      editButton.innerHTML = '<i class="fa-solid fa-pen"></i> Modifier le profil';
+    }
+  }
+
+  function updateStrength(value) {
+    const fill = document.getElementById('strength-fill');
+    const label = document.getElementById('strength-label');
+    let width = 0;
+    let color = '#dc2626';
+    let text = '';
+
+    if (value.length > 0) {
+      width = 25;
+      color = '#dc2626';
+      text = 'Faible';
+    }
+    if (value.length >= 6) {
+      width = 50;
+      color = '#d97706';
+      text = 'Moyen';
+    }
+    if (value.length >= 8) {
+      width = 75;
+      color = '#2563eb';
+      text = 'Fort';
+    }
+    if (value.length >= 10 && /[A-Z]/.test(value) && /[0-9]/.test(value)) {
+      width = 100;
+      color = '#16a34a';
+      text = 'Très fort';
+    }
+
+    if (fill) {
+      fill.style.width = width + '%';
+      fill.style.background = color;
+    }
+
+    if (label) {
+      label.textContent = text;
+      label.style.color = color;
+    }
+  }
+
+  function togglePwd(id) {
+    const input = document.getElementById(id);
+    if (!input) {
+      return;
+    }
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  function openPhotoPicker() {
+    const input = document.getElementById('photo-file-input');
+    if (!input) {
+      return;
+    }
+    input.value = '';
+    input.click();
+  }
+
+  function onPhotoPicked(input) {
+    if (!input || !input.files || input.files.length === 0) {
+      return;
+    }
+    if (input.form) {
+      input.form.submit();
+    }
+  }
+
+  function openDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    if (!modal) {
+      return;
+    }
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    if (!modal) {
+      return;
+    }
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  function updatePhoneVerificationButton() {
+    const phoneInput = document.getElementById('f-tel');
+    const button = document.querySelector('[data-phone-verification-button]');
+    if (!phoneInput || !button) {
+      return;
+    }
+    const originalPhone = (phoneInput.defaultValue || '').trim();
+    const currentPhone = (phoneInput.value || '').trim();
+    const isVerified = button.dataset.phoneVerified === '1';
+    const hasChanged = currentPhone !== '' && currentPhone !== originalPhone;
+
+    button.classList.remove('profil-btn-phone--verified', 'profil-btn-phone--unverified');
+
+    if (hasChanged) {
+      button.classList.add('profil-btn-phone--unverified');
+      button.textContent = button.dataset.phoneSaveLabel || 'Enregistrez d\'abord le numéro';
+      button.disabled = true;
+      return;
+    }
+    if (isVerified) {
+      button.classList.add('profil-btn-phone--verified');
+      button.textContent = button.dataset.phoneVerifiedLabel || 'Numéro vérifié';
+      button.disabled = true;
+      return;
+    }
+    button.classList.add('profil-btn-phone--unverified');
+    button.textContent = button.dataset.phoneUnverifiedLabel || 'Vérifier le numéro de téléphone';
+    button.disabled = false;
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      closeDeleteModal();
+    }
+  });
+
+  document.addEventListener('click', function (event) {
+    const modal = document.getElementById('delete-modal');
+    if (modal && event.target === modal) {
+      closeDeleteModal();
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const phoneInput = document.getElementById('f-tel');
+    if (phoneInput) {
+      phoneInput.addEventListener('input', updatePhoneVerificationButton);
+      phoneInput.addEventListener('change', updatePhoneVerificationButton);
+    }
+    updatePhoneVerificationButton();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,208 @@
+{# templates/caution/_panel_retenue.html.twig
+   Panel Retenue — style natif Sakan (dark panel, CSS inline, zero Bootstrap, zero jQuery)
+   Ce fragment est chargé via AJAX dans #panelRetenueContent depuis a_regulariser.html.twig
+   Le JS d'upload est DANS a_regulariser.html.twig (uploadPhotoPanel / sauvegarderRetenue)
+#}
+
+{# ── En-tête caution ────────────────────────────────────────── #}
+<div style="display:flex;gap:12px;margin-bottom:24px;">
+    <div style="flex:1;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px 16px;">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Locataire</div>
+        <div style="font-weight:700;color:#f1f5f9;font-size:14px;">
+            {{ caution.nom_locataire|default(caution.locataire_nom|default('N/A')) }}
+        </div>
+        {% if caution.telephone is defined and caution.telephone %}
+        <div style="font-size:11px;color:#475569;margin-top:2px;">{{ caution.telephone }}</div>
+        {% endif %}
+    </div>
+    <div style="flex:1;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px 16px;">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Caution initiale</div>
+        <div style="font-weight:800;color:#4ade80;font-size:18px;">
+            {{ caution.montant_initial|number_format(3, '.', ' ') }} <span style="font-size:11px;font-weight:600;">TND</span>
+        </div>
+    </div>
+</div>
+
+<div style="height:1px;background:#1e293b;margin-bottom:24px;"></div>
+
+{# ── Section 1 : Photos justificatives ──────────────────────── #}
+<div style="margin-bottom:24px;">
+    <div style="font-size:12px;color:#cbd5e1;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span style="background:#3b82f6;color:white;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">1</span>
+        Photos Justificatives
+        <span style="background:#334155;color:#94a3b8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;">Optionnel</span>
+    </div>
+
+    {# Zone de drop #}
+    <label for="photoUploadPanel"
+           style="display:block;background:#1e293b;border:2px dashed #475569;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;"
+           onmouseover="this.style.borderColor='#60a5fa';this.style.background='#1e3a5f';"
+           onmouseout="this.style.borderColor='#475569';this.style.background='#1e293b';">
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size:28px;color:#475569;display:block;margin-bottom:8px;"></i>
+        <div style="color:#94a3b8;font-size:13px;margin-bottom:4px;">Cliquez ou déposez une photo ici</div>
+        <div style="color:#64748b;font-size:11px;">JPG, PNG, WEBP — max 5 MB — Analysé par Gemini IA</div>
+        <input type="file" id="photoUploadPanel" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;"
+               onchange="uploadPhotoPanel(this, {{ caution.id }})">
+    </label>
+
+    <p style="font-size:11px;color:#64748b;margin:8px 0 0 2px;">
+        <i class="fa-solid fa-circle-info" style="color:#f59e0b;margin-right:4px;"></i>
+        SAKAN AI analyse les justificatifs pour rédiger un constat. Vous gardez le contrôle total.
+    </p>
+
+    {# Liste des photos (existantes + nouvelles via JS) — ID attendu par uploadPhotoPanel() dans a_regulariser.html.twig #}
+    <div id="photosListPanel" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for photo in caution.photos|default([]) %}
+        <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px;">
+            <img src="{{ photo.fichier_url }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #1e3a5f;" alt="Photo dommage">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="color:white;font-size:12px;font-weight:700;">{{ photo.type_dommage }}</span>
+                    <span style="background:{% if photo.gravite_gemini == 'CRITIQUE' %}#dc2626{% elseif photo.gravite_gemini == 'IMPORTANT' %}#f97316{% elseif photo.gravite_gemini == 'MODERE' %}#f59e0b{% else %}#3b82f6{% endif %};color:white;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;">
+                        {{ photo.gravite_gemini }}
+                    </span>
+                </div>
+                <div style="color:#94a3b8;font-size:11px;line-height:1.4;">{{ photo.analyse_gemini }}</div>
+                {% if photo.montant_estime is defined and photo.montant_estime > 0 %}
+                <div style="color:#60a5fa;font-size:11px;font-weight:600;margin-top:4px;">~{{ photo.montant_estime|number_format(0) }} TND estimés</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div style="height:1px;background:#1e293b;margin-bottom:24px;"></div>
+
+{# ── Section 2 : Montant retenue ─────────────────────────────── #}
+<div style="margin-bottom:24px;">
+    <div style="font-size:12px;color:#cbd5e1;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span style="background:#f59e0b;color:#0f172a;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">2</span>
+        Montant de Retenue (TND)
+        <span style="background:#dc2626;color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;">Obligatoire</span>
+    </div>
+
+    <div style="position:relative;margin-bottom:8px;">
+        <div style="display:flex;align-items:flex-end;border-bottom:2px solid #3b82f6;padding-bottom:4px;transition:border-color .2s;" id="retenueInputContainer">
+            <span style="color:#60a5fa;font-size:18px;margin-right:8px;padding-bottom:2px;"><i class="fa-solid fa-coins"></i></span>
+            <input type="number" step="0.001" min="0" max="{{ caution.montant_initial }}"
+                   id="panelMontantRetention"
+                   value="{{ caution.montant_retention|default(0) }}"
+                   placeholder="0.000"
+                   style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:24px;font-weight:700;outline:none;padding:0;"
+                   onfocus="document.getElementById('retenueInputContainer').style.borderColor='#8b5cf6';"
+                   onblur="document.getElementById('retenueInputContainer').style.borderColor='#3b82f6';"
+                   oninput="verifierPlafondRetenue(this, {{ caution.montant_initial }}, {{ caution.total_charges_impayees|default(0) }})">
+            <span style="color:#4ade80;font-weight:800;font-size:16px;margin-left:8px;padding-bottom:4px;">TND</span>
+        </div>
+    </div>
+
+    <div id="erreurPlafond" style="display:none;color:#f87171;font-size:12px;margin-bottom:12px;">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>
+        Le montant ne peut pas dépasser la caution initiale.
+    </div>
+
+    <div style="background:rgba(59,130,246,0.1);border-left:3px solid #3b82f6;border-radius:4px;padding:10px 14px;margin-top:12px;">
+        <p style="color:#94a3b8;font-size:11px;line-height:1.5;margin:0;">
+            <i class="fa-solid fa-user-pen" style="color:#60a5fa;margin-right:6px;"></i>
+            <strong style="color:#e2e8f0;">Saisie Manuelle :</strong> L'IA Sakan fournit une aide à la description, mais <strong>vous avez le contrôle total</strong> sur ce montant final retenu.
+        </p>
+    </div>
+</div>
+
+<div style="height:1px;background:#1e293b;margin-bottom:24px;"></div>
+
+{# ── Section 3 : Justification ──────────────────────────────── #}
+<div style="margin-bottom:24px;">
+    <div style="font-size:12px;color:#cbd5e1;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span style="background:#64748b;color:white;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;">3</span>
+        Justification de la Retenue
+    </div>
+
+    <textarea id="panelDescriptionRetenue"
+              rows="3"
+              placeholder="Décrivez les dommages constatés (ex: fissure murale salon, peinture dégradée chambre...)..."
+              style="width:100%;background:#1e293b;border:1px solid #475569;border-radius:10px;color:#e2e8f0;font-size:13px;padding:12px 14px;resize:none;outline:none;box-sizing:border-box;transition:border-color .2s;"
+              onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#475569'">{{ caution.description_retenue|default('') }}</textarea>
+    <div style="font-size:11px;color:#64748b;margin-top:6px;">
+        <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
+        Une description détaillée facilite la compréhension et peut être transmise au locataire.
+    </div>
+</div>
+
+<div style="height:1px;background:#1e293b;margin-bottom:24px;"></div>
+
+{# ── Section 4 : Récapitulatif live ──────────────────────────── #}
+{% set totalCharges = caution.total_charges_impayees|default(0) %}
+{% set montantRetention = caution.montant_retention|default(0) %}
+{% set netRemboursement = caution.montant_initial - montantRetention - totalCharges %}
+
+<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:24px;">
+    <div style="font-size:11px;color:#60a5fa;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+        <i class="fa-solid fa-calculator"></i> Récapitulatif Liquidation
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #334155;">
+        <span style="color:#e2e8f0;font-size:13px;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-piggy-bank" style="color:#4ade80;"></i> Caution initiale
+        </span>
+        <span style="color:#f8fafc;font-size:14px;font-weight:700;">{{ caution.montant_initial|number_format(3, '.', ' ') }} TND</span>
+    </div>
+
+    {% if totalCharges > 0 %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #334155;">
+        <span style="color:#e2e8f0;font-size:13px;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-file-invoice-dollar" style="color:#f87171;"></i>
+            Charges impayées
+            <span style="background:#dc2626;color:white;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;">AUTO</span>
+        </span>
+        <span style="color:#f87171;font-size:13px;font-weight:700;">− {{ totalCharges|number_format(3, '.', ' ') }} TND</span>
+    </div>
+    {% endif %}
+
+    <div id="liveRetenueRow" style="display:{% if montantRetention > 0 %}flex{% else %}none{% endif %};justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #334155;">
+        <span style="color:#e2e8f0;font-size:13px;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-wrench" style="color:#fbbf24;"></i>
+            Retenue dégâts
+            <span style="background:#f59e0b;color:#0f172a;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;">MANUEL</span>
+        </span>
+        <span id="liveRetenueDisplay" style="color:#fbbf24;font-size:13px;font-weight:700;">− {{ montantRetention|number_format(3, '.', ' ') }} TND</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;margin-top:12px;background:#064e3b;border:1px solid #10b981;border-radius:10px;">
+        <span style="color:#f8fafc;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-hand-holding-dollar" style="color:#4ade80;font-size:16px;"></i>
+            NET À REMBOURSER
+        </span>
+        <span id="liveNetDisplay" style="color:#4ade80;font-size:22px;font-weight:800;">{{ netRemboursement|number_format(3, '.', ' ') }} TND</span>
+    </div>
+</div>
+
+{# ── Bouton Sauvegarder ────────────────────────────────────── #}
+<div style="display:flex;gap:10px;margin-bottom:16px;">
+    <button onclick="fermerPanelRetenue()"
+            style="flex:1;padding:12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.background='#334155';this.style.color='white';"
+            onmouseout="this.style.background='#1e293b';this.style.color='#94a3b8';">
+        <i class="fa-solid fa-xmark" style="margin-right:6px;"></i>Annuler
+    </button>
+    <button id="btnSauvegarderRetenue"
+            onclick="sauvegarderRetenue({{ caution.id }})"
+            style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.opacity='.85';" onmouseout="this.style.opacity='1';">
+        <i class="fa-solid fa-floppy-disk" style="margin-right:8px;"></i>Sauvegarder la retenue
+    </button>
+</div>
+
+{# Bloc bouton finaliser (visible après sauvegarde réussie, injecté par JS dans a_regulariser.html.twig) #}
+<div id="btnFinaliserWrapper" style="display:none;">
+    <div style="background:#1e293b;border:1px solid #10b981;border-radius:12px;padding:14px 16px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">Net à rembourser au locataire</div>
+        <div id="montantFinaliserDisplay" style="font-size:28px;font-weight:800;color:#4ade80;margin-bottom:12px;"></div>
+        <button onclick="finaliserRemboursementPartiel()"
+                style="width:100%;padding:12px;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+            <i class="fa-brands fa-stripe" style="font-size:16px;margin-right:8px;"></i>
+            Rembourser via Stripe
+        </button>
+    </div>
+</div>

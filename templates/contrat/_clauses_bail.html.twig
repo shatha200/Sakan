@@ -1,0 +1,50 @@
+{# Clauses contractuelles + rappel des données annonce (lecture locataire / propriétaire) #}
+{% set prix = annonce.prix ?? '—' %}
+{% set titre = annonce.titre ?? 'Bien' %}
+{% set ville = annonce.ville ?? '' %}
+{% set adresse = annonce.adresse ?? '' %}
+
+<div style="background: linear-gradient(135deg, #f0f9ff 0%, #eef2ff 100%); border: 1px solid #c7d2fe; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin: 0 0 12px 0; font-size: 18px; color: #1e3a8a; display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-scale-balanced"></i> Clauses et rappel du bien (annonce)
+    </h3>
+    <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 16px 0;">
+        Les <strong>montants</strong> et <strong>dates</strong> du présent bail sont préremplis à partir de l’annonce et de la réservation approuvée.
+        Le locataire pourra consulter ces mêmes informations sur son espace avant de finaliser.
+    </p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 14px;">
+        <div style="background: white; padding: 12px 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700;">Bien</div>
+            <div style="font-weight: 700; color: #0f172a;">{{ titre }}</div>
+            {% if ville or adresse %}
+                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">{{ adresse }}{% if ville and adresse %}, {% endif %}{{ ville }}</div>
+            {% endif %}
+        </div>
+        <div style="background: white; padding: 12px 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700;">Loyer de référence (annonce)</div>
+            <div style="font-weight: 800; color: #059669; font-size: 18px;">{{ prix }} TND / mois</div>
+        </div>
+        {% if reservation is defined and reservation %}
+            <div style="background: white; padding: 12px 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700;">Réservation #{{ reservation.id }}</div>
+                <div style="font-size: 13px;">Du {{ reservation.dateDebut ? reservation.dateDebut|date('d/m/Y') : '—' }} au {{ reservation.dateFin ? reservation.dateFin|date('d/m/Y') : '—' }}</div>
+            </div>
+        {% endif %}
+    </div>
+    <details style="margin-top: 16px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px 16px;">
+        <summary style="cursor: pointer; font-weight: 700; color: #3730a3;">Lire les clauses types du bail</summary>
+        <ol style="margin: 12px 0 0 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.65;">
+            <li>Le locataire s’engage à payer le loyer aux échéances convenues et à respecter les lieux loués.</li>
+            <li>Le propriétaire garantit la jouissance paisible des lieux conformément à la réglementation en vigueur.</li>
+            <li>La caution versée est destinée à couvrir d’éventuels manquements ; son sort est régi par le module financier Sakan.</li>
+            <li>Les pénalités de retard éventuelles sont celles définies dans le formulaire ci-dessous (délai de grâce, montants et plafonds).</li>
+            <li>Les signatures électroniques et pièces d’identité fournies valent engagement des parties.</li>
+            <li>En cas de litige, les parties privilégient la résolution amiable avant toute action.</li>
+        </ol>
+        {% if annonce.description %}
+            <p style="font-size: 12px; color: #64748b; margin-top: 12px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <strong>Description annonce :</strong> {{ annonce.description|length > 400 ? annonce.description|slice(0, 400) ~ '…' : annonce.description }}
+            </p>
+        {% endif %}
+    </details>
+</div>

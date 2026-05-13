@@ -1,0 +1,262 @@
+{% extends 'layouts/base_cautions_owner.html.twig' %}
+{% block cautions_content %}
+
+{# ── Stats bar ──────────────────────────────────────────────── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-shield-check" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">Dépôts actifs</div>
+            <div style="font-size:26px;font-weight:800;color:var(--text-primary);line-height:1.2;">{{ cautions|length }}</div>
+        </div>
+    </div>
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-coins" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">Total détenu</div>
+            <div style="font-size:22px;font-weight:800;color:#059669;line-height:1.2;">
+                {{ totalDetenu|number_format(3, '.', ' ') }} <span style="font-size:13px;font-weight:600;">TND</span>
+            </div>
+        </div>
+    </div>
+    <div style="background:white;border-radius:16px;padding:20px 24px;box-shadow:var(--shadow-card);display:flex;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-calendar-check" style="color:white;font-size:20px;"></i>
+        </div>
+        <div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">Contrats actifs</div>
+            <div style="font-size:26px;font-weight:800;color:var(--text-primary);line-height:1.2;">{{ cautions|length }}</div>
+        </div>
+    </div>
+</div>
+
+{# ── Table card ─────────────────────────────────────────────── #}
+<div style="background:white;border-radius:20px;padding:0;box-shadow:var(--shadow-card);overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+            <h3 style="font-size:16px;font-weight:700;margin:0 0 2px;">
+                <i class="fa-solid fa-shield-check" style="color:#4f46e5;margin-right:8px;"></i>
+                Cautions détenues — Contrats en cours
+            </h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;">Dépôts bloqués sur contrats actifs (date fin ≥ aujourd'hui)</p>
+        </div>
+        <span style="background:#eef2ff;color:#4f46e5;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;">
+            {{ cautions|length }} caution{{ cautions|length > 1 ? 's' : '' }}
+        </span>
+    </div>
+
+    {% if cautions is empty %}
+    <div style="padding:60px 24px;text-align:center;color:var(--text-muted);">
+        <i class="fa-solid fa-shield-check" style="font-size:48px;opacity:.2;display:block;margin-bottom:16px;"></i>
+        <p style="font-size:16px;font-weight:500;margin-bottom:4px;">Aucun dépôt actif</p>
+        <p style="font-size:13px;">Les cautions apparaîtront ici dès qu'un contrat actif aura une caution enregistrée.</p>
+    </div>
+    {% else %}
+    <div style="overflow-x:auto;">
+        <table class="table-paiements" style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Locataire</th>
+                    <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Bien loué</th>
+                    <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Montant caution</th>
+                    <th style="padding:14px 20px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Période</th>
+                    <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Charges Impayées</th>
+                    <th style="padding:14px 20px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Statut</th>
+                    <th style="padding:14px 20px;text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in cautions %}
+                <tr style="border-bottom:1px solid #f1f5f9;transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+                    <td style="padding:16px 20px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:white;">
+                                {{ c.nom_locataire|first|upper }}
+                            </div>
+                            <div>
+                                <div style="font-weight:600;font-size:14px;color:var(--text-primary);">{{ c.nom_locataire }}</div>
+                                {% if c.telephone %}<div style="font-size:12px;color:var(--text-muted);">{{ c.telephone }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:16px 20px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--text-primary);">
+                            <i class="fa-solid fa-building" style="color:var(--text-muted);margin-right:6px;font-size:12px;"></i>
+                            {{ c.nom_bien }}
+                        </div>
+                    </td>
+                    <td style="padding:16px 20px;text-align:right;">
+                        <div style="font-size:16px;font-weight:700;color:#059669;">
+                            {{ c.montant_initial|number_format(3, '.', ' ') }} TND
+                        </div>
+                        {% if c.montant_retention > 0 %}
+                        <div style="font-size:11px;color:#d97706;margin-top:2px;">
+                            Retenue: {{ c.montant_retention|number_format(3, '.', ' ') }} TND
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td style="padding:16px 20px;text-align:center;">
+                        <div style="font-size:13px;color:var(--text-muted);">
+                            <div>{{ c.date_debut ? c.date_debut|date('d/m/Y') : '—' }}</div>
+                            <div style="margin:2px 0;color:var(--border);">↓</div>
+                            <div style="font-weight:500;color:var(--text-primary);">{{ c.date_fin ? c.date_fin|date('d/m/Y') : '—' }}</div>
+                        </div>
+                    </td>
+                    <td style="padding:16px 20px;text-align:right;">
+                        {% if c.total_charges_impayees|default(0) > 0 %}
+                            <div style="display:inline-flex;flex-direction:column;align-items:flex-end;">
+                                <span style="background:#fee2e2;color:#dc2626;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #fecaca;white-space:nowrap;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>
+                                    {{ c.total_charges_impayees|number_format(3, '.', ' ') }} TND
+                                </span>
+                                {% if c.total_charges_impayees > c.montant_initial %}
+                                    <span style="font-size:9px;color:#ef4444;font-weight:800;text-transform:uppercase;margin-top:2px;">Risque Critique</span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <span style="color:#059669;font-size:12px;font-weight:600;"><i class="fa-solid fa-circle-check" style="margin-right:2px;"></i> OK</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:16px 20px;text-align:center;">
+                        <span style="display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;">
+                            <span style="width:6px;height:6px;background:#22c55e;border-radius:50%;display:inline-block;"></span>
+                            Bloquée
+                        </span>
+                    </td>
+                    <td style="padding:16px 20px;text-align:center;">
+                            <button
+                                onclick="openFinaliserModal({{ c.caution_id }}, '{{ c.nom_locataire|e('js') }}', '{{ c.nom_bien|e('js') }}', {{ c.total_charges_impayees|default(0) }})"
+                                style="padding:7px 14px;background:linear-gradient(135deg,#dc2626,#ef4444);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;"
+                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(220,38,38,.3)'"
+                                onmouseout="this.style.transform='';this.style.boxShadow=''">
+                                <i class="fa-solid fa-flag-checkered" style="margin-right:5px;"></i>
+                                Finaliser
+                            </button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+{# ── Modal Finaliser contrat ─────────────────────────────────── #}
+<div id="modalFinaliser" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:24px;padding:32px;max-width:480px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,.25);animation:slideUp .25s ease;">
+        <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;">
+            <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#dc2626,#ef4444);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-flag-checkered" style="color:white;font-size:22px;"></i>
+            </div>
+            <div>
+                <h3 style="font-size:18px;font-weight:700;margin:0 0 6px;">Finaliser le contrat</h3>
+                <p style="font-size:14px;color:var(--text-muted);margin:0;">Cette action met fin au contrat. La caution passera en "À régulariser".</p>
+            </div>
+        </div>
+
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:24px;">
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-right:6px;"></i>
+                Confirmation requise
+            </div>
+            <p id="modalFinaliserText" style="font-size:14px;color:#7f1d1d;margin:0;line-height:1.5;"></p>
+            <div id="riskWarning" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #fecaca;color:#dc2626;font-size:13px;font-weight:700;">
+                <i class="fa-solid fa-skull-crossbones" style="margin-right:6px;"></i>
+                ATTENTION : Ce locataire a <span id="debtAmount">0.000</span> TND de charges impayées !
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button onclick="closeFinaliserModal()" style="padding:10px 20px;background:var(--surface);color:var(--text-primary);border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;">
+                Annuler
+            </button>
+            <button id="btnConfirmFinaliser" onclick="confirmerFinaliser()" style="padding:10px 20px;background:linear-gradient(135deg,#dc2626,#ef4444);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+                <i class="fa-solid fa-flag-checkered" style="margin-right:6px;"></i>
+                Confirmer la finalisation
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ── Toast notification ───────────────────────────────────────── #}
+<div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;background:#1e293b;color:white;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:500;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;align-items:center;gap:10px;max-width:380px;"></div>
+
+<style>
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
+<script>
+let _cautionIdToFinaliser = null;
+
+function openFinaliserModal(cautionId, locataire, bien, totalImpaye = 0) {
+    _cautionIdToFinaliser = cautionId;
+    document.getElementById('modalFinaliserText').textContent =
+        `Voulez-vous vraiment finaliser le contrat de ${locataire} pour "${bien}" ? Le contrat sera marqué comme terminé et la caution devra être régularisée.`;
+    
+    // Alerte de risque financier (Charges impayées)
+    const riskBox = document.getElementById('riskWarning');
+    const debtSpan = document.getElementById('debtAmount');
+    if (riskBox && debtSpan && parseFloat(totalImpaye) > 0) {
+        debtSpan.textContent = parseFloat(totalImpaye).toFixed(3);
+        riskBox.style.display = 'block';
+    } else if (riskBox) {
+        riskBox.style.display = 'none';
+    }
+
+    document.getElementById('modalFinaliser').style.display = 'flex';
+}
+
+function closeFinaliserModal() {
+    document.getElementById('modalFinaliser').style.display = 'none';
+    _cautionIdToFinaliser = null;
+}
+
+async function confirmerFinaliser() {
+    if (!_cautionIdToFinaliser) return;
+    const btn = document.getElementById('btnConfirmFinaliser');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Finalisation…';
+
+    try {
+        const res = await fetch(`/proprietaire/cautions/api/finaliser/${_cautionIdToFinaliser}`, {
+            method: 'POST',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        });
+        const data = await res.json();
+        closeFinaliserModal();
+        if (data.success) {
+            showToast('✅ ' + data.message, 'success');
+            setTimeout(() => location.reload(), 1800);
+        } else {
+            showToast('❌ ' + (data.message || 'Erreur lors de la finalisation'), 'error');
+        }
+    } catch (e) {
+        closeFinaliserModal();
+        showToast('❌ Erreur réseau. Veuillez réessayer.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-flag-checkered" style="margin-right:6px;"></i>Confirmer la finalisation';
+    }
+}
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    const colors = {success: '#059669', error: '#dc2626', info: '#4f46e5'};
+    t.style.borderLeft = `4px solid ${colors[type] || colors.success}`;
+    t.innerHTML = msg;
+    t.style.display = 'flex';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display = 'none', 4000);
+}
+
+// Close modal on backdrop click
+document.getElementById('modalFinaliser').addEventListener('click', function(e) {
+    if (e.target === this) closeFinaliserModal();
+});
+</script>
+
+{% endblock %}

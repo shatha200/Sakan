@@ -1,0 +1,656 @@
+{% extends 'layouts/base_owner.html.twig' %}
+{% block title %}Pénalités — Dashboard — Sakan{% endblock %}
+{% block page_title %}Pénalités{% endblock %}
+{% block page_subtitle %}Suivi des pénalités par bien immobilier{% endblock %}
+
+{% block content %}
+
+<!-- Flash Messages -->
+{% for message in app.flashes('success') %}
+    <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #166534;">
+        <i class="fa-solid fa-check-circle"></i> {{ message }}
+    </div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+    <div style="background: #fef2f2; border: 1px solid #dc2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #991b1b;">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+    </div>
+{% endfor %}
+
+<!-- ═══ État Vide: Pas de biens ═══════════════════════════════════════ -->
+{% if reglesParBien is empty %}
+<div style="background: white; border-radius: 16px; padding: 48px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 28px;">
+    <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <i class="fa-solid fa-building" style="font-size: 32px; color: #9ca3af;"></i>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 12px;">Aucun bien immobilier</h3>
+    <p style="font-size: 15px; color: #6b7280; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Vous n'avez pas encore ajouté de biens immobiliers. Pour configurer des règles de pénalités, vous devez d'abord ajouter au moins un bien et créer un contrat avec un locataire.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ path('owner_ajouter_bien') }}" style="padding: 12px 24px; background: var(--primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-plus"></i> Ajouter un bien
+        </a>
+        <a href="{{ path('owner_penalites_configuration') }}" style="padding: 12px 24px; background: #f3f4f6; color: #374151; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-gear"></i> Configurer quand même
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ État Vide: Pas de pénalités mais a des biens ═════════════════ -->
+{% if reglesParBien is not empty and historique is empty and kpis.totalRecouvre == 0 %}
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 16px; padding: 32px; margin-bottom: 28px; border: 1px solid #bbf7d0;">
+    <div style="display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+        <div style="width: 64px; height: 64px; background: #22c55e; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="fa-solid fa-check-double" style="font-size: 28px; color: white;"></i>
+        </div>
+        <div style="flex: 1; min-width: 280px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #166534; margin-bottom: 8px;">Excellent ! Vos locataires sont ponctuels</h3>
+            <p style="font-size: 14px; color: #15803d; margin-bottom: 16px;">
+                Vous avez {{ reglesParBien|length }} bien(s) mais aucune pénalité n'a été appliquée. Cela signifie que vos locataires paient à temps ou que les délais de grâce ne sont pas encore dépassés.
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="{{ path('owner_penalites_configuration') }}" style="padding: 10px 20px; background: #16a34a; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                    <i class="fa-solid fa-sliders"></i> Voir mes règles
+                </a>
+                <a href="{{ path('owner_loyers') }}" style="padding: 10px 20px; background: white; color: #166534; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; border: 1px solid #bbf7d0;">
+                    <i class="fa-solid fa-money-bill"></i> Voir les loyers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ KPI Cards ════════════════════════════════════════════════════ -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px;">
+    
+    <!-- Total Recouvré -->
+    <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; padding: 24px; color: white; box-shadow: 0 4px 15px rgba(99,102,241,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; margin-bottom: 8px;">Total Recouvré</div>
+                <div style="font-size: 32px; font-weight: 700;">{{ kpis.totalRecouvre|number_format(3, ',', ' ') }} <span style="font-size: 18px;">TND</span></div>
+            </div>
+            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-coins" style="font-size: 20px;"></i>
+            </div>
+        </div>
+        <div style="margin-top: 16px; font-size: 13px; opacity: 0.9;">
+            <i class="fa-solid fa-check-circle"></i> Cumul des pénalités encaissées
+        </div>
+    </div>
+    
+    <!-- Performance Mois -->
+    <div style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border-radius: 16px; padding: 24px; color: white; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; margin-bottom: 8px;">Performance Mois</div>
+                <div style="font-size: 32px; font-weight: 700;">{{ kpis.performanceMois|number_format(3, ',', ' ') }} <span style="font-size: 18px;">TND</span></div>
+            </div>
+            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-chart-line" style="font-size: 20px;"></i>
+            </div>
+        </div>
+        <div style="margin-top: 16px; font-size: 13px; opacity: 0.9;">
+            <i class="fa-solid fa-calendar"></i> Ce mois-ci
+        </div>
+    </div>
+    
+    <!-- Retards Identifiés -->
+    <div style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 16px; padding: 24px; color: white; box-shadow: 0 4px 15px rgba(245,158,11,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; margin-bottom: 8px;">Retards Identifiés</div>
+                <div style="font-size: 32px; font-weight: 700;">{{ kpis.retardsIdentifies }}</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-clock" style="font-size: 20px;"></i>
+            </div>
+        </div>
+        <div style="margin-top: 16px; font-size: 13px; opacity: 0.9;">
+            <i class="fa-solid fa-exclamation-triangle"></i> Ce mois (payés + en retard)
+        </div>
+    </div>
+    
+    <!-- Top Retardataire -->
+    <div style="background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); border-radius: 16px; padding: 24px; color: white; box-shadow: 0 4px 15px rgba(239,68,68,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; margin-bottom: 8px;">Top Retardataire</div>
+                <div style="font-size: 20px; font-weight: 700; line-height: 1.3;">{{ kpis.topRetardataire|default('—') }}</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-building-user" style="font-size: 20px;"></i>
+            </div>
+        </div>
+        <div style="margin-top: 16px; font-size: 13px; opacity: 0.9;">
+            <i class="fa-solid fa-ranking-star"></i> Bien avec le plus de retards
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Graphiques ═══════════════════════════════════════════════════ -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
+    
+    <!-- BarChart: Évolution -->
+    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #1f2937;">
+            <i class="fa-solid fa-chart-column" style="color: #6366f1; margin-right: 8px;"></i>
+            Évolution des Encaissements (12 mois)
+        </h3>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="evolutionChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- PieChart: Répartition -->
+    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #1f2937;">
+            <i class="fa-solid fa-chart-pie" style="color: #10b981; margin-right: 8px;"></i>
+            Répartition par Bien (Top 10)
+        </h3>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="repartitionChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Règles par Bien avec Rendement ════════════════════════════════════════════ -->
+<div style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="font-size: 16px; font-weight: 700; color: #1f2937; margin: 0;">
+            <i class="fa-solid fa-gavel" style="color: #f59e0b; margin-right: 8px;"></i>
+            Mes Règles de Pénalités par Bien
+        </h3>
+        <span style="font-size: 13px; color: #6b7280;">
+            <i class="fa-solid fa-info-circle"></i> Définies lors de la signature des contrats
+        </span>
+    </div>
+    <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+        Consultez les règles de pénalité applicables à chaque propriété et leur rendement financier. 
+        Les règles sont établies lors de la création du contrat et ne peuvent pas être modifiées.
+    </p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px;">
+        {% for regle in reglesParBien %}
+        <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-radius: 16px; padding: 20px; border-left: 4px solid {{ regle.type_regle == 'personnalisee' ? '#f59e0b' : '#10b981' }}; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <!-- Header: Propriété + Locataire -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <div style="font-size: 16px; font-weight: 700; color: #1f2937; margin-bottom: 4px;">
+                        <i class="fa-solid fa-house" style="color: #6366f1; margin-right: 6px;"></i>{{ regle.propriete }}
+                    </div>
+                    <div style="font-size: 13px; color: #6b7280;">
+                        <i class="fa-solid fa-user" style="margin-right: 4px;"></i>Locataire: {{ regle.locataire|default('Vacant') }}
+                    </div>
+                </div>
+                <span style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+                    background: {{ regle.type_regle == 'personnalisee' ? '#fef3c7' : '#dcfce7' }};
+                    color: {{ regle.type_regle == 'personnalisee' ? '#d97706' : '#16a34a' }};">
+                    {{ regle.type_regle == 'personnalisee' ? 'Contrat' : 'Globale' }}
+                </span>
+            </div>
+
+            <!-- Règles configurées -->
+            <div style="background: white; border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+                <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.5px;">
+                    Règle de pénalité appliquée
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 28px; height: 28px; background: #e0e7ff; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-clock" style="color: #6366f1; font-size: 12px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #9ca3af;">Délai grâce</div>
+                            <strong style="color: #374151;">{{ regle.delai_grace_jours }} jours</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 28px; height: 28px; background: #fef3c7; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-money-bill" style="color: #f59e0b; font-size: 12px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #9ca3af;">Pénalité fixe</div>
+                            <strong style="color: #374151;">{{ regle.penalite_fixe|number_format(2, ',', ' ') }} TND</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 28px; height: 28px; background: #dbeafe; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-percent" style="color: #3b82f6; font-size: 12px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #9ca3af;">Variable</div>
+                            <strong style="color: #374151;">{{ regle.penalite_pourcentage }}%</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 28px; height: 28px; background: #fce7f3; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-arrow-up" style="color: #ec4899; font-size: 12px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #9ca3af;">Plafond</div>
+                            <strong style="color: #374151;">{{ regle.plafond_pourcentage }}%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Rendement -->
+            <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 10px; padding: 14px; border: 1px solid #a7f3d0;">
+                <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.5px;">
+                    <i class="fa-solid fa-chart-line" style="margin-right: 4px;"></i>Rendement financier
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: 700; color: #047857;">{{ regle.total_penalites|default(0)|number_format(3, ',', ' ') }}</div>
+                        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase;">TND encaissés</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: 700; color: #047857;">{{ regle.nb_penalites|default(0) }}</div>
+                        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase;">Pénalités</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 18px; font-weight: 700; color: #047857;">{{ regle.moyenne_penalite|default(0)|number_format(2, ',', ' ') }}</div>
+                        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase;">TND/moy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 48px 24px; color: #9ca3af; background: #f9fafb; border-radius: 16px;">
+            <i class="fa-solid fa-house-circle-xmark" style="font-size: 48px; margin-bottom: 16px; color: #d1d5db;"></i>
+            <h4 style="font-size: 16px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">Aucune propriété avec contrat actif</h4>
+            <p style="font-size: 14px; color: #9ca3af; max-width: 400px; margin: 0 auto;">
+                Les règles de pénalité s'afficheront ici lorsque vous aurez des contrats signés avec des locataires.
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ═══ Journal des Encaissements avec Pagerfanta ════════════════════════════════════ -->
+<div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+    {# Header avec titre et stats #}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #1f2937; margin: 0;">
+                <i class="fa-solid fa-list-alt" style="color: #6366f1; margin-right: 8px;"></i>
+                Journal des Encaissements
+            </h3>
+            {% if nbFiltered > 0 %}
+            <span style="padding: 2px 10px; background: #e0e7ff; color: #4f46e5; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                {{ nbFiltered }} résultat(s)
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Barre de filtres - Formulaire GET serveur #}
+    <form method="get" action="{{ path('owner_penalites_dashboard') }}" style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+            {# Recherche #}
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Recherche</label>
+                <input type="text" name="search" value="{{ search }}" placeholder="Locataire, bien, période..."
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; box-sizing: border-box;">
+            </div>
+            
+            {# Date From #}
+            <div style="min-width: 130px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Date début</label>
+                <input type="date" name="date_from" value="{{ dateFrom }}"
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Date To #}
+            <div style="min-width: 130px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Date fin</label>
+                <input type="date" name="date_to" value="{{ dateTo }}"
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Min Pénalité #}
+            <div style="min-width: 100px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Min (TND)</label>
+                <input type="number" name="min_penalite" value="{{ minPenalite }}" step="0.001" placeholder="0.000"
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Max Pénalité #}
+            <div style="min-width: 100px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Max (TND)</label>
+                <input type="number" name="max_penalite" value="{{ maxPenalite }}" step="0.001" placeholder="∞"
+                       style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+            </div>
+            
+            {# Lignes par page #}
+            <div style="min-width: 80px;">
+                <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Lignes</label>
+                <select name="limit" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;">
+                    <option value="5" {{ limit == 5 ? 'selected' }}>5</option>
+                    <option value="10" {{ limit == 10 ? 'selected' }}>10</option>
+                    <option value="20" {{ limit == 20 ? 'selected' }}>20</option>
+                    <option value="50" {{ limit == 50 ? 'selected' }}>50</option>
+                </select>
+            </div>
+            
+            {# Boutons #}
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" style="padding: 8px 16px; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                    <i class="fa-solid fa-filter"></i> Filtrer
+                </button>
+                <a href="{{ path('owner_penalites_dashboard') }}"
+                   style="padding: 8px 12px; background: rgba(107,114,128,0.1); color: #374151; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+            </div>
+        </div>
+        
+        {# Tags de filtres actifs #}
+        {% set hasFilters = search or dateFrom or dateTo or minPenalite or maxPenalite %}
+        {% if hasFilters %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; padding: 4px 0;">Filtres actifs:</span>
+            
+            {% if search %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({search: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Recherche: {{ search }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if dateFrom %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({date_from: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Du: {{ dateFrom }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if dateTo %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({date_to: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Au: {{ dateTo }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if minPenalite %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({min_penalite: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Min: {{ minPenalite }} TND <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            
+            {% if maxPenalite %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({max_penalite: null})) }}"
+                   style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Max: {{ maxPenalite }} TND <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </form>
+    
+    {# Tableau des encaissements #}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+                <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Date</th>
+                    <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Bien</th>
+                    <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Locataire</th>
+                    <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Période</th>
+                    <th style="padding: 14px 12px; text-align: right; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Principal</th>
+                    <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Retard (J)</th>
+                    <th style="padding: 14px 12px; text-align: right; font-weight: 700; color: #374151; text-transform: uppercase; font-size: 12px;">Pénalité</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in historique %}
+                <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 12px; color: #374151;">{{ item.date_paiement|date('d/m/Y') }}</td>
+                    <td style="padding: 14px 12px; color: #374151; font-weight: 600;">{{ item.propriete }}</td>
+                    <td style="padding: 14px 12px; color: #374151;">{{ item.locataire }}</td>
+                    <td style="padding: 14px 12px; color: #374151; text-align: center;">{{ item.periode }}</td>
+                    <td style="padding: 14px 12px; color: #374151; text-align: right; font-weight: 600;">{{ item.montant|number_format(3, ',', ' ') }} TND</td>
+                    <td style="padding: 14px 12px; text-align: center;">
+                        <span style="padding: 4px 10px; background: #fef2f2; color: #dc2626; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            {{ item.jours_retard }}j
+                        </span>
+                    </td>
+                    <td style="padding: 14px 12px; text-align: right; color: #dc2626; font-weight: 700;">{{ item.penalite|number_format(3, ',', ' ') }} TND</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="padding: 40px; text-align: center; color: #9ca3af;">
+                        <i class="fa-solid fa-inbox" style="font-size: 32px; margin-bottom: 12px; display: block;"></i>
+                        Aucun encaissement de pénalité trouvé
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {# Pagination Pagerfanta #}
+    {% if pager.nbPages > 1 %}
+    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; flex-wrap: wrap;">
+        {% if pager.currentPage > 1 %}
+            <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({page: pager.currentPage - 1})) }}"
+               style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+        {% else %}
+            <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </span>
+        {% endif %}
+
+        {% for page in 1..pager.nbPages %}
+            {% if page == pager.currentPage %}
+                <span style="padding: 8px 14px; background: #6366f1; color: white; border-radius: 6px; font-weight: 600; font-size: 13px;">
+                    {{ page }}
+                </span>
+            {% elseif page >= pager.currentPage - 2 and page <= pager.currentPage + 2 %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({page: page})) }}"
+                   style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    {{ page }}
+                </a>
+            {% elseif page == 1 or page == pager.nbPages %}
+                <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({page: page})) }}"
+                   style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    {{ page }}
+                </a>
+            {% elseif page == pager.currentPage - 3 or page == pager.currentPage + 3 %}
+                <span style="padding: 8px; color: #94a3b8; font-size: 13px;">...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if pager.currentPage < pager.nbPages %}
+            <a href="{{ path('owner_penalites_dashboard', app.request.query.all|merge({page: pager.currentPage + 1})) }}"
+               style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        {% else %}
+            <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+        {% endif %}
+
+        <span style="font-size: 12px; color: #64748b; margin-left: 12px;">
+            Page {{ pager.currentPage }} / {{ pager.nbPages }} ({{ pager.nbResults }} résultats)
+        </span>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ─── Données ─────────────────────────────────────────────────────────
+    const evolutionData = {{ evolution|json_encode|raw }};
+    const repartitionData = {{ repartition|json_encode|raw }};
+    const totalItems = {{ nbFiltered }};
+    const itemsPerPage = {{ limit }};
+    
+    // ─── Chart: Évolution ────────────────────────────────────────────────
+    const ctxEvolution = document.getElementById('evolutionChart').getContext('2d');
+    new Chart(ctxEvolution, {
+        type: 'bar',
+        data: {
+            labels: evolutionData.map(d => {
+                const [year, month] = d.mois.split('-');
+                return month + '/' + year;
+            }),
+            datasets: [{
+                label: 'Pénalités encaissées (TND)',
+                data: evolutionData.map(d => parseFloat(d.total)),
+                backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                borderColor: '#6366f1',
+                borderWidth: 2,
+                borderRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('fr-FR', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' TND';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // ─── Chart: Répartition ────────────────────────────────────────────
+    const ctxRepartition = document.getElementById('repartitionChart').getContext('2d');
+    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6'];
+    new Chart(ctxRepartition, {
+        type: 'doughnut',
+        data: {
+            labels: repartitionData.map(d => d.titre),
+            datasets: [{
+                data: repartitionData.map(d => parseFloat(d.total)),
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+    
+    // ─── Recherche & Pagination ────────────────────────────────────────
+    let currentPage = 1;
+    const searchInput = document.getElementById('searchInput');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageInfo = document.getElementById('pageInfo');
+    
+    function loadHistorique(page, search = '') {
+        fetch(`{{ path('api_penalites_historique') }}?page=${page}&search=${encodeURIComponent(search)}`)
+            .then(r => r.json())
+            .then(data => {
+                const tbody = document.getElementById('journalBody');
+                tbody.innerHTML = '';
+                
+                if (data.historique.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="padding: 40px; text-align: center; color: #9ca3af;">
+                                <i class="fa-solid fa-inbox" style="font-size: 32px; margin-bottom: 12px; display: block;"></i>
+                                Aucun résultat trouvé
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    data.historique.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.style.borderBottom = '1px solid #f3f4f6';
+                        row.innerHTML = `
+                            <td style="padding: 14px 12px; color: #374151;">${new Date(item.date_paiement).toLocaleDateString('fr-FR')}</td>
+                            <td style="padding: 14px 12px; color: #374151; font-weight: 600;">${item.propriete}</td>
+                            <td style="padding: 14px 12px; color: #374151;">${item.locataire}</td>
+                            <td style="padding: 14px 12px; color: #374151; text-align: center;">${item.periode}</td>
+                            <td style="padding: 14px 12px; color: #374151; text-align: right; font-weight: 600;">${parseFloat(item.montant).toLocaleString('fr-FR', {minimumFractionDigits: 3})} TND</td>
+                            <td style="padding: 14px 12px; text-align: center;">
+                                <span style="padding: 4px 10px; background: #fef2f2; color: #dc2626; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                    ${item.jours_retard}j
+                                </span>
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; color: #dc2626; font-weight: 700;">${parseFloat(item.penalite).toLocaleString('fr-FR', {minimumFractionDigits: 3})} TND</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                
+                currentPage = data.page;
+                pageInfo.textContent = `Page ${data.page} / ${data.pages}`;
+                prevBtn.disabled = data.page <= 1;
+                nextBtn.disabled = data.page >= data.pages;
+            });
+    }
+    
+    searchInput.addEventListener('input', (e) => {
+        loadHistorique(1, e.target.value);
+    });
+    
+    prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) loadHistorique(currentPage - 1, searchInput.value);
+    });
+    
+    nextBtn.addEventListener('click', () => {
+        loadHistorique(currentPage + 1, searchInput.value);
+    });
+    
+    // ─── Export CSV ────────────────────────────────────────────────────
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const rows = [['Date', 'Bien', 'Locataire', 'Période', 'Principal (TND)', 'Retard (J)', 'Pénalité (TND)']];
+        document.querySelectorAll('#journalBody tr').forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length === 7) {
+                rows.push([
+                    cells[0].textContent,
+                    cells[1].textContent,
+                    cells[2].textContent,
+                    cells[3].textContent,
+                    cells[4].textContent.replace(' TND', '').replace(/\s/g, ''),
+                    cells[5].textContent.replace('j', '').trim(),
+                    cells[6].textContent.replace(' TND', '').replace(/\s/g, '')
+                ]);
+            }
+        });
+        
+        const csv = rows.map(r => r.join(';')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'journal_penalites_' + new Date().toISOString().split('T')[0] + '.csv';
+        link.click();
+    });
+</script>
+{% endblock %}

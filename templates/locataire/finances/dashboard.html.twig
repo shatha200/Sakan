@@ -1,0 +1,378 @@
+{% extends 'layouts/base_finances_locataire.html.twig' %}
+{% block title %}Tableau de bord financier - Sakan{% endblock %}
+
+{% block finances_content %}
+<style>
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --neutral: #64748b;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-container {
+    animation: fadeIn 0.5s ease-out forwards;
+    padding-bottom: 2rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dash {
+    to { stroke-dashoffset: 0; }
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.glass-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px);
+}
+
+.card-accent-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+}
+
+.status-ok { background: linear-gradient(90deg, #34d399, #10b981); }
+.status-warn { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.status-err { background: linear-gradient(90deg, #f87171, #ef4444); }
+.status-neutral { background: linear-gradient(90deg, #94a3b8, #64748b); }
+
+.kpi-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.kpi-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+}
+
+.kpi-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-amount {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.375rem;
+}
+
+.kpi-currency {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.kpi-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    flex-grow: 1;
+}
+
+.kpi-footer {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+.badge-ok { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.badge-warn { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.badge-err { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+.dark-card {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: white;
+    border: none;
+}
+.dark-card .kpi-amount { color: white; }
+.dark-card .kpi-currency { color: #94a3b8; }
+.dark-card .kpi-title { color: #94a3b8; }
+.dark-card .kpi-subtitle { color: #cbd5e1; }
+
+.grid-cols-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+</style>
+
+<div class="dashboard-container">
+    <!-- En-tête -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; box-shadow: var(--shadow-md);">
+                <i class="fa-solid fa-hand-wave"></i>
+            </div>
+            <div>
+                <h1 style="font-size: 1.875rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0; line-height: 1.2;">Bonjour, {{ dashboard.nomLocataire }} !</h1>
+                <p style="color: var(--text-muted); margin: 0; font-size: 0.9375rem; font-weight: 500;">Voici l'aperçu de votre situation financière.</p>
+            </div>
+        </div>
+        <div>
+            <span class="badge badge-{{ dashboard.statutContratStyle|default('neutral') }}">
+                <i class="fa-solid {{ dashboard.statutContratStyle == 'ok' ? 'fa-file-signature' : 'fa-triangle-exclamation' }}"></i>
+                {{ dashboard.statutContrat ?: 'Non renseigné' }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Section 1 : KPIs Principaux -->
+    <div class="grid-cols-3">
+        <!-- Prochain Loyer -->
+        <div class="glass-card">
+            <div class="card-accent-top status-{{ dashboard.prochainLoyerMontant is null ? 'neutral' : dashboard.statutRetard }}"></div>
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: rgba(79,70,229,0.1); color: var(--primary);">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div class="kpi-title">Prochain Loyer</div>
+            </div>
+            <div class="kpi-amount">
+                {{ dashboard.prochainLoyerMontant is not null ? dashboard.prochainLoyerMontant|number_format(3, ',', ' ') : '0.000' }}
+                <span class="kpi-currency">TND</span>
+            </div>
+            <div class="kpi-subtitle">
+                {% if dashboard.prochainLoyerEcheance %}
+                    Échéance : <strong>{{ dashboard.prochainLoyerEcheance|date('d/m/Y') }}</strong>
+                {% else %}
+                    Aucun loyer en cours
+                {% endif %}
+            </div>
+            <div class="kpi-footer" style="color: var(--{{ dashboard.statutRetard == 'err' ? 'danger' : (dashboard.statutRetard == 'warn' ? 'warning' : 'success') }});">
+                {% if dashboard.joursRetard > 0 %}
+                    <i class="fa-solid fa-triangle-exclamation fa-fade"></i> {{ dashboard.joursRetard }} jour(s) de retard - Urgent !
+                {% elseif dashboard.joursRetard == 0 %}
+                    <i class="fa-solid fa-clock"></i> Échéance aujourd'hui
+                {% elseif dashboard.joursRetard < 0 %}
+                    <i class="fa-solid fa-check"></i> Prévu dans {{ dashboard.joursRetard|abs }} jour(s)
+                {% else %}
+                    <i class="fa-solid fa-shield-check"></i> À jour
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Charges en Attente -->
+        <div class="glass-card">
+            <div class="card-accent-top status-{{ dashboard.totalChargesAttente > 0 ? 'warn' : 'ok' }}"></div>
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div class="kpi-title">Charges en Attente</div>
+            </div>
+            <div class="kpi-amount" style="color: {{ dashboard.totalChargesAttente > 0 ? 'var(--warning)' : 'var(--text-main)' }};">
+                {{ dashboard.totalChargesAttente|number_format(3, ',', ' ') }}
+                <span class="kpi-currency" style="color: inherit; opacity: 0.6;">TND</span>
+            </div>
+            <div class="kpi-subtitle">
+                {% if dashboard.chargesDetail is empty %}
+                    <span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check-circle"></i> Aucune charge impayée.</span>
+                {% else %}
+                    <div style="font-size: 0.8125rem;">
+                        {% for charge in dashboard.chargesDetail|slice(0, 2) %}
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.375rem;">
+                                <span>{{ charge.type }}</span>
+                                <span style="font-weight: 700; color: var(--text-main);">{{ charge.montant|number_format(3, ',', ' ') }}</span>
+                            </div>
+                        {% endfor %}
+                        {% if dashboard.chargesDetail|length > 2 %}
+                            <div style="color: var(--text-muted); font-weight: 500; margin-top: 0.375rem;">+ {{ dashboard.chargesDetail|length - 2 }} autre(s)</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Caution -->
+        <div class="glass-card">
+            <div class="card-accent-top status-{{ dashboard.cautionStyle|default('neutral') }}"></div>
+            <div class="kpi-header">
+                <div class="kpi-icon" style="background: rgba(16,185,129,0.1); color: var(--success);">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="kpi-title">Ma Caution (Garantie)</div>
+            </div>
+            <div class="kpi-amount">
+                {{ dashboard.cautionMontant is not null ? dashboard.cautionMontant|number_format(3, ',', ' ') : '-' }}
+                <span class="kpi-currency">TND</span>
+            </div>
+            <div class="kpi-subtitle">
+                Dépôt initial sécurisé
+            </div>
+            <div class="kpi-footer" style="color: var(--{{ dashboard.cautionStyle == 'ok' ? 'success' : (dashboard.cautionStyle == 'warn' ? 'warning' : 'text-muted') }});">
+                <i class="fa-solid {{ dashboard.cautionStyle == 'ok' ? 'fa-lock' : (dashboard.cautionStyle == 'warn' ? 'fa-unlock-keyhole' : 'fa-circle-question') }}"></i>
+                {{ dashboard.cautionStatut ?: 'Déclaration non trouvée' }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2 : Analytics -->
+    <div class="grid-cols-3">
+        <!-- Payé ce mois -->
+        <div class="glass-card" style="flex-direction: row; align-items: center; gap: 1.25rem;">
+            <div style="width: 3.5rem; height: 3.5rem; min-width: 3.5rem; border-radius: 1rem; background: rgba(79,70,229,0.08); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.5rem;">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div>
+                <div class="kpi-title" style="margin-bottom: 0.25rem;">Mois en Cours</div>
+                <div class="kpi-amount" style="font-size: 1.5rem; margin: 0;">{{ dashboard.totalPayeMois|number_format(3, ',', ' ') }} <span class="kpi-currency" style="font-size: 0.875rem;">TND</span></div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Valeur libérée : Loyers + Charges</div>
+            </div>
+        </div>
+
+        <!-- Ponctualité -->
+        <div class="glass-card" style="flex-direction: row; align-items: center; gap: 1.25rem;">
+            {% set ponctPct = dashboard.pourcentageATemps|default(0) %}
+            {% set strokeColors = {'ok': '#10b981', 'warn': '#f59e0b', 'err': '#ef4444', 'neutral': '#64748b'} %}
+            {% set pColor = strokeColors[dashboard.ponctualiteStyle]|default('#64748b') %}
+            <div style="position: relative; width: 4rem; height: 4rem; min-width: 4rem;">
+                <svg width="100%" height="100%" viewBox="0 0 36 36">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f1f5f9" stroke-width="3"/>
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="{{ pColor }}" stroke-width="3" stroke-dasharray="{{ ponctPct }}, 100" style="stroke-linecap:round; animation: dash 1.5s ease-out forwards;"/>
+                </svg>
+                <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 800; color: {{ pColor }};">
+                    {{ ponctPct }}%
+                </div>
+            </div>
+            <div>
+                <div class="kpi-title" style="margin-bottom: 0.25rem;">Ponctualité Globale</div>
+                <div style="font-size: 0.9375rem; font-weight: 700; color: var(--text-main);">Paiements à temps</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Reflet de la régularité</div>
+            </div>
+        </div>
+
+        <!-- Total Année -->
+        <div class="glass-card dark-card" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 1.5rem 1.75rem;">
+            <div>
+                <div class="kpi-title" style="margin-bottom: 0.5rem; font-size: 0.75rem;">Total Annuel {{ "now"|date('Y') }}</div>
+                <div class="kpi-amount" style="font-size: 1.75rem; margin: 0;">{{ dashboard.totalPayeAnnee|number_format(3, ',', ' ') }} <span class="kpi-currency" style="font-size: 0.875rem;">TND</span></div>
+                <div style="font-size: 0.75rem; color: #cbd5e1; font-weight: 500; margin-top: 0.25rem;">Volume financier transigé</div>
+            </div>
+            <div style="font-size: 2.5rem; color: rgba(255,255,255,0.1); margin-left: 1rem;">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3 : Détails Contrat -->
+    <div class="glass-card" style="border-left: 4px solid var(--primary); padding-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem;">
+            <div class="kpi-title" style="margin: 0; color: var(--primary); font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-file-signature"></i> Détails Administratifs
+            </div>
+            <a href="{{ path('tenant_finances_historique') }}" style="background: rgba(79,70,229,0.08); color: var(--primary); padding: 0.5rem 1rem; border-radius: 0.75rem; font-size: 0.8125rem; font-weight: 700; text-decoration: none; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Voir l'historique complet
+            </a>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="background: #f1f5f9; width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.125rem;">
+                    <i class="fa-solid fa-house-chimney"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Bien loué</div>
+                    <div style="font-size: 0.9375rem; font-weight: 700; color: var(--text-main);">{{ dashboard.bienLoue ?: 'Non renseigné' }}</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="background: #f1f5f9; width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.125rem;">
+                    <i class="fa-solid fa-money-check-dollar"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Loyer Mensuel</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--primary);">
+                        {{ dashboard.loyerMensuel is not null ? dashboard.loyerMensuel|number_format(3, ',', ' ') ~ ' TND' : '-' }}
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="background: #f1f5f9; width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.125rem;">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Période du contrat</div>
+                    <div style="font-size: 0.9375rem; font-weight: 700; color: var(--text-main);">{{ dashboard.periodeContrat ?: 'Non renseignée' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+    }
+</script>
+{% endblock %}

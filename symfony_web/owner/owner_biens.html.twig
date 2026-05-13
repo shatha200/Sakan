@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Mes Propriétés</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-components.css">
+  <link rel="stylesheet" href="../../css_web/sakan-owner.css">
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sakan-sidebar owner" id="sidebar-owner">
+    <!-- Mêmes éléments, avec "Mes propriétés" actif -->
+    <div class="sidebar-logo"><i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span> <span class="role-badge">PRO</span></div>
+    <ul class="sidebar-menu">
+      <li><a href="owner_dashboard.html"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+      <li><a href="owner_biens.html" class="active"><i class="fa-solid fa-building"></i> Mes propriétés</a></li>
+      <li><a href="owner_loyers.html"><i class="fa-solid fa-coins"></i> Suivi des loyers</a></li>
+      <li><a href="owner_cautions.html"><i class="fa-solid fa-money-bill-wave"></i> Gestion des cautions</a></li>
+      <li><a href="owner_contrats.html"><i class="fa-solid fa-file-contract"></i> Contrats</a></li>
+      <li><a href="owner_visites.html"><i class="fa-solid fa-calendar-check"></i> Demandes de visite</a></li>
+      <li><a href="owner_reservations.html"><i class="fa-solid fa-check"></i> Réservations</a></li>
+      <li><a href="owner_reclamations.html"><i class="fa-solid fa-shield-halved"></i> Alertes / Réclamations</a></li>
+    </ul>
+    <div class="sidebar-footer"><a href="../auth/login.html"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></div>
+  </nav>
+
+  <main class="sakan-main">
+    <div class="sakan-content">
+      <!-- PAGE HEADER -->
+      <div class="page-header" style="justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="display:flex; align-items:center; gap:12px;"><i class="fa-solid fa-building"></i> Mes Propriétés</h1>
+          <p style="color:var(--text-muted); margin-top: 4px;">Gérez votre parc immobilier (5 biens)</p>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <!-- TOGGLE VUE -->
+          <button id="btn-grid" onclick="setView('grid')" class="btn-outline btn-sm active-view"><i class="fa-solid fa-grip"></i></button>
+          <button id="btn-list" onclick="setView('list')" class="btn-outline btn-sm"><i class="fa-solid fa-list"></i></button>
+          <button class="btn-primary" onclick="window.location.href='owner_ajouter_bien.html'"><i class="fa-solid fa-plus"></i> Ajouter</button>
+        </div>
+      </div>
+
+      <!-- FILTRES STATUT -->
+      <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+        <button class="filter-chip active" onclick="filterBiens('all')">Tous (5)</button>
+        <button class="filter-chip" onclick="filterBiens('loue')"><span style="color:#10b981">●</span> Loués (2)</button>
+        <button class="filter-chip" onclick="filterBiens('disponible')"><span style="color:#5E17EB">●</span> Disponibles (2)</button>
+        <button class="filter-chip" onclick="filterBiens('revision')"><span style="color:#d97706">●</span> En révision (1)</button>
+      </div>
+
+      <!-- VUE GRILLE -->
+      <div id="view-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+        <!-- BIEN 1: LOUÉ -->
+        <div class="bien-owner-card" data-statut="loue" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+          <div style="height:4px;background:#10b981;"></div>
+          <div style="position:relative;">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600" style="width:100%;height:200px;object-fit:cover;">
+            <span style="position:absolute;top:12px;right:12px; background:#10b981;color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● LOUÉ</span>
+            <div style="position:absolute;top:12px;left:12px;background:rgba(7,4,53,0.6);color:white;padding:4px 10px;border-radius:10px;font-size:11px;"><i class="fa-solid fa-star" style="color:#f59e0b;"></i> 4.8</div>
+          </div>
+          <div style="padding:16px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Appartement lumineux - Lac 2</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> Lac 2, Tunis</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;color:#5E17EB;">2 200</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">3</div><div style="font-size:10px;color:var(--text-muted);">chambres</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">95</div><div style="font-size:10px;color:var(--text-muted);">m²</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#dcfce7;border-radius:12px;margin-bottom:12px;">
+              <img src="https://i.pravatar.cc/32?img=5" style="width:28px;height:28px;border-radius:50%;">
+              <div><div style="font-size:12px;font-weight:600;color:#16a34a;">Fatma Trabelsi</div><div style="font-size:11px;color:#16a34a;">Contrat jusqu'au 31/08/2025</div></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-primary btn-sm" style="flex:1;" onclick="showModal('modal-detail-bien1')"><i class="fa-solid fa-eye"></i> Détail</button>
+              <button class="btn-outline btn-sm" onclick="showToast('✏️ Édition du bien (bientôt)')"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-outline btn-sm" style="color:#dc2626;border-color:#dc2626;" onclick="showToast('⚠️ Bien actif : impossible de désactiver')"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIEN 2: DISPONIBLE -->
+        <div class="bien-owner-card" data-statut="disponible" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+          <div style="height:4px;background:#5E17EB;"></div>
+          <div style="position:relative;">
+            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600" style="width:100%;height:200px;object-fit:cover;">
+            <span style="position:absolute;top:12px;right:12px; background:rgba(94,23,235,0.8);color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● DISPONIBLE</span>
+            <div style="position:absolute;top:12px;left:12px;background:rgba(7,4,53,0.6);color:white;padding:4px 10px;border-radius:10px;font-size:11px;"><i class="fa-solid fa-star" style="color:#f59e0b;"></i> 4.3</div>
+          </div>
+          <div style="padding:16px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Studio moderne - Menzah 6</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> Menzah 6, Tunis</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;color:#5E17EB;">1 100</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">1</div><div style="font-size:10px;color:var(--text-muted);">chambre</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">45</div><div style="font-size:10px;color:var(--text-muted);">m²</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:#f3f4f6;border-radius:12px;margin-bottom:12px;">
+              <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-eye"></i> 7 demandes en cours</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-primary btn-sm" style="flex:1;" onclick="showModal('modal-detail-bien1')"><i class="fa-solid fa-eye"></i> Détail</button>
+              <button class="btn-outline btn-sm" onclick="showToast('✏️ Édition du bien')"><i class="fa-solid fa-pen-to-square"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIEN 3: LOUÉ -->
+        <div class="bien-owner-card" data-statut="loue" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+          <div style="height:4px;background:#10b981;"></div>
+          <div style="position:relative;">
+            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600" style="width:100%;height:200px;object-fit:cover;">
+            <span style="position:absolute;top:12px;right:12px; background:#10b981;color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● LOUÉ</span>
+          </div>
+          <div style="padding:16px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Villa avec piscine - La Marsa</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> La Marsa</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;color:#5E17EB;">4 500</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">5</div><div style="font-size:10px;color:var(--text-muted);">chambres</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;">280</div><div style="font-size:10px;color:var(--text-muted);">m²</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fee2e2;border-radius:12px;margin-bottom:12px;">
+              <div><div style="font-size:12px;font-weight:600;color:#dc2626;">⚠ Expire dans 32 jours</div></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-primary btn-sm" style="flex:1;" onclick="showModal('modal-detail-bien1')"><i class="fa-solid fa-eye"></i> Détail</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIEN 4: REVISION -->
+        <div class="bien-owner-card" data-statut="revision" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+          <div style="height:4px;background:#d97706;"></div>
+          <div style="position:relative;">
+            <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600" style="width:100%;height:200px;object-fit:cover;">
+            <span style="position:absolute;top:12px;right:12px; background:#d97706;color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● RÉVISION</span>
+          </div>
+          <div style="padding:16px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Appartement cosy - Lac</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> Les Berges du Lac</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;color:#5E17EB;">1 800</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-primary btn-sm" style="flex:1;" onclick="showModal('modal-detail-bien1')"><i class="fa-solid fa-eye"></i> Détail</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIEN 5: DISPONIBLE -->
+        <div class="bien-owner-card" data-statut="disponible" style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-card);">
+          <div style="height:4px;background:#5E17EB;"></div>
+          <div style="position:relative;">
+            <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600" style="width:100%;height:200px;object-fit:cover;">
+            <span style="position:absolute;top:12px;right:12px; background:rgba(94,23,235,0.8);color:white;padding:4px 12px; border-radius:20px;font-size:11px;font-weight:700;">● DISPONIBLE</span>
+          </div>
+          <div style="padding:16px;">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px 0;">Duplex standing - Ennasr 2</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;"><i class="fa-solid fa-location-dot"></i> Ennasr 2</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="text-align:center;padding:8px;background:#f8fafc;border-radius:10px;">
+                <div style="font-size:16px;font-weight:700;color:#5E17EB;">2 800</div><div style="font-size:10px;color:var(--text-muted);">TND/mois</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-primary btn-sm" style="flex:1;" onclick="showModal('modal-detail-bien1')"><i class="fa-solid fa-eye"></i> Détail</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VUE LISTE -->
+      <div id="view-list" style="display:none;">
+        <table class="sakan-table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-card);">
+          <thead style="background: #f8fafc; text-align: left; border-bottom: 2px solid var(--border);">
+            <tr>
+              <th style="padding: 16px;">Bien</th>
+              <th style="padding: 16px;">Loyer</th>
+              <th style="padding: 16px;">Surface</th>
+              <th style="padding: 16px;">Statut</th>
+              <th style="padding: 16px;">Locataire</th>
+              <th style="padding: 16px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 16px; display:flex; align-items:center; gap: 12px;">
+                <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
+                <div>
+                  <strong style="display:block;">Appartement - Lac 2</strong>
+                  <span style="font-size:12px; color:var(--text-muted);">BIEN-001</span>
+                </div>
+              </td>
+              <td style="padding: 16px; font-weight:600;">2 200 TND</td>
+              <td style="padding: 16px;">95m²</td>
+              <td style="padding: 16px;"><span style="background:#dcfce7;color:#16a34a;padding:4px 8px; border-radius:12px;font-size:12px;">LOUÉ</span></td>
+              <td style="padding: 16px;">Fatma Trabelsi</td>
+              <td style="padding: 16px;">
+                <button class="btn-outline btn-sm" onclick="showModal('modal-detail-bien1')">Détail</button>
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 16px; display:flex; align-items:center; gap: 12px;">
+                <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=100" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
+                <div>
+                  <strong style="display:block;">Studio moderne</strong>
+                  <span style="font-size:12px; color:var(--text-muted);">BIEN-002</span>
+                </div>
+              </td>
+               <td style="padding: 16px; font-weight:600;">1 100 TND</td>
+              <td style="padding: 16px;">45m²</td>
+              <td style="padding: 16px;"><span style="background:rgba(94,23,235,0.1);color:#5E17EB;padding:4px 8px; border-radius:12px;font-size:12px;">DISPONIBLE</span></td>
+              <td style="padding: 16px; color: var(--text-muted);">-</td>
+              <td style="padding: 16px;">
+                <button class="btn-outline btn-sm" onclick="showModal('modal-detail-bien1')">Détail</button>
+              </td>
+            </tr>
+             <!-- Other rows simulated -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL DÉTAIL BIEN -->
+<div id="modal-detail-bien1" class="modal-overlay" style="display:none">
+  <div class="modal-card modal-lg">
+    <div class="modal-header">
+      <h3 style="margin:0;">Appartement lumineux - Lac 2 <span style="color:var(--text-muted); font-size:14px; font-weight:normal;">— BIEN-001</span></h3>
+      <button style="border:none;background:none;font-size:24px;cursor:pointer;" onclick="closeModal('modal-detail-bien1')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- ONGLETS dans la modal -->
+      <div class="section-tabs" style="margin-bottom:24px; border-bottom: 1px solid var(--border);">
+        <button class="tab-btn active" onclick="showBienTab('tab-infos', this)">Infos</button>
+        <button class="tab-btn" onclick="showBienTab('tab-finances', this)">Finances</button>
+        <button class="tab-btn" onclick="showBienTab('tab-locataire', this)">Locataire</button>
+      </div>
+
+      <!-- TAB INFOS -->
+      <div id="tab-infos" style="display: block;">
+        <p style="margin: 0 0 8px 0;"><strong>Adresse:</strong> Lac 2, Tunis 1053</p>
+        <p style="margin: 0 0 8px 0;"><strong>Surface:</strong> 95m² | 3 chambres | 2 SDB</p>
+        <p style="margin: 0 0 8px 0;"><strong>Équipements:</strong> WiFi, Parking, Clim, Ascenseur, Balcon</p>
+        <p style="margin: 0 0 8px 0;"><strong>Financier:</strong> Loyer: 2 200 TND | Charges: 150 TND | Caution: 4 400 TND</p>
+        <p style="margin: 0 0 8px 0;"><strong>Note:</strong> ★★★★★ 4.8/5 (12 avis)</p>
+        <p style="margin: 0 0 8px 0;"><strong>Publié le:</strong> 25/08/2024</p>
+      </div>
+
+      <!-- TAB FINANCES -->
+      <div id="tab-finances" style="display:none">
+        <p style="margin: 0 0 8px 0;"><strong>Revenus générés :</strong> 15 400 TND (7 mois)</p>
+        <p style="margin: 0 0 8px 0;"><strong>Loyers reçus :</strong> 7/7 ✓</p>
+        <p style="margin: 0 0 8px 0;"><strong>Prochain loyer :</strong> Août 2025 — <span style="color:#f59e0b;">EN ATTENTE</span></p>
+      </div>
+
+      <!-- TAB LOCATAIRE -->
+      <div id="tab-locataire" style="display:none">
+        <div style="display:flex; align-items:center; gap: 16px; margin-bottom: 16px;">
+            <img src="https://i.pravatar.cc/64?img=5" style="border-radius:50%; width: 64px; height: 64px;" alt="Fatma">
+            <div>
+                <strong style="display:block; font-size: 16px;">Fatma Trabelsi</strong>
+                <span style="color:var(--text-muted); font-size: 14px;">fatma@sakan.tn | +216 55 987 654</span>
+            </div>
+        </div>
+        <p style="margin: 0 0 8px 0;"><strong>Locataire depuis:</strong> 01/09/2024</p>
+        <p style="margin: 0 0 8px 0;"><strong>Paiements:</strong> 6/7 à temps | Score: Excellent ★★★★★</p>
+        <p style="margin: 0 0 8px 0;"><strong>Réclamations:</strong> 1 en cours (Plomberie)</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-detail-bien1')">Fermer</button>
+      <button class="btn-primary" onclick="window.location.href='owner_loyers.html'"><i class="fa-solid fa-coins"></i> Gérer les loyers</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+  function setView(v) {
+    document.getElementById('view-grid').style.display = v === 'grid' ? 'grid' : 'none';
+    document.getElementById('view-list').style.display = v === 'list' ? 'block' : 'none';
+    document.getElementById('btn-grid').classList.toggle('active-view', v === 'grid');
+    document.getElementById('btn-list').classList.toggle('active-view', v === 'list');
+  }
+  function filterBiens(statut) {
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.bien-owner-card').forEach(c => {
+      c.style.display = (statut === 'all' || c.dataset.statut === statut) ? 'block' : 'none';
+    });
+  }
+  function showBienTab(id, btn) {
+    ['tab-infos','tab-finances','tab-locataire'].forEach(t => document.getElementById(t).style.display = 'none');
+    document.querySelectorAll('#modal-detail-bien1 .tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).style.display = 'block';
+    btn.classList.add('active');
+  }
+  function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+</script>
+</body>
+</html>

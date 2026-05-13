@@ -1,0 +1,315 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Traiter les réclamations - SAKAN AI{% endblock %}
+{% block page_title %}Traiter les réclamations{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header mb-5">
+        <div>
+            <h1 class="dashboard-title fs-2 d-flex align-items-center">
+                Traiter les réclamations
+            </h1>
+            <p class="text-muted mb-0">Gestion et suivi des réclamations locataires.</p>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-row mb-5">
+        <div class="stat-card">
+            <div class="stat-label">Total réclamations</div>
+            <div class="stat-value">{{ stats.total }}</div>
+        </div>
+        <div class="stat-card attente">
+            <div class="stat-label">En attente</div>
+            <div class="stat-value text-danger">{{ stats.pending }}</div>
+        </div>
+        <div class="stat-card cours">
+            <div class="stat-label">En cours</div>
+            <div class="stat-value text-primary">{{ stats.inProgress }}</div>
+        </div>
+        <div class="stat-card resolu">
+            <div class="stat-label">Résolues</div>
+            <div class="stat-value text-success">{{ stats.resolved }}</div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-5 gx-4">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card-dashboard border-0 shadow-sm p-4 h-100 d-flex flex-column">
+                <h5 class="fw-bold mb-4 fs-6 text-muted text-uppercase tracking-wider">Statut des réclamations</h5>
+                <div class="chart-container flex-grow-1 d-flex justify-content-center align-items-center" style="position: relative; height: 220px; width: 100%">
+                    {% if stats.total > 0 %}
+                        <canvas id="statusChart"></canvas>
+                    {% else %}
+                        <div class="text-center text-muted w-100">
+                            <i class="bi bi-inbox fs-1 mb-3 d-block" style="color: #cbd5e1;"></i>
+                            <p class="mb-0 fw-medium">En attente de réclamations...</p>
+                            <small style="color: #94a3b8;">Aucune donnée à afficher</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card-dashboard border-0 shadow-sm p-4 h-100 d-flex flex-column">
+                <h5 class="fw-bold mb-4 fs-6 text-muted text-uppercase tracking-wider">Évolution sur 7 jours</h5>
+                <div class="chart-container flex-grow-1 d-flex justify-content-center align-items-center" style="position: relative; height: 220px; width: 100%">
+                    {% if stats.total > 0 %}
+                        <canvas id="dailyChart"></canvas>
+                    {% else %}
+                        <div class="text-center text-muted w-100">
+                            <i class="bi bi-graph-down fs-1 mb-3 d-block" style="color: #cbd5e1;"></i>
+                            <p class="mb-0 fw-medium">Pas d'activité récente</p>
+                            <small style="color: #94a3b8;">Les statistiques apparaîtront ici</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if stats.total > 0 %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctxStatus = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Résolues', 'En cours', 'En attente'],
+                    datasets: [{
+                        label: 'Statut des réclamations',
+                        backgroundColor: ['#10b981', '#3b82f6', '#ef4444'],
+                        data: {{ chartStatusData|json_encode|raw }},
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom' } },
+                    maintainAspectRatio: false
+                }
+            });
+
+            var ctxDaily = document.getElementById('dailyChart').getContext('2d');
+            new Chart(ctxDaily, {
+                type: 'line',
+                data: {
+                    labels: {{ chartDays|json_encode|raw }},
+                    datasets: [{
+                        label: 'Nouvelles réclamations',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderColor: '#6366f1',
+                        data: {{ chartCounts|json_encode|raw }},
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    maintainAspectRatio: false
+                }
+            });
+        });
+    </script>
+    {% endif %}
+
+    {% for message in app.flashes('success') %}
+        <div style="background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; border-radius: 8px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); font-family: 'Inter', sans-serif;">
+            <i class="fa-solid fa-check-circle" style="font-size: 1.25rem;"></i> {{ message }}
+        </div>
+    {% endfor %}
+
+    {% for message in app.flashes('error') %}
+        <div style="background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; border-radius: 8px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); font-family: 'Inter', sans-serif;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.25rem;"></i> {{ message }}
+        </div>
+    {% endfor %}
+
+    <div class="card-dashboard border-0 shadow-sm">
+        <form class="filter-bar border-bottom pb-4 mb-4" method="GET" action="{{ path('owner_reclamations') }}">
+            <div class="search-box d-flex align-items-center">
+                <i class="bi bi-search text-muted me-2"></i>
+                <input type="text" name="q" class="form-control border-0 bg-transparent" placeholder="Rechercher..." value="{{ currentSearch }}">
+            </div>
+            
+            <div class="filter-group ms-auto d-flex gap-3">
+                <div class="d-flex align-items-center">
+                    <span class="filter-label me-2">Type</span>
+                    <select name="type" class="filter-select">
+                        <option value="">Tous</option>
+                        {% for type in types %}
+                            <option value="{{ type.libelle }}" {% if currentType == type.libelle %}selected{% endif %}>{{ type.libelle }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <span class="filter-label me-2">Statut</span>
+                    <select name="status" class="filter-select">
+                        <option value="">Tous</option>
+                        <option value="EN_ATTENTE" {% if currentStatus == 'EN_ATTENTE' %}selected{% endif %}>En Attente</option>
+                        <option value="EN_COURS" {% if currentStatus == 'EN_COURS' %}selected{% endif %}>En Cours</option>
+                        <option value="RESOLU" {% if currentStatus == 'RESOLU' %}selected{% endif %}>Résolu</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="border-radius: 8px;">Filtrer</button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-modern" id="reclamationsTable">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Locataire</th>
+                        <th>Bien</th>
+                        <th>Statut</th>
+                        <th>Date réclam.</th>
+                        <th>Réponse</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for reclamation in reclamations %}
+                    <tr class="clickable-row" style="cursor: pointer;" onclick="window.location.href='{{ path('owner_reclamation_show', {'id': reclamation.id}) }}'" data-id="{{ reclamation.id }}" data-status="{{ reclamation.statut }}">
+                        <td class="fw-bold">
+                            {{ reclamation.typeId is not null ? reclamation.typeId.libelle : (reclamation.typeAutre ?? '—') }}
+                        </td>
+                        <td class="text-muted small">
+                            <div class="fw-bold text-dark">{{ tenantNames[reclamation.locataireId] ?? 'Locataire #' ~ reclamation.locataireId }}</div>
+                        </td>
+                        <td class="small">
+                            {{ reclamation.contrat and reclamation.contrat.annonce ? reclamation.contrat.annonce.titre : '—' }}
+                        </td>
+                        <td>
+                            <span class="badge-status {{ 
+                                reclamation.statut == 'EN_ATTENTE' ? 'badge-attente' : 
+                                (reclamation.statut == 'EN_COURS' ? 'badge-cours' : 'badge-resolu') 
+                            }}">
+                                {{ reclamation.statut }}
+                            </span>
+                        </td>
+
+                        <td>{{ reclamation.date|ago }}</td>
+                        <td class="text-truncate text-muted small" style="max-width: 120px;">
+                            {{ reclamation.traitement ? reclamation.traitement.reponse : '—' }}
+                        </td>
+                        <td class="text-end" onclick="event.stopPropagation();">
+                            <div class="action-cell">
+                                {% if reclamation.statut != 'RESOLU' %}
+                                    <div class="action-buttons-group">
+                                        <a href="{{ path('owner_reclamation_new', {'id': reclamation.id}) }}" class="btn-owner-action btn-primary-action" title="Répondre à la réclamation">
+                                            <i class="bi bi-chat-dots"></i> <span>Traitement</span>
+                                        </a>
+                                        <form action="{{ path('owner_reclamation_resolve', {'id': reclamation.id}) }}" method="post" onsubmit="return confirm('Marquer cette réclamation comme résolue ?')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('resolve' ~ reclamation.id) }}">
+                                            <button type="submit" class="btn-owner-action btn-outline-action" title="Marquer comme résolu">
+                                                <i class="bi bi-check2-circle"></i> <span>Résolu</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <div class="status-finished">
+                                        <i class="bi bi-check-all"></i> Terminée
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <p class="text-muted mb-0">Aucune réclamation à traiter.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="navigation d-flex justify-content-center mt-4 mb-3">
+            {{ knp_pagination_render(reclamations) }}
+        </div>
+    </div>
+</div>
+
+<style>
+    .action-buttons-group {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .btn-owner-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        height: 38px;
+        white-space: nowrap;
+    }
+
+    .btn-primary-action {
+        background: #6366f1;
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary-action:hover {
+        background: #4f46e5;
+        color: white;
+        transform: translateY(-1.5px);
+        box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-outline-action {
+        background: #fff;
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+
+    .btn-outline-action:hover {
+        background: #f8fafc;
+        color: #334155;
+        border-color: #cbd5e1;
+        transform: translateY(-1.5px);
+    }
+
+    .status-finished {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #10b981;
+        background: #ecfdf5;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid #d1fae5;
+    }
+
+    .action-cell {
+        min-width: 220px;
+    }
+
+    .table-modern td { vertical-align: middle; padding: 18px 12px; }
+</style>
+
+{% endblock %}

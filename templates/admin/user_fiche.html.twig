@@ -1,0 +1,1102 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Fiche — {{ fiche.profile.nom }} — Admin{% endblock %}
+{% block page_title %}Fiche utilisateur{% endblock %}
+
+{% block page_actions %}
+  <a href="{{ path('admin_users') }}" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Retour</a>
+{% endblock %}
+
+{% block stylesheets %}
+  {{ parent() }}
+  <style>
+    .fiche-hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+    .fiche-avatar{width:72px;height:72px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#4a6cf7;flex-shrink:0;text-transform:uppercase;}
+    .fiche-meta{flex:1;min-width:180px;}
+    .fiche-name{font-size:20px;font-weight:700;margin:0 0 3px;}
+    .fiche-email-line{color:#777;font-size:13px;margin-bottom:8px;}
+    .fiche-badges-row{display:flex;gap:6px;flex-wrap:wrap;}
+    .fiche-hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;}
+
+    .fiche-kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin:16px 0;}
+    .fiche-kpi{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #edf0f7;text-align:center;}
+    .fiche-kpi span{display:block;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+    .fiche-kpi strong{font-size:24px;font-weight:700;color:#222;}
+
+    .fiche-tabs{display:flex;gap:0;border-bottom:2px solid #edf0f7;margin-bottom:20px;flex-wrap:wrap;}
+    .fiche-tab-btn{background:none;border:none;padding:11px 18px;cursor:pointer;font-size:13px;font-weight:500;color:#777;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s,border-color .15s;}
+    .fiche-tab-btn:hover{color:#4a6cf7;}
+    .fiche-tab-btn.active{color:#4a6cf7;border-bottom-color:#4a6cf7;}
+    .fiche-tab-panel{display:none;}
+    .fiche-tab-panel.active{display:block;}
+
+    .fiche-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;padding:4px 0;}
+    .fiche-detail-item label{display:block;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+    .fiche-detail-item .val{font-size:14px;color:#333;font-weight:500;display:flex;flex-direction:column;align-items:flex-start;gap:4px;word-break:break-word;min-width:0;}
+    .fiche-detail-item .val-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+
+    .security-checks{display:flex;flex-direction:column;gap:0;}
+    .security-check-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f4f4f4;}
+    .security-check-row:last-child{border-bottom:none;}
+    .sc-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+    .sc-ok{background:#e6f9f0;color:#1a9e5c;}
+    .sc-warn{background:#fff8e1;color:#e67e22;}
+    .sc-off{background:#f5f5f5;color:#999;}
+    .sc-label{font-weight:600;font-size:13px;color:#333;}
+    .sc-sub{font-size:12px;color:#888;margin-top:2px;}
+    .sc-info{flex:1;}
+
+    .badge-ok{background:#e6f9f0;color:#1a9e5c;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+    .badge-warn{background:#fff3e0;color:#e67e22;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+    .badge-off{background:#f0f0f0;color:#999;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+
+    .empty-state{text-align:center;padding:32px 16px;color:#aaa;font-size:13px;}
+    .empty-state i{font-size:28px;margin-bottom:8px;display:block;}
+
+    /* Styles pour les tableaux de paiement */
+    .paiement-table-wrapper{overflow-x:auto;border-radius:8px;border:1px solid #e5e7eb;}
+    .paiement-table{width:100%;min-width:800px;border-collapse:collapse;font-size:12px;}
+    .paiement-table th{background:#f9fafb;padding:10px 8px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e5e7eb;white-space:nowrap;}
+    .paiement-table td{padding:10px 8px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
+    .paiement-table tr:hover{background:#f9fafb;}
+    .paiement-table th:nth-child(1),.paiement-table td:nth-child(1){width:50px;} /* # */
+    .paiement-table th:nth-child(2),.paiement-table td:nth-child(2){min-width:120px;} /* Bien */
+    .paiement-table th:nth-child(3),.paiement-table td:nth-child(3){min-width:120px;} /* Locataire/Propriétaire */
+    .paiement-table th:nth-child(4),.paiement-table td:nth-child(4){width:80px;text-align:center;} /* Période */
+    .paiement-table th:nth-child(5),.paiement-table td:nth-child(5){width:90px;} /* Échéance */
+    .paiement-table th:nth-child(6),.paiement-table td:nth-child(6){width:90px;} /* Paiement */
+    .paiement-table th:nth-child(7),.paiement-table td:nth-child(7){width:80px;} /* Statut */
+    .paiement-table th:nth-child(8),.paiement-table td:nth-child(8),
+    .paiement-table th:nth-child(9),.paiement-table td:nth-child(9),
+    .paiement-table th:nth-child(10),.paiement-table td:nth-child(10){width:90px;text-align:right;white-space:nowrap;} /* Montants */
+
+    /* Styles spécifiques charges */
+    .charges-table th:nth-child(4),.charges-table td:nth-child(4){width:100px;} /* Type */
+    .charges-table th:nth-child(5),.charges-table td:nth-child(5){width:80px;text-align:center;} /* Période */
+    .charges-table th:nth-child(6),.charges-table td:nth-child(6){width:100px;} /* Date paiement */
+    .charges-table th:nth-child(7),.charges-table td:nth-child(7){width:100px;} /* Méthode */
+    .charges-table th:nth-child(8),.charges-table td:nth-child(8){width:100px;text-align:right;} /* Montant */
+  </style>
+{% endblock %}
+
+{% block content %}
+
+  {% set p = fiche.profile %}
+  {% set initials = (p.nom|split(' ')|first|slice(0,1) ~ (p.nom|split(' ')|length > 1 ? p.nom|split(' ')|last|slice(0,1) : ''))|upper %}
+
+  {# ── Hero card ─────────────────────────────────────────────────── #}
+  <section class="card admin-soft-card fiche-hero" style="margin-bottom:16px;">
+    <div class="fiche-avatar">{{ initials }}</div>
+    <div class="fiche-meta">
+      <div class="fiche-name">{{ p.nom }}</div>
+      <div class="fiche-email-line"><i class="fa-solid fa-envelope" style="margin-right:5px;"></i>{{ p.email }}</div>
+      <div class="fiche-badges-row">
+        {% if p.role == 'ADMIN' %}
+          <span class="badge badge-blue">Admin</span>
+        {% elseif p.role == 'PROPRIETAIRE' %}
+          <span class="badge" style="background:#fff3e0;color:#e67e22;">Propriétaire</span>
+        {% else %}
+          <span class="badge badge-blue">Locataire</span>
+        {% endif %}
+
+        {% if p.statut == 'SUSPENDU' %}
+          <span class="badge badge-err">Suspendu</span>
+        {% else %}
+          <span class="badge badge-actif">Actif</span>
+        {% endif %}
+
+        {% if p.two_factor_enabled %}
+          <span class="badge" style="background:#e8f5e9;color:#388e3c;"><i class="fa-solid fa-shield-halved"></i> 2FA</span>
+        {% endif %}
+
+        {% if p.is_google %}
+          <span class="badge" style="background:#fce4ec;color:#c2185b;"><i class="fa-brands fa-google"></i> Google</span>
+        {% endif %}
+
+        {% if fiche.webauthn is defined and fiche.webauthn.count > 0 %}
+          <span class="badge" style="background:#eff6ff;color:#2563eb;" title="{{ fiche.webauthn.count }} appareil(s) enregistré(s)">
+            <i class="fa-solid fa-fingerprint"></i> WebAuthn
+          </span>
+        {% endif %}
+
+        {% if fiche.face is defined and fiche.face.enrolled %}
+          <span class="badge" style="background:#f5f3ff;color:#7c3aed;" title="Enregistré le {{ fiche.face.enrolled_at }}">
+            <i class="fa-solid fa-face-smile"></i> Facial
+          </span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="fiche-hero-actions">
+      <button type="button" class="btn-secondary btn-sm" onclick="openFicheEditModal()">
+        <i class="fa-solid fa-pen"></i> Modifier
+      </button>
+      <form method="post" action="{{ path('admin_users') }}" style="display:inline;" onsubmit="return confirm('Confirmer le changement de statut ?');">
+        <input type="hidden" name="action" value="toggle_user_status">
+        <input type="hidden" name="user_id" value="{{ p.id }}">
+        <input type="hidden" name="new_status" value="{{ p.statut == 'SUSPENDU' ? 'ACTIF' : 'SUSPENDU' }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_toggle_user_' ~ p.id) }}">
+        <button class="btn-secondary btn-sm" type="submit">
+          {% if p.statut == 'SUSPENDU' %}
+            <i class="fa-solid fa-circle-check"></i> Activer
+          {% else %}
+            <i class="fa-solid fa-ban"></i> Suspendre
+          {% endif %}
+        </button>
+      </form>
+    </div>
+  </section>
+
+  {# ── KPI row ────────────────────────────────────────────────────── #}
+  <div class="fiche-kpi-row">
+    <div class="fiche-kpi"><span>Réservations</span><strong>{{ fiche.reservations|length }}</strong></div>
+    <div class="fiche-kpi"><span>Contrats</span><strong>{{ fiche.contrats|length }}</strong></div>
+    <div class="fiche-kpi"><span>Réclamations</span><strong>{{ fiche.reclamations|length }}</strong></div>
+    <div class="fiche-kpi"><span>Loyers</span><strong>{% if pager_loyer is defined %}{{ pager_loyer.nbResults }}{% else %}0{% endif %}</strong></div>
+    <div class="fiche-kpi"><span>Charges</span><strong>{% if pager_charges is defined %}{{ pager_charges.nbResults }}{% else %}0{% endif %}</strong></div>
+    {% if p.role == 'PROPRIETAIRE' %}
+      <div class="fiche-kpi"><span>Annonces</span><strong>{{ fiche.annonces|length }}</strong></div>
+    {% endif %}
+    <div class="fiche-kpi"><span>Actions admin</span><strong>{{ fiche.audit_actions|length }}</strong></div>
+    <div class="fiche-kpi"><span>Connexions</span><strong>{{ fiche.login_attempts|length }}</strong></div>
+  </div>
+
+  {# ── Tabs ───────────────────────────────────────────────────────── #}
+  <div class="fiche-tabs">
+    <button class="fiche-tab-btn active" data-target="tab-profil">
+      <i class="fa-solid fa-user"></i> Profil
+    </button>
+    <button class="fiche-tab-btn" data-target="tab-securite">
+      <i class="fa-solid fa-shield"></i> Sécurité
+      {% if fiche.login_attempts|length > 0 %}
+        <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ fiche.login_attempts|length }}</span>
+      {% endif %}
+    </button>
+    <button class="fiche-tab-btn" data-target="tab-reservations">
+      <i class="fa-solid fa-calendar-check"></i> Réservations
+      {% if fiche.reservations|length > 0 %}
+        <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ fiche.reservations|length }}</span>
+      {% endif %}
+    </button>
+    <button class="fiche-tab-btn" data-target="tab-contrats">
+      <i class="fa-solid fa-file-signature"></i> Contrats
+      {% if fiche.contrats|length > 0 %}
+        <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ fiche.contrats|length }}</span>
+      {% endif %}
+    </button>
+    <button class="fiche-tab-btn" data-target="tab-reclamations">
+      <i class="fa-solid fa-triangle-exclamation"></i> Réclamations
+      {% if fiche.reclamations|length > 0 %}
+        <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ fiche.reclamations|length }}</span>
+      {% endif %}
+    </button>
+    <button class="fiche-tab-btn" data-target="tab-paiements">
+      <i class="fa-solid fa-money-bill-wave"></i> Paiements
+    </button>
+    {% if p.role == 'PROPRIETAIRE' %}
+      <button class="fiche-tab-btn" data-target="tab-annonces">
+        <i class="fa-solid fa-bullhorn"></i> Annonces
+        {% if fiche.annonces|length > 0 %}
+          <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ fiche.annonces|length }}</span>
+        {% endif %}
+      </button>
+    {% elseif p.role == 'LOCATAIRE' %}
+      <button class="fiche-tab-btn" data-target="tab-logement">
+        <i class="fa-solid fa-house"></i> Logement
+      </button>
+    {% endif %}
+    <button class="fiche-tab-btn" data-target="tab-audit">
+      <i class="fa-solid fa-clipboard-list"></i> Historique admin
+      {% if fiche.audit_actions|length > 0 %}
+        <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ fiche.audit_actions|length }}</span>
+      {% endif %}
+    </button>
+  </div>
+
+  {# ══════════════ TAB: PROFIL ══════════════ #}
+  <div id="tab-profil" class="fiche-tab-panel active">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:20px;font-size:15px;"><i class="fa-solid fa-id-card" style="color:#4a6cf7;margin-right:8px;"></i>Identité</h3>
+      <div class="fiche-detail-grid">
+        <div class="fiche-detail-item">
+          <label>Nom complet</label>
+          <div class="val">{{ p.nom ?: '-' }}</div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Email</label>
+          <div class="val">{{ p.email ?: '-' }}</div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Téléphone</label>
+          <div class="val">
+            <div class="val-row">
+              <span>{{ p.telephone ?: '-' }}</span>
+              {% if p.telephone_verified %}
+                <span class="badge-ok"><i class="fa-solid fa-check"></i> Vérifié</span>
+              {% elseif p.telephone %}
+                <span class="badge-warn">Non vérifié</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Rôle</label>
+          <div class="val">{{ p.role ?: '-' }}</div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Statut</label>
+          <div class="val">
+            {% if p.statut == 'SUSPENDU' %}
+              <span class="badge-warn">Suspendu</span>
+            {% else %}
+              <span class="badge-ok">Actif</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Date d'inscription</label>
+          <div class="val">{{ p.date_inscription }}</div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Connexion Google</label>
+          <div class="val">
+            {% if p.is_google %}
+              <span class="badge-ok"><i class="fa-brands fa-google"></i> Oui</span>
+            {% else %}
+              <span class="badge-off">Non</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>2FA (Mail)</label>
+          <div class="val">
+            {% if p.two_factor_enabled %}
+              <span class="badge-ok"><i class="fa-solid fa-shield-halved"></i> Activé</span>
+            {% else %}
+              <span class="badge-off">Désactivé</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Téléphone vérifié</label>
+          <div class="val">
+            {% if p.telephone_verified %}
+              <span class="badge-ok"><i class="fa-solid fa-check"></i> Oui</span>
+            {% else %}
+              <span class="badge-warn">Non</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="fiche-detail-item">
+          <label>Email vérifié</label>
+          <div class="val">
+            <div class="val-row">
+              {% if fiche.security.email_verified %}
+                <span class="badge-ok"><i class="fa-solid fa-check"></i> Oui</span>
+                {% if fiche.security.email_verified_at %}
+                  <small style="color:#aaa;">{{ fiche.security.email_verified_at }}</small>
+                {% endif %}
+              {% else %}
+                <span class="badge-warn">Non vérifié</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  {# ══════════════ TAB: SÉCURITÉ ══════════════ #}
+  <div id="tab-securite" class="fiche-tab-panel">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap;" class="fiche-security-grid">
+
+      <section class="card admin-soft-card">
+        <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-lock" style="color:#4a6cf7;margin-right:8px;"></i>État de sécurité</h3>
+        <div class="security-checks">
+          <div class="security-check-row">
+            <div class="sc-icon {{ fiche.security.email_verified ? 'sc-ok' : 'sc-warn' }}">
+              <i class="fa-solid {{ fiche.security.email_verified ? 'fa-envelope-circle-check' : 'fa-envelope' }}"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Email</div>
+              <div class="sc-sub">
+                {% if fiche.security.email_verified %}
+                  Vérifié{% if fiche.security.email_verified_at %} le {{ fiche.security.email_verified_at }}{% endif %}
+                {% else %}
+                  Non vérifié
+                {% endif %}
+              </div>
+            </div>
+            <span class="{{ fiche.security.email_verified ? 'badge-ok' : 'badge-warn' }}">{{ fiche.security.email_verified ? 'OK' : 'Attention' }}</span>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ p.telephone_verified ? 'sc-ok' : 'sc-warn' }}">
+              <i class="fa-solid fa-mobile-screen"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Téléphone</div>
+              <div class="sc-sub">{{ p.telephone ?: 'Non renseigné' }}</div>
+            </div>
+            <span class="{{ p.telephone_verified ? 'badge-ok' : 'badge-warn' }}">{{ p.telephone_verified ? 'Vérifié' : 'Non vérifié' }}</span>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ p.two_factor_enabled ? 'sc-ok' : 'sc-off' }}">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Double authentification (2FA Mail)</div>
+              <div class="sc-sub">{% if p.two_factor_enabled %}Protection par mail activée{% else %}Non activée{% endif %}</div>
+            </div>
+            <span class="{{ p.two_factor_enabled ? 'badge-ok' : 'badge-off' }}">{{ p.two_factor_enabled ? 'Activé' : 'Désactivé' }}</span>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ p.is_google ? 'sc-ok' : 'sc-off' }}">
+              <i class="fa-brands fa-google"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Connexion via Google OAuth</div>
+              <div class="sc-sub">{% if p.is_google %}Compte lié à Google{% else %}Authentification locale{% endif %}</div>
+            </div>
+            <span class="{{ p.is_google ? 'badge-ok' : 'badge-off' }}">{{ p.is_google ? 'Lié' : 'Non' }}</span>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ fiche.security.last_login_at ? 'sc-ok' : 'sc-off' }}">
+              <i class="fa-solid fa-right-to-bracket"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Dernière connexion</div>
+              <div class="sc-sub">
+                {{ fiche.security.last_login_at ?: 'Jamais connecté' }}
+                {% if fiche.security.last_login_ip %}— IP : {{ fiche.security.last_login_ip }}{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ fiche.security.last_password_change_at ? 'sc-ok' : 'sc-off' }}">
+              <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Dernier changement de mot de passe</div>
+              <div class="sc-sub">{{ fiche.security.last_password_change_at ?: 'Aucun changement enregistré' }}</div>
+            </div>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ fiche.webauthn.count > 0 ? 'sc-ok' : 'sc-off' }}">
+              <i class="fa-solid fa-fingerprint"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Authentificateur biométrique FIDO2 (WebAuthn)</div>
+              <div class="sc-sub">
+                {% if fiche.webauthn.count > 0 %}
+                  {{ fiche.webauthn.count }} appareil(s) — {{ fiche.webauthn.devices|map(d => d.name)|join(', ') }}
+                {% else %}
+                  Aucun appareil enregistré
+                {% endif %}
+              </div>
+            </div>
+            <span class="{{ fiche.webauthn.count > 0 ? 'badge-ok' : 'badge-off' }}">
+              {{ fiche.webauthn.count > 0 ? fiche.webauthn.count ~ ' appareil(s)' : 'Non configuré' }}
+            </span>
+          </div>
+
+          <div class="security-check-row">
+            <div class="sc-icon {{ fiche.face.enrolled ? 'sc-ok' : 'sc-off' }}">
+              <i class="fa-solid fa-face-smile"></i>
+            </div>
+            <div class="sc-info">
+              <div class="sc-label">Reconnaissance faciale (webcam)</div>
+              <div class="sc-sub">
+                {% if fiche.face.enrolled %}
+                  Descripteur facial enregistré le {{ fiche.face.enrolled_at }}
+                {% else %}
+                  Aucun descripteur facial enregistré
+                {% endif %}
+              </div>
+            </div>
+            <span class="{{ fiche.face.enrolled ? 'badge-ok' : 'badge-off' }}">
+              {{ fiche.face.enrolled ? 'Configurée' : 'Non configurée' }}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card admin-soft-card">
+        <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-clock-rotate-left" style="color:#4a6cf7;margin-right:8px;"></i>Historique des connexions (20 dernières)</h3>
+        {% if fiche.login_attempts is empty %}
+          <div class="empty-state"><i class="fa-solid fa-inbox"></i>Aucune tentative enregistrée</div>
+        {% else %}
+          <div class="admin-table-wrap">
+            <table class="sakan-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>IP</th>
+                  <th>Résultat</th>
+                  <th>Motif</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for attempt in fiche.login_attempts %}
+                  <tr>
+                    <td>{{ attempt.attempted_at }}</td>
+                    <td>{{ attempt.ip_address ?: '-' }}</td>
+                    <td>
+                      {% if attempt.success %}
+                        <span class="badge-ok"><i class="fa-solid fa-check"></i> Succès</span>
+                      {% else %}
+                        <span class="badge-warn"><i class="fa-solid fa-xmark"></i> Échec</span>
+                      {% endif %}
+                      {% if attempt.lock_triggered %}
+                        <span class="badge badge-err" style="margin-left:4px;font-size:10px;">Verrouillage</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ attempt.reason ?: '-' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+
+    {# ── Historique des changements d'email ── #}
+    <section class="card admin-soft-card" style="margin-top:16px;">
+      <h3 style="margin-bottom:16px;font-size:15px;">
+        <i class="fa-solid fa-envelope-open-text" style="color:#4a6cf7;margin-right:8px;"></i>
+        Historique des changements d'email
+        {% if fiche.email_history|length > 0 %}
+          <span style="background:#e8edf8;color:#4a6cf7;border-radius:10px;padding:1px 9px;font-size:12px;margin-left:8px;">{{ fiche.email_history|length }}</span>
+        {% endif %}
+      </h3>
+      {% if fiche.email_history is empty %}
+        <div class="empty-state"><i class="fa-solid fa-inbox"></i>Aucun changement d'email enregistré</div>
+      {% else %}
+        <div class="admin-table-wrap">
+          <table class="sakan-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Ancien email</th>
+                <th>Nouvel email</th>
+                <th>Modifié par</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in fiche.email_history %}
+                <tr>
+                  <td>{{ row.changed_at }}</td>
+                  <td style="color:#999;text-decoration:line-through;">{{ row.old_email }}</td>
+                  <td style="font-weight:600;">{{ row.new_email }}</td>
+                  <td>{{ row.changed_by_admin_name ?: '-' }}</td>
+                  <td><span class="badge badge-blue" style="font-size:11px;">{{ row.source }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ══════════════ TAB: RÉSERVATIONS ══════════════ #}
+  <div id="tab-reservations" class="fiche-tab-panel">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-calendar-check" style="color:#4a6cf7;margin-right:8px;"></i>Réservations ({{ fiche.reservations|length }})</h3>
+      {% if fiche.reservations is empty %}
+        <div class="empty-state"><i class="fa-solid fa-calendar-xmark"></i>Aucune réservation</div>
+      {% else %}
+        <div class="admin-table-wrap">
+          <table class="sakan-table">
+            <thead>
+              <tr><th>#</th><th>Statut</th><th>Début</th><th>Fin</th><th>Montant</th></tr>
+            </thead>
+            <tbody>
+              {% for r in fiche.reservations %}
+                <tr>
+                  <td>{{ r.id }}</td>
+                  <td>
+                    {% if 'CONFIRM' in r.statut %}
+                      <span class="badge badge-actif">{{ r.statut }}</span>
+                    {% elseif 'ANNUL' in r.statut or 'CANCEL' in r.statut %}
+                      <span class="badge badge-err">{{ r.statut }}</span>
+                    {% else %}
+                      <span class="badge badge-blue">{{ r.statut ?: '-' }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ r.date_debut }}</td>
+                  <td>{{ r.date_fin }}</td>
+                  <td>{{ r.montant is not null ? r.montant ~ ' TND' : '-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ══════════════ TAB: CONTRATS ══════════════ #}
+  <div id="tab-contrats" class="fiche-tab-panel">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:16px;font-size:15px;">
+        <i class="fa-solid fa-file-signature" style="color:#4a6cf7;margin-right:8px;"></i>
+        Contrats ({{ contrats|length }})
+      </h3>
+      {% if contrats is empty %}
+        <div class="empty-state"><i class="fa-solid fa-file-circle-xmark"></i>Aucun contrat lié à cet utilisateur</div>
+      {% else %}
+        <div class="admin-table-wrap">
+          <table class="sakan-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Bien</th>
+                <th>Locataire</th>
+                <th>Propriétaire</th>
+                <th>Loyer</th>
+                <th>Période</th>
+                <th>Signatures</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in contrats %}
+                {% set su = c.statut|upper %}
+                <tr>
+                  <td style="font-weight:700;color:#4a6cf7;">Contrat #{{ c.id }}</td>
+                  <td style="font-size:13px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ c.annonce_titre|default('-') }}
+                  </td>
+                  <td style="font-size:13px;">{{ c.locataire_nom|default('-') }}</td>
+                  <td style="font-size:13px;">{{ c.proprietaire_nom|default('-') }}</td>
+                  <td style="font-weight:700;">{{ c.montant and c.montant != '-' ? c.montant ~ ' TND' : '-' }}</td>
+                  <td style="font-size:12px;color:#555;white-space:nowrap;">
+                    {% if c.date_debut %}Du {{ c.date_debut|date('d/m/Y') }}<br>{% endif %}
+                    {% if c.date_fin %}Au {{ c.date_fin|date('d/m/Y') }}{% endif %}
+                    {% if not c.date_debut and not c.date_fin %}-{% endif %}
+                  </td>
+                  <td>
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                      <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;{{ c.signe_locataire ? 'background:#e6f9f0;color:#1a9e5c;' : 'background:#f5f5f5;color:#aaa;' }}">
+                        <i class="fa-solid {{ c.signe_locataire ? 'fa-circle-check' : 'fa-circle-xmark' }}"></i> Locataire
+                      </span>
+                      <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;{{ c.signe_proprietaire ? 'background:#e6f9f0;color:#1a9e5c;' : 'background:#f5f5f5;color:#aaa;' }}">
+                        <i class="fa-solid {{ c.signe_proprietaire ? 'fa-circle-check' : 'fa-circle-xmark' }}"></i> Propriétaire
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    {% if 'ACTIF' in su %}
+                      <span class="badge-ok" style="padding:3px 10px;border-radius:20px;">{{ c.statut }}</span>
+                    {% elseif 'RESIL' in su or 'TERMIN' in su %}
+                      <span class="badge badge-err" style="border-radius:20px;">{{ c.statut }}</span>
+                    {% elseif 'ATTENTE' in su or 'SIGNATURE' in su %}
+                      <span class="badge-warn" style="padding:3px 10px;border-radius:20px;">{{ c.statut }}</span>
+                    {% else %}
+                      <span class="badge-off" style="padding:3px 10px;border-radius:20px;">{{ c.statut ?: '-' }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ══════════════ TAB: RÉCLAMATIONS ══════════════ #}
+  <div id="tab-reclamations" class="fiche-tab-panel">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-triangle-exclamation" style="color:#4a6cf7;margin-right:8px;"></i>Réclamations ({{ fiche.reclamations|length }})</h3>
+      {% if fiche.reclamations is empty %}
+        <div class="empty-state"><i class="fa-solid fa-circle-check"></i>Aucune réclamation</div>
+      {% else %}
+        <div class="admin-table-wrap">
+          <table class="sakan-table">
+            <thead>
+              <tr><th>#</th><th>Type</th><th>Statut</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              {% for r in fiche.reclamations %}
+                <tr>
+                  <td>{{ r.id }}</td>
+                  <td>{{ r.type }}</td>
+                  <td>
+                    {% if 'RESOL' in r.statut or 'FERME' in r.statut %}
+                      <span class="badge badge-actif">{{ r.statut }}</span>
+                    {% elseif 'COURS' in r.statut or 'TRAIT' in r.statut %}
+                      <span class="badge badge-blue">{{ r.statut }}</span>
+                    {% elseif 'OUVERT' in r.statut %}
+                      <span class="badge badge-err">{{ r.statut }}</span>
+                    {% else %}
+                      <span class="badge badge-blue">{{ r.statut ?: '-' }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ r.date_reclamation }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ══════════════ TAB: PAIEMENTS ══════════════ #}
+  <div id="tab-paiements" class="fiche-tab-panel">
+    <div style="display:flex;flex-direction:column;gap:24px;width:100%;">
+
+      {# ─── PAIEMENTS LOYER ─── #}
+      <section class="card admin-soft-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+          <h3 style="font-size:15px;margin:0;"><i class="fa-solid fa-house" style="color:#4a6cf7;margin-right:8px;"></i>Paiements de loyer ({% if pager_loyer is defined %}{{ pager_loyer.nbResults }}{% else %}{{ paiements_loyer|length }}{% endif %})</h3>
+          {% if paiements_loyer is not empty %}
+            {% set totalLoyer = 0 %}
+            {% set totalPenalites = 0 %}
+            {% for pay in paiements_loyer %}
+              {% set totalLoyer = totalLoyer + pay.montant %}
+              {% set totalPenalites = totalPenalites + pay.penalite %}
+            {% endfor %}
+            <div style="display:flex;gap:16px;font-size:13px;">
+              <span style="color:#6b7280;">Loyers: <strong style="color:#1f2937;">{{ totalLoyer|number_format(3, ',', ' ') }} TND</strong></span>
+              <span style="color:#6b7280;">Pénalités: <strong style="color:#dc2626;">{{ totalPenalites|number_format(3, ',', ' ') }} TND</strong></span>
+              <span style="color:#6b7280;">Total: <strong style="color:#16a34a;">{{ (totalLoyer + totalPenalites)|number_format(3, ',', ' ') }} TND</strong></span>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if paiements_loyer is empty %}
+          <div class="empty-state"><i class="fa-solid fa-inbox"></i>Aucun paiement de loyer enregistré</div>
+        {% else %}
+          <div class="paiement-table-wrapper">
+            <table class="paiement-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Bien</th>
+                  {% if p.role == 'PROPRIETAIRE' %}<th>Locataire</th>{% else %}<th>Propriétaire</th>{% endif %}
+                  <th>Période</th>
+                  <th>Échéance</th>
+                  <th>Paiement</th>
+                  <th>Statut</th>
+                  <th style="text-align:right;">Loyer</th>
+                  <th style="text-align:right;">Pénalité</th>
+                  <th style="text-align:right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pay in paiements_loyer %}
+                  <tr>
+                    <td style="font-weight:600;color:#4a6cf7;">#{{ pay.id }}</td>
+                    <td>{{ pay.bien|default('-') }}</td>
+                    {% if p.role == 'PROPRIETAIRE' %}
+                      <td>{{ pay.locataire|default('-') }}</td>
+                    {% else %}
+                      <td>{{ pay.proprietaire|default('-') }}</td>
+                    {% endif %}
+                    <td style="text-align:center;"><span style="background:#e0e7ff;color:#4f46e5;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;white-space:nowrap;">{{ pay.periode|default('-') }}</span></td>
+                    <td>{{ pay.date_echeance|default('-') }}</td>
+                    <td>{{ pay.date_paiement|default('Non payé') }}</td>
+                    <td>
+                      {% if 'PAYE' in pay.statut %}
+                        <span class="badge-ok" style="padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap;"><i class="fa-solid fa-check"></i> Payé</span>
+                      {% elseif 'EN_RETARD' in pay.statut %}
+                        <span class="badge-warn" style="padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap;"><i class="fa-solid fa-clock"></i> Retard</span>
+                      {% elseif 'A_PAYER' in pay.statut %}
+                        <span class="badge-off" style="padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap;">À payer</span>
+                      {% else %}
+                        <span class="badge badge-blue" style="padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap;">{{ pay.statut|default('-') }}</span>
+                      {% endif %}
+                    </td>
+                    <td style="text-align:right;font-weight:500;">{{ pay.montant|number_format(3, ',', ' ') }} TND</td>
+                    <td style="text-align:right;color:{{ pay.penalite > 0 ? '#dc2626' : '#9ca3af' }};font-weight:{{ pay.penalite > 0 ? '600' : '400' }};">
+                      {{ pay.penalite > 0 ? pay.penalite|number_format(3, ',', ' ') ~ ' TND' : '-' }}
+                    </td>
+                    <td style="text-align:right;font-weight:700;color:#16a34a;">{{ pay.total|number_format(3, ',', ' ') }} TND</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {# Pagination Paiements Loyer #}
+          {% if pager_loyer is defined and pager_loyer.nbPages > 1 %}
+            <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
+              {% if page_loyer > 1 %}
+                <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page_loyer - 1, page_charges: page_charges}) }}"
+                   style="padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </a>
+              {% else %}
+                <span style="padding:8px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;color:#94a3b8;font-size:13px;">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </span>
+              {% endif %}
+
+              {% for page in 1..pager_loyer.nbPages %}
+                {% if page == page_loyer %}
+                  <span style="padding:8px 14px;background:#6366f1;color:white;border-radius:6px;font-weight:600;font-size:13px;">
+                    {{ page }}
+                  </span>
+                {% elseif page >= page_loyer - 2 and page <= page_loyer + 2 %}
+                  <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page, page_charges: page_charges}) }}"
+                     style="padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                    {{ page }}
+                  </a>
+                {% elseif page == 1 or page == pager_loyer.nbPages %}
+                  <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page, page_charges: page_charges}) }}"
+                     style="padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                    {{ page }}
+                  </a>
+                {% elseif page == page_loyer - 3 or page == page_loyer + 3 %}
+                  <span style="padding:8px;color:#94a3b8;font-size:13px;">...</span>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_loyer < pager_loyer.nbPages %}
+                <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page_loyer + 1, page_charges: page_charges}) }}"
+                   style="padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </a>
+              {% else %}
+                <span style="padding:8px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;color:#94a3b8;font-size:13px;">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </span>
+              {% endif %}
+
+              <span style="font-size:12px;color:#64748b;margin-left:12px;">
+                Page {{ page_loyer }} / {{ pager_loyer.nbPages }} ({{ pager_loyer.nbResults }} résultats)
+              </span>
+            </div>
+          {% endif %}
+        {% endif %}
+      </section>
+
+      {# ─── PAIEMENTS CHARGES ─── #}
+      <section class="card admin-soft-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+          <h3 style="font-size:15px;margin:0;"><i class="fa-solid fa-bolt" style="color:#f59e0b;margin-right:8px;"></i>Paiements de charges ({% if pager_charges is defined %}{{ pager_charges.nbResults }}{% else %}{{ paiements_charges|length }}{% endif %})</h3>
+          {% if paiements_charges is not empty %}
+            {% set totalCharges = 0 %}
+            {% for pay in paiements_charges %}
+              {% set totalCharges = totalCharges + pay.montant %}
+            {% endfor %}
+            <div style="font-size:13px;color:#6b7280;">
+              Total charges payées: <strong style="color:#1f2937;">{{ totalCharges|number_format(3, ',', ' ') }} TND</strong>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if paiements_charges is empty %}
+          <div class="empty-state"><i class="fa-solid fa-inbox"></i>Aucun paiement de charges enregistré</div>
+        {% else %}
+          <div class="paiement-table-wrapper">
+            <table class="paiement-table charges-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Bien</th>
+                  {% if p.role == 'PROPRIETAIRE' %}<th>Locataire</th>{% else %}<th>Propriétaire</th>{% endif %}
+                  <th>Type</th>
+                  <th>Période</th>
+                  <th>Date paiement</th>
+                  <th>Méthode</th>
+                  <th style="text-align:right;">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pay in paiements_charges %}
+                  <tr>
+                    <td style="font-weight:600;color:#4a6cf7;">#{{ pay.id }}</td>
+                    <td>{{ pay.bien|default('-') }}</td>
+                    {% if p.role == 'PROPRIETAIRE' %}
+                      <td>{{ pay.locataire|default('-') }}</td>
+                    {% else %}
+                      <td>{{ pay.proprietaire|default('-') }}</td>
+                    {% endif %}
+                    <td><span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;white-space:nowrap;">{{ pay.type_charge|default('-') }}</span></td>
+                    <td style="text-align:center;">{{ pay.periode|default('-') }}</td>
+                    <td>{{ pay.date_paiement|default('-') }}</td>
+                    <td>
+                      {% if pay.methode_paiement %}
+                        <span style="background:#ecfdf5;color:#059669;padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap;">
+                          <i class="fa-solid fa-credit-card"></i> {{ pay.methode_paiement }}
+                        </span>
+                      {% else %}
+                        <span style="color:#9ca3af;font-size:12px;">-</span>
+                      {% endif %}
+                    </td>
+                    <td style="text-align:right;font-weight:700;color:#16a34a;">{{ pay.montant|number_format(3, ',', ' ') }} TND</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {# Pagination Paiements Charges #}
+          {% if pager_charges is defined and pager_charges.nbPages > 1 %}
+            <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
+              {% if page_charges > 1 %}
+                <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page_loyer, page_charges: page_charges - 1}) }}"
+                   style="padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </a>
+              {% else %}
+                <span style="padding:8px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;color:#94a3b8;font-size:13px;">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </span>
+              {% endif %}
+
+              {% for page in 1..pager_charges.nbPages %}
+                {% if page == page_charges %}
+                  <span style="padding:8px 14px;background:#f59e0b;color:white;border-radius:6px;font-weight:600;font-size:13px;">
+                    {{ page }}
+                  </span>
+                {% elseif page >= page_charges - 2 and page <= page_charges + 2 %}
+                  <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page_loyer, page_charges: page}) }}"
+                     style="padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                    {{ page }}
+                  </a>
+                {% elseif page == 1 or page == pager_charges.nbPages %}
+                  <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page_loyer, page_charges: page}) }}"
+                     style="padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                    {{ page }}
+                  </a>
+                {% elseif page == page_charges - 3 or page == page_charges + 3 %}
+                  <span style="padding:8px;color:#94a3b8;font-size:13px;">...</span>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_charges < pager_charges.nbPages %}
+                <a href="{{ path('admin_user_fiche', {id: p.id, page_loyer: page_loyer, page_charges: page_charges + 1}) }}"
+                   style="padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#374151;font-size:13px;">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </a>
+              {% else %}
+                <span style="padding:8px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;color:#94a3b8;font-size:13px;">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </span>
+              {% endif %}
+
+              <span style="font-size:12px;color:#64748b;margin-left:12px;">
+                Page {{ page_charges }} / {{ pager_charges.nbPages }} ({{ pager_charges.nbResults }} résultats)
+              </span>
+            </div>
+          {% endif %}
+        {% endif %}
+      </section>
+    </div>
+  </div>
+
+  {# ══════════════ TAB: ANNONCES (Propriétaire) ══════════════ #}
+  {% if p.role == 'PROPRIETAIRE' %}
+  <div id="tab-annonces" class="fiche-tab-panel">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-bullhorn" style="color:#4a6cf7;margin-right:8px;"></i>Annonces publiées ({{ fiche.annonces|length }})</h3>
+      {% if fiche.annonces is empty %}
+        <div class="empty-state"><i class="fa-solid fa-bullhorn"></i>Aucune annonce</div>
+      {% else %}
+        <div class="admin-table-wrap">
+          <table class="sakan-table">
+            <thead><tr><th>#</th><th>Titre</th><th>Ville</th><th>Statut</th><th>Prix</th></tr></thead>
+            <tbody>
+              {% for ann in fiche.annonces %}
+                <tr>
+                  <td>{{ ann.id }}</td>
+                  <td>{{ ann.titre }}</td>
+                  <td>{{ ann.ville }}</td>
+                  <td>
+                    {% if 'DISP' in ann.statut %}
+                      <span class="badge badge-actif">{{ ann.statut }}</span>
+                    {% elseif 'OCC' in ann.statut %}
+                      <span class="badge badge-err">{{ ann.statut }}</span>
+                    {% else %}
+                      <span class="badge badge-blue">{{ ann.statut ?: '-' }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ ann.prix is not null ? ann.prix ~ ' TND' : '-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+  {% endif %}
+
+  {# ══════════════ TAB: LOGEMENT (Locataire) ══════════════ #}
+  {% if p.role == 'LOCATAIRE' %}
+  <div id="tab-logement" class="fiche-tab-panel">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-house" style="color:#4a6cf7;margin-right:8px;"></i>Logement actuel</h3>
+      {% set activeContrat = null %}
+      {% for c in fiche.contrats %}
+        {% if 'ACTIF' in c.statut and activeContrat is null %}
+          {% set activeContrat = c %}
+        {% endif %}
+      {% endfor %}
+      {% if activeContrat %}
+        <div class="fiche-detail-grid">
+          <div class="fiche-detail-item">
+            <label>Contrat actif #</label>
+            <span class="val">{{ activeContrat.id }}</span>
+          </div>
+          <div class="fiche-detail-item">
+            <label>Statut contrat</label>
+            <span class="val"><span class="badge badge-actif">{{ activeContrat.statut }}</span></span>
+          </div>
+          <div class="fiche-detail-item">
+            <label>Début</label>
+            <span class="val">{{ activeContrat.date_debut }}</span>
+          </div>
+          <div class="fiche-detail-item">
+            <label>Fin prévue</label>
+            <span class="val">{{ activeContrat.date_fin }}</span>
+          </div>
+          <div class="fiche-detail-item">
+            <label>Loyer mensuel</label>
+            <span class="val">{{ activeContrat.montant is not null ? activeContrat.montant ~ ' TND' : '-' }}</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state"><i class="fa-solid fa-house-circle-xmark"></i>Aucun logement actif trouvé</div>
+      {% endif %}
+    </section>
+  </div>
+  {% endif %}
+
+  {# ══════════════ TAB: HISTORIQUE ADMIN ══════════════ #}
+  <div id="tab-audit" class="fiche-tab-panel">
+    <section class="card admin-soft-card">
+      <h3 style="margin-bottom:16px;font-size:15px;"><i class="fa-solid fa-clipboard-list" style="color:#4a6cf7;margin-right:8px;"></i>Actions admin sur ce compte ({{ fiche.audit_actions|length }})</h3>
+      {% if fiche.audit_actions is empty %}
+        <div class="empty-state"><i class="fa-solid fa-inbox"></i>Aucune action enregistrée</div>
+      {% else %}
+        <div class="admin-table-wrap">
+          <table class="sakan-table">
+            <thead>
+              <tr><th>Date</th><th>Action</th><th>Par (admin)</th><th>Détail</th></tr>
+            </thead>
+            <tbody>
+              {% for row in fiche.audit_actions %}
+                <tr>
+                  <td>{{ row.created_at }}</td>
+                  <td>
+                    {% set action = row.action|lower %}
+                    {% if 'creat' in action or 'add' in action %}
+                      <span class="badge badge-actif">{{ row.action }}</span>
+                    {% elseif 'delet' in action or 'suspens' in action %}
+                      <span class="badge badge-err">{{ row.action }}</span>
+                    {% else %}
+                      <span class="badge badge-blue">{{ row.action }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {{ row.admin_name ?: '-' }}
+                    {% if row.admin_email %}<br><small style="color:#aaa;">{{ row.admin_email }}</small>{% endif %}
+                  </td>
+                  <td style="font-size:12px;color:#777;">
+                    {% if row.payload.changed_fields is defined and row.payload.changed_fields is not empty %}
+                      Modifié : {{ row.payload.changed_fields|join(', ') }}<br>
+                    {% endif %}
+                    {% if row.payload.role is defined %}Rôle : {{ row.payload.role }}<br>{% endif %}
+                    {% if row.payload.statut is defined %}Statut : {{ row.payload.statut }}<br>{% endif %}
+                    {% if row.reason %}{{ row.reason }}{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ── Edit modal ─────────────────────────────────────────────────── #}
+  <div id="fiche-edit-modal" class="admin-modal" aria-hidden="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-head">
+        <h3>Modifier utilisateur</h3>
+        <button type="button" class="admin-close" onclick="closeFicheEditModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form method="post" action="{{ path('admin_users') }}" class="admin-grid-form admin-grid-2">
+        <input type="hidden" name="action" value="edit_user">
+        <input type="hidden" name="user_id" value="{{ p.id }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_edit_user_' ~ p.id) }}">
+
+        <label>Nom complet<input class="form-input" type="text" name="nom" value="{{ p.nom }}" required></label>
+        <label>Email<input class="form-input" type="email" name="email" value="{{ p.email }}" required></label>
+        <label>Telephone<input class="form-input" type="text" name="telephone" value="{{ p.telephone }}" pattern="[2-9][0-9]{7}"></label>
+        <label>Role
+          <select class="form-input" name="role">
+            <option value="LOCATAIRE" {{ p.role == 'LOCATAIRE' ? 'selected' : '' }}>Locataire</option>
+            <option value="PROPRIETAIRE" {{ p.role == 'PROPRIETAIRE' ? 'selected' : '' }}>Proprietaire</option>
+            <option value="ADMIN" {{ p.role == 'ADMIN' ? 'selected' : '' }}>Admin</option>
+          </select>
+        </label>
+        <label>Statut
+          <select class="form-input" name="statut">
+            <option value="ACTIF" {{ p.statut == 'ACTIF' ? 'selected' : '' }}>Actif</option>
+            <option value="SUSPENDU" {{ p.statut == 'SUSPENDU' ? 'selected' : '' }}>Suspendu</option>
+          </select>
+        </label>
+        <label>Nouveau mot de passe (optionnel)<input class="form-input" type="password" name="password" placeholder="Laisser vide pour garder l'ancien"></label>
+
+        <div class="admin-form-actions">
+          <button type="button" class="btn-secondary" onclick="closeFicheEditModal()">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    document.querySelectorAll('.fiche-tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.fiche-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.fiche-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        var target = document.getElementById(btn.dataset.target);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    function adjustSecurityGrid() {
+      var grid = document.querySelector('.fiche-security-grid');
+      if (grid) {
+        grid.style.gridTemplateColumns = window.innerWidth < 900 ? '1fr' : '1fr 1fr';
+      }
+    }
+    adjustSecurityGrid();
+    window.addEventListener('resize', adjustSecurityGrid);
+
+    function openFicheEditModal() {
+      var modal = document.getElementById('fiche-edit-modal');
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeFicheEditModal() {
+      var modal = document.getElementById('fiche-edit-modal');
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('fiche-edit-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'fiche-edit-modal') closeFicheEditModal();
+    });
+  </script>
+{% endblock %}

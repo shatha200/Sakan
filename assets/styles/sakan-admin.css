@@ -1,0 +1,819 @@
+:root {
+  --admin-bg-soft: linear-gradient(145deg, #f8fbff 0%, #f5f3ff 45%, #eef8f4 100%);
+  --admin-card-bg: rgba(255, 255, 255, 0.88);
+  --admin-card-border: rgba(100, 116, 139, 0.15);
+  --admin-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+  --admin-muted: #64748b;
+}
+
+html[data-theme="dark"] {
+  --admin-bg-soft: linear-gradient(145deg, #0b1020 0%, #131a32 45%, #0f1428 100%);
+  --admin-card-bg: rgba(22, 28, 48, 0.92);
+  --admin-card-border: rgba(255, 255, 255, 0.10);
+  --admin-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+  --admin-muted: rgba(232, 234, 243, 0.65);
+}
+html[data-theme="dark"] .admin-shell,
+html[data-theme="dark"] .admin-shell * { color-scheme: dark; }
+html[data-theme="dark"] .admin-shell .sakan-sidebar,
+html[data-theme="dark"] .admin-sidebar { background: rgba(15, 20, 38, 0.98) !important; }
+html[data-theme="dark"] .admin-shell .sakan-topbar { background: rgba(15, 20, 38, 0.98) !important; border-bottom-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .admin-shell h1,
+html[data-theme="dark"] .admin-shell h2,
+html[data-theme="dark"] .admin-shell h3,
+html[data-theme="dark"] .admin-shell h4,
+html[data-theme="dark"] .admin-shell h5,
+html[data-theme="dark"] .admin-shell h6 { color: #e8eaf3 !important; }
+html[data-theme="dark"] .admin-shell p,
+html[data-theme="dark"] .admin-shell li,
+html[data-theme="dark"] .admin-shell label,
+html[data-theme="dark"] .admin-shell span,
+html[data-theme="dark"] .admin-shell td,
+html[data-theme="dark"] .admin-shell th { color: #e8eaf3; }
+html[data-theme="dark"] .admin-shell input,
+html[data-theme="dark"] .admin-shell select,
+html[data-theme="dark"] .admin-shell textarea {
+  background: #1c2440 !important;
+  color: #e8eaf3 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+html[data-theme="dark"] .admin-shell [style*="background:#fff"],
+html[data-theme="dark"] .admin-shell [style*="background: #fff"],
+html[data-theme="dark"] .admin-shell [style*="background:white"],
+html[data-theme="dark"] .admin-shell [style*="background: white"],
+html[data-theme="dark"] .admin-shell [style*="background:#f8fafc"],
+html[data-theme="dark"] .admin-shell [style*="background: #f8fafc"],
+html[data-theme="dark"] .admin-shell [style*="background:#f5f7fa"] {
+  background: #161c30 !important;
+  color: #e8eaf3;
+}
+html[data-theme="dark"] .admin-shell .admin-kpi-icon { filter: brightness(0.85); }
+
+/* Force tous les fonds clairs hardcodés en sombre */
+html[data-theme="dark"] .admin-sidebar,
+html[data-theme="dark"] .admin-topbar { background: rgba(15, 20, 38, 0.98) !important; border-color: rgba(255,255,255,0.08) !important; }
+html[data-theme="dark"] .admin-topbar .topbar-search,
+html[data-theme="dark"] .admin-chart-card { background: #1c2440 !important; border-color: rgba(255,255,255,0.10) !important; color: #e8eaf3; }
+html[data-theme="dark"] .admin-alert-success { background: rgba(34, 197, 94, 0.18) !important; color: #86efac !important; }
+html[data-theme="dark"] .admin-alert-error   { background: rgba(239, 68, 68, 0.18)  !important; color: #fca5a5 !important; }
+html[data-theme="dark"] .admin-shell .admin-card,
+html[data-theme="dark"] .admin-shell .admin-kpi,
+html[data-theme="dark"] .admin-shell .admin-stat,
+html[data-theme="dark"] .admin-shell .admin-panel,
+html[data-theme="dark"] .admin-shell .admin-modal,
+html[data-theme="dark"] .admin-shell .admin-list,
+html[data-theme="dark"] .admin-shell .admin-table,
+html[data-theme="dark"] .admin-shell table { background: #161c30 !important; color: #e8eaf3; border-color: rgba(255,255,255,0.10) !important; }
+html[data-theme="dark"] .admin-shell tr,
+html[data-theme="dark"] .admin-shell tbody,
+html[data-theme="dark"] .admin-shell thead,
+html[data-theme="dark"] .admin-shell tfoot { background: transparent !important; border-color: rgba(255,255,255,0.08) !important; }
+html[data-theme="dark"] .admin-shell tr:hover { background: rgba(255,255,255,0.04) !important; }
+
+/* Catch-all : tout ce qui a un fond rgba blanc, blanc pur, ou gris très clair */
+html[data-theme="dark"] .admin-shell [class*="admin-"][class*="card"],
+html[data-theme="dark"] .admin-shell [class*="admin-"][class*="panel"],
+html[data-theme="dark"] .admin-shell [class*="admin-"][class*="box"],
+html[data-theme="dark"] .admin-shell [class*="admin-"][class*="tile"],
+html[data-theme="dark"] .admin-shell [class*="admin-"][class*="bar"],
+html[data-theme="dark"] .admin-shell [class*="admin-"][class*="row"] { background-color: #161c30 !important; color: #e8eaf3; border-color: rgba(255,255,255,0.10) !important; }
+
+html[data-theme="dark"] .admin-shell .admin-kpi-violet .admin-kpi-icon { background: rgba(90, 105, 229, 0.22) !important; color: #a8b3ff !important; }
+html[data-theme="dark"] .admin-shell .admin-kpi-blue   .admin-kpi-icon { background: rgba(56, 132, 255, 0.18) !important; }
+html[data-theme="dark"] .admin-shell .admin-kpi-green  .admin-kpi-icon { background: rgba(34, 197, 94, 0.18) !important; }
+html[data-theme="dark"] .admin-shell .admin-kpi-red    .admin-kpi-icon { background: rgba(239, 68, 68, 0.18) !important; }
+
+html[data-theme="dark"] .admin-shell .badge-blue {
+  background: rgba(90, 105, 229, 0.22) !important;
+  color: #a8b3ff !important;
+  border-color: rgba(90, 105, 229, 0.35) !important;
+}
+html[data-theme="dark"] .admin-shell .badge-ok,
+html[data-theme="dark"] .admin-shell .badge-actif {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #86efac !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+html[data-theme="dark"] .admin-shell .badge-warn,
+html[data-theme="dark"] .admin-shell .badge-attente {
+  background: rgba(251, 191, 36, 0.18) !important;
+  color: #fcd34d !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+}
+html[data-theme="dark"] .admin-shell .badge-err,
+html[data-theme="dark"] .admin-shell .badge-retard {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+html[data-theme="dark"] .admin-shell .admin-modal { background: rgba(2, 6, 23, 0.70) !important; }
+html[data-theme="dark"] .admin-shell .admin-modal-card {
+  background: #161c30 !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55) !important;
+}
+html[data-theme="dark"] .admin-shell .admin-close { color: #cbd2e6 !important; }
+html[data-theme="dark"] .admin-shell .admin-close:hover { background: rgba(90, 105, 229, 0.18) !important; color: #a8b3ff !important; }
+
+html[data-theme="dark"] .admin-shell .btn-secondary {
+  background: #1c2440 !important;
+  color: #e8eaf3 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html[data-theme="dark"] .admin-shell .btn-secondary:hover {
+  background: rgba(90, 105, 229, 0.18) !important;
+  border-color: rgba(90, 105, 229, 0.55) !important;
+  color: #a8b3ff !important;
+}
+html[data-theme="dark"] .admin-shell .btn-primary {
+  background: linear-gradient(135deg, #5A69E5 0%, #7380ff 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(90, 105, 229, 0.35) !important;
+}
+html[data-theme="dark"] .admin-shell .btn-primary:hover {
+  box-shadow: 0 6px 22px rgba(90, 105, 229, 0.55) !important;
+}
+html[data-theme="dark"] .admin-shell .btn-danger {
+  background: #ef4444 !important;
+  color: #fff !important;
+}
+html[data-theme="dark"] .admin-shell .btn-danger:hover {
+  background: #dc2626 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
+}
+
+html[data-theme="dark"] .admin-shell textarea.form-input { min-height: 90px; }
+html[data-theme="dark"] .admin-shell .sakan-table th {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: #cbd2e6 !important;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  background: var(--admin-bg-soft);
+}
+
+.admin-sidebar {
+  border-right: 1px solid #e7edf7;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset -1px 0 0 rgba(148, 163, 184, 0.12);
+}
+
+.admin-main {
+  padding: 0;
+  background: transparent;
+}
+
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  border-bottom: 1px solid #e7edf7;
+  background: rgba(255, 255, 255, 0.9);
+  justify-content: space-between;
+}
+
+.admin-topbar .topbar-actions {
+  margin-left: auto;
+}
+
+.admin-topbar .topbar-search {
+  width: min(440px, 45vw);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-topbar .topbar-search i {
+  color: #94a3b8;
+}
+
+.admin-dot {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.admin-page-wrap {
+  padding: 28px 34px 36px;
+}
+
+.admin-alert {
+  margin: 10px 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-alert-success {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.admin-alert-error {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.admin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.admin-kpi-grid-users {
+  margin-bottom: 16px;
+}
+
+.admin-kpi-card {
+  border: 1px solid var(--admin-card-border);
+  border-radius: 18px;
+  background: var(--admin-card-bg);
+  box-shadow: var(--admin-shadow);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-kpi-card p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.admin-kpi-card h3 {
+  margin: 5px 0 0;
+  color: #0f172a;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.admin-kpi-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 17px;
+}
+
+.admin-kpi-violet .admin-kpi-icon { background: rgba(90, 105, 229, 0.12); color: #5A69E5; }
+.admin-kpi-blue .admin-kpi-icon { background: #e6f3ff; }
+.admin-kpi-green .admin-kpi-icon { background: #e8f9ef; }
+.admin-kpi-red .admin-kpi-icon { background: #ffecec; }
+
+.admin-mini-kpi {
+  border: 1px solid var(--admin-card-border);
+  border-radius: 16px;
+  background: var(--admin-card-bg);
+  box-shadow: var(--admin-shadow);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-mini-kpi span {
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-mini-kpi strong {
+  font-size: 27px;
+  line-height: 1;
+}
+
+.admin-card-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-card-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-soft-card {
+  border: 1px solid var(--admin-card-border);
+  border-radius: 18px;
+  background: var(--admin-card-bg);
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-card-head {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-card-head h3 {
+  font-size: 19px;
+  margin: 0;
+}
+
+.admin-link {
+  color: #5A69E5;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.admin-muted {
+  color: var(--admin-muted);
+  font-size: 14px;
+}
+
+.admin-chart-card {
+  background: #f5f7fa;
+  border-color: #e3e8ef;
+  padding: 18px;
+}
+
+.admin-chart-wrap {
+  position: relative;
+  height: 270px;
+}
+
+.admin-chart-wrap-pie {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.admin-bars {
+  height: 220px;
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  padding: 10px 4px;
+}
+
+.admin-bar-wrap {
+  flex: 1;
+  min-width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-bar {
+  width: 100%;
+  min-height: 8px;
+  max-height: 170px;
+  border-radius: 12px 12px 8px 8px;
+  background: linear-gradient(180deg, #7c8cff, #69a8ff);
+  transition: height .5s ease;
+}
+
+.admin-bar-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.admin-bar-label {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+}
+
+.admin-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-status-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 90px;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-status-label,
+.admin-status-count {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.admin-status-track {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.admin-status-track span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5A69E5, #7380ff);
+}
+
+.admin-inline-filters {
+  display: grid;
+  grid-template-columns: 1.4fr 220px auto auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.admin-grid-form {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-grid-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.admin-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-empty {
+  text-align: center;
+  color: #64748b;
+  padding: 20px 0;
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-inline-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-inline-form-lg {
+  min-width: 330px;
+}
+
+.form-input-sm {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.btn-sm {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+}
+
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 2000;
+}
+
+.admin-modal.is-open {
+  display: flex;
+}
+
+.admin-modal-card {
+  width: min(760px, 100%);
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 30px 60px rgba(2, 6, 23, 0.2);
+  padding: 18px;
+}
+
+.admin-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.admin-modal-head h3 {
+  margin: 0;
+}
+
+.admin-close {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.admin-close:hover {
+  background: rgba(90, 105, 229, 0.12);
+  color: #5A69E5;
+}
+
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.admin-grid-form label.admin-check {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@media (max-width: 1260px) {
+  .admin-kpi-grid,
+  .admin-card-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-status-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .admin-page-wrap {
+    padding: 20px;
+  }
+
+  .admin-inline-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-grid-2,
+  .admin-grid-3,
+  .admin-kpi-grid,
+  .admin-card-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-topbar .topbar-search {
+    display: none;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   DARK-THEME OVERRIDES FOR ADMIN PAGES
+   Catches all inline light hardcoded colors via attribute selectors.
+   Targets `.admin-shell` (root of every admin page, cf. base_admin).
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Generic near-white backgrounds → deep navy card ── */
+html[data-theme="dark"] .admin-shell [style*="background:#fff"],
+html[data-theme="dark"] .admin-shell [style*="background: #fff"],
+html[data-theme="dark"] .admin-shell [style*="background:#ffffff"],
+html[data-theme="dark"] .admin-shell [style*="background: #ffffff"],
+html[data-theme="dark"] .admin-shell [style*="background:white"],
+html[data-theme="dark"] .admin-shell [style*="background: white"],
+html[data-theme="dark"] .admin-shell [style*="background:#f8fafc"],
+html[data-theme="dark"] .admin-shell [style*="background: #f8fafc"],
+html[data-theme="dark"] .admin-shell [style*="background:#f9fafb"],
+html[data-theme="dark"] .admin-shell [style*="background: #f9fafb"],
+html[data-theme="dark"] .admin-shell [style*="background:#f1f5f9"],
+html[data-theme="dark"] .admin-shell [style*="background: #f1f5f9"],
+html[data-theme="dark"] .admin-shell [style*="background:#f3f4f6"],
+html[data-theme="dark"] .admin-shell [style*="background: #f3f4f6"],
+html[data-theme="dark"] .admin-shell [style*="background:#f5f5f5"],
+html[data-theme="dark"] .admin-shell [style*="background: #f5f5f5"],
+html[data-theme="dark"] .admin-shell [style*="background:#f0f0f0"],
+html[data-theme="dark"] .admin-shell [style*="background:#f0f0fe"] {
+  background: #1c2440 !important;
+  color: #e8eaf3 !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* ── 2. Alert/badge tinted backgrounds preserved but adapted ── */
+
+/* Red (errors, masked avis) */
+html[data-theme="dark"] .admin-shell [style*="background:#fef2f2"],
+html[data-theme="dark"] .admin-shell [style*="background: #fef2f2"],
+html[data-theme="dark"] .admin-shell [style*="background:#fee2e2"],
+html[data-theme="dark"] .admin-shell [style*="background: #fee2e2"] {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #fecaca !important;
+}
+
+/* Green (success) */
+html[data-theme="dark"] .admin-shell [style*="background:#dcfce7"],
+html[data-theme="dark"] .admin-shell [style*="background: #dcfce7"],
+html[data-theme="dark"] .admin-shell [style*="background:#d1fae5"],
+html[data-theme="dark"] .admin-shell [style*="background: #d1fae5"] {
+  background: rgba(34, 197, 94, 0.15) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  color: #86efac !important;
+}
+
+/* Amber / yellow (warning) */
+html[data-theme="dark"] .admin-shell [style*="background:#fffbeb"],
+html[data-theme="dark"] .admin-shell [style*="background: #fffbeb"],
+html[data-theme="dark"] .admin-shell [style*="background:#fef3c7"],
+html[data-theme="dark"] .admin-shell [style*="background: #fef3c7"],
+html[data-theme="dark"] .admin-shell [style*="background:#fff8e1"],
+html[data-theme="dark"] .admin-shell [style*="background:#fff3e0"] {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #fcd34d !important;
+}
+
+/* Orange / peach */
+html[data-theme="dark"] .admin-shell [style*="background:#ffedd5"] {
+  background: rgba(251, 146, 60, 0.15) !important;
+  color: #fdba74 !important;
+}
+
+/* Lavender (Sakan brand tint used on info cards) */
+html[data-theme="dark"] .admin-shell [style*="background:#faf5ff"],
+html[data-theme="dark"] .admin-shell [style*="background: #faf5ff"],
+html[data-theme="dark"] .admin-shell [style*="background:#f5f3ff"],
+html[data-theme="dark"] .admin-shell [style*="background: #f5f3ff"] {
+  background: rgba(139, 92, 246, 0.15) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  color: #c4b5fd !important;
+}
+
+/* Pink (accent badges) */
+html[data-theme="dark"] .admin-shell [style*="background:#fce4ec"] {
+  background: rgba(236, 72, 153, 0.15) !important;
+  color: #f9a8d4 !important;
+}
+
+/* ── 3. Hardcoded dark text colors → lift to readable grey ── */
+html[data-theme="dark"] .admin-shell [style*="color:#111827"],
+html[data-theme="dark"] .admin-shell [style*="color: #111827"],
+html[data-theme="dark"] .admin-shell [style*="color:#1f2937"],
+html[data-theme="dark"] .admin-shell [style*="color: #1f2937"],
+html[data-theme="dark"] .admin-shell [style*="color:#1e293b"],
+html[data-theme="dark"] .admin-shell [style*="color: #1e293b"],
+html[data-theme="dark"] .admin-shell [style*="color:#334155"],
+html[data-theme="dark"] .admin-shell [style*="color: #334155"],
+html[data-theme="dark"] .admin-shell [style*="color:#374151"],
+html[data-theme="dark"] .admin-shell [style*="color: #374151"] {
+  color: #cbd5e1 !important;
+}
+
+/* Muted grey text */
+html[data-theme="dark"] .admin-shell [style*="color:#64748b"],
+html[data-theme="dark"] .admin-shell [style*="color: #64748b"],
+html[data-theme="dark"] .admin-shell [style*="color:#94a3b8"],
+html[data-theme="dark"] .admin-shell [style*="color: #94a3b8"],
+html[data-theme="dark"] .admin-shell [style*="color:#6b7280"],
+html[data-theme="dark"] .admin-shell [style*="color: #6b7280"] {
+  color: #9aa4bd !important;
+}
+
+/* Dark semantic text (green/success) */
+html[data-theme="dark"] .admin-shell [style*="color:#065f46"],
+html[data-theme="dark"] .admin-shell [style*="color: #065f46"],
+html[data-theme="dark"] .admin-shell [style*="color:#166534"],
+html[data-theme="dark"] .admin-shell [style*="color: #166534"] {
+  color: #86efac !important;
+}
+
+/* Dark red text */
+html[data-theme="dark"] .admin-shell [style*="color:#991b1b"],
+html[data-theme="dark"] .admin-shell [style*="color: #991b1b"],
+html[data-theme="dark"] .admin-shell [style*="color:#dc2626"],
+html[data-theme="dark"] .admin-shell [style*="color: #dc2626"] {
+  color: #fecaca !important;
+}
+
+/* Dark amber text */
+html[data-theme="dark"] .admin-shell [style*="color:#92400e"],
+html[data-theme="dark"] .admin-shell [style*="color: #92400e"],
+html[data-theme="dark"] .admin-shell [style*="color:#a16207"],
+html[data-theme="dark"] .admin-shell [style*="color: #a16207"],
+html[data-theme="dark"] .admin-shell [style*="color:#b45309"],
+html[data-theme="dark"] .admin-shell [style*="color: #b45309"] {
+  color: #fcd34d !important;
+}
+
+/* ── 4. Borders — light pastels → subtle white transparency ── */
+html[data-theme="dark"] .admin-shell [style*="border-color:#e2e8f0"],
+html[data-theme="dark"] .admin-shell [style*="border-color: #e2e8f0"],
+html[data-theme="dark"] .admin-shell [style*="border:1px solid #e2e8f0"],
+html[data-theme="dark"] .admin-shell [style*="border: 1px solid #e2e8f0"],
+html[data-theme="dark"] .admin-shell [style*="border:1.5px solid #e2e8f0"],
+html[data-theme="dark"] .admin-shell [style*="border:1px solid #e5e7eb"],
+html[data-theme="dark"] .admin-shell [style*="border: 1px solid #e5e7eb"],
+html[data-theme="dark"] .admin-shell [style*="border:1px solid #f1f5f9"],
+html[data-theme="dark"] .admin-shell [style*="border:1px dashed #e2e8f0"],
+html[data-theme="dark"] .admin-shell [style*="border: 1px dashed #e2e8f0"] {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ── 5. Inputs / selects / textareas on admin pages ── */
+html[data-theme="dark"] .admin-shell .sakan-input,
+html[data-theme="dark"] .admin-shell .admin-input,
+html[data-theme="dark"] .admin-shell input[type="text"],
+html[data-theme="dark"] .admin-shell input[type="email"],
+html[data-theme="dark"] .admin-shell input[type="number"],
+html[data-theme="dark"] .admin-shell input[type="date"],
+html[data-theme="dark"] .admin-shell input[type="datetime-local"],
+html[data-theme="dark"] .admin-shell input[type="password"],
+html[data-theme="dark"] .admin-shell input[type="search"],
+html[data-theme="dark"] .admin-shell input[type="time"],
+html[data-theme="dark"] .admin-shell textarea,
+html[data-theme="dark"] .admin-shell select {
+  background: #1c2440 !important;
+  color: #e8eaf3 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+html[data-theme="dark"] .admin-shell input::placeholder,
+html[data-theme="dark"] .admin-shell textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* ── 6. Tables & rows ── */
+html[data-theme="dark"] .admin-shell .sakan-table,
+html[data-theme="dark"] .admin-shell .admin-table-wrap {
+  background: #161c30 !important;
+  color: #e8eaf3 !important;
+}
+html[data-theme="dark"] .admin-shell .sakan-table thead {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+html[data-theme="dark"] .admin-shell .sakan-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+html[data-theme="dark"] .admin-shell .sakan-table td,
+html[data-theme="dark"] .admin-shell .sakan-table th {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── 7. Modals (create/edit annonce, user fiche, etc.) ── */
+html[data-theme="dark"] .admin-shell .admin-modal,
+html[data-theme="dark"] .admin-shell .admin-modal-card,
+html[data-theme="dark"] .admin-shell .modal-overlay,
+html[data-theme="dark"] .admin-shell .modal-card {
+  background: #161c30 !important;
+  color: #e8eaf3 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-theme="dark"] .admin-shell .admin-modal-backdrop,
+html[data-theme="dark"] .admin-shell .modal-overlay {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* ── 8. Checkboxes accent color on dark ── */
+html[data-theme="dark"] .admin-shell input[type="checkbox"],
+html[data-theme="dark"] .admin-shell input[type="radio"] {
+  accent-color: #5A69E5;
+}
+
+/* ── 9. Avatars / initials bubbles that use gradient bg — keep brand ── */
+html[data-theme="dark"] .admin-shell .avis-avatar-placeholder,
+html[data-theme="dark"] .admin-shell [style*="linear-gradient(135deg,#5E17EB"] {
+  color: white !important;
+}
+

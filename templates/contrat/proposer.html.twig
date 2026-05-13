@@ -1,0 +1,441 @@
+{# templates/contrat/proposer.html.twig #}
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Proposer un Contrat - Sakan{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 40px rgba(79,70,229,0.15);
+    --ocr-bg: rgba(251,191,36,0.1);
+    --ocr-border: rgba(245,158,11,0.3);
+}
+
+.gc {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 20px;
+}
+
+.form-group { margin-bottom: 20px; }
+.form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #111827;
+    background: #fafafa;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+    background: white;
+}
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+.btn-action-primary {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-action-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(79,70,229,0.3); }
+.btn-action-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-action-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-action-secondary:hover { background: #e5e7eb; }
+
+/* OCR Section */
+.ocr-section {
+    background: var(--ocr-bg);
+    border: 2px dashed var(--ocr-border);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.2s;
+}
+.ocr-section:hover { border-color: #f59e0b; background: rgba(251,191,36,0.15); }
+.ocr-section.has-file { border-color: #10b981; background: rgba(16,163,74,0.1); }
+
+.ocr-input { display: none; }
+
+.ocr-btn {
+    background: white;
+    border: 2px solid #e5e7eb;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.ocr-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+
+.ocr-result {
+    margin-top: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    display: none;
+}
+.ocr-result.visible { display: block; }
+.ocr-result.success { border: 2px solid #10b981; }
+.ocr-result.error { border: 2px solid #ef4444; }
+
+/* Signature Canvas */
+.signature-container {
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    background: white;
+}
+
+.signature-canvas {
+    width: 100%;
+    height: 200px;
+    border: 1px dashed #d1d5db;
+    border-radius: 12px;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.signature-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+/* Annonce selection */
+.annonce-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.annonce-card:hover { border-color: var(--primary); background: rgba(79,70,229,0.03); }
+.annonce-radio { display: none; }
+.annonce-radio:checked + .annonce-card { border-color: var(--primary); background: rgba(79,70,229,0.08); }
+
+.spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div style="padding: 24px 32px; max-width: 900px; margin: 0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom: 24px;">
+        <a href="{{ path('locataire_contrats_liste') }}" style="color: #6b7280; text-decoration: none; font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-arrow-left"></i> Retour à mes contrats
+        </a>
+        <h1 style="font-size: 28px; font-weight: 800; margin: 16px 0 8px; color: #111827;">
+            <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i> Proposer un Contrat
+        </h1>
+        <p style="color: #6b7280; font-size: 14px;">Remplissez les informations, vérifiez votre identité et signez électroniquement.</p>
+    </div>
+
+    <form method="post" action="{{ path('contrat_proposer') }}" id="contrat-form" enctype="multipart/form-data">
+        <input type="hidden" name="cin_confirmed" id="cin-confirmed" value="">
+        <input type="hidden" name="signature_data" id="signature-data" value="">
+        
+        <!-- Étape 1: Choisir le bien -->
+        <div class="gc">
+            <div style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; text-transform: uppercase;">
+                <i class="fa-solid fa-house"></i> Étape 1: Choisir le bien
+            </div>
+            
+            {% if annonces is empty %}
+                <div style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fa-solid fa-circle-info" style="font-size: 32px; margin-bottom: 12px;"></i>
+                    <p>Aucun bien disponible actuellement.</p>
+                </div>
+            {% else %}
+                {% for annonce in annonces %}
+                    <label style="display: block; cursor: pointer;">
+                        <input type="radio" name="annonce_id" value="{{ annonce.id }}" class="annonce-radio" required {% if loop.first %}checked{% endif %}>
+                        <div class="annonce-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <div style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 4px;">{{ annonce.titre ?? 'Bien #' ~ annonce.id }}</div>
+                                    <div style="font-size: 13px; color: #6b7280;">{{ annonce.description ?? 'Pas de description' }}</div>
+                                </div>
+                                <div style="font-size: 18px; font-weight: 800; color: var(--primary);">
+                                    {{ annonce.prix|number_format(0, ',', ' ') }} TND
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Étape 2: Informations du locataire -->
+        <div class="gc">
+            <div style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; text-transform: uppercase;">
+                <i class="fa-solid fa-user"></i> Étape 2: Informations du locataire
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nom <span style="color:#dc2626">*</span></label>
+                    <input type="text" name="nom" class="form-control" value="{{ user.nom ?? '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prénom <span style="color:#dc2626">*</span></label>
+                    <input type="text" name="prenom" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Téléphone <span style="color:#dc2626">*</span></label>
+                    <input type="tel" name="telephone" class="form-control" value="{{ user.telephone ?? '' }}" placeholder="Ex: 22 111 222" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">CIN (8 chiffres) <span style="color:#dc2626">*</span></label>
+                    <input type="text" name="cin" id="cin-input" class="form-control" placeholder="Ex: 14362933" maxlength="8" pattern="\d{8}" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Adresse <span style="color:#dc2626">*</span></label>
+                <input type="text" name="adresse" class="form-control" placeholder="Ex: Loc 2, Tunis 1053" required>
+            </div>
+        </div>
+
+        <!-- Étape 3: Vérification CIN par OCR -->
+        <div class="gc">
+            <div style="font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 16px; text-transform: uppercase;">
+                <i class="fa-solid fa-id-card"></i> Étape 3: Vérification CIN par OCR
+            </div>
+            
+            <div class="ocr-section" id="ocr-zone" onclick="document.getElementById('cin-file').click()">
+                <i class="fa-solid fa-camera" style="font-size: 32px; color: #f59e0b; margin-bottom: 12px;"></i>
+                <div style="font-weight: 600; color: #92400e; margin-bottom: 8px;">Image de votre CIN</div>
+                <p style="font-size: 13px; color: #a16207; margin-bottom: 16px;">
+                    Téléchargez une photo ou scan de votre CIN tunisien.<br>
+                    Les 8 chiffres seront extraits automatiquement et comparés.
+                </p>
+                <button type="button" class="ocr-btn">
+                    <i class="fa-solid fa-upload"></i> Choisir un fichier
+                </button>
+                <div id="ocr-filename" style="font-size: 13px; color: #6b7280; margin-top: 8px;">Aucun fichier sélectionné</div>
+                <input type="file" id="cin-file" name="cin_file" class="ocr-input" accept="image/*" onchange="sakanHandleCINUpload(this)">
+            </div>
+            
+            <div id="ocr-result" class="ocr-result">
+                <div id="ocr-message-box" style="display: flex; align-items: center; gap: 12px;">
+                    <i id="ocr-icon" class="fa-solid fa-check-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <div id="ocr-message" style="font-weight: 600;"></div>
+                        <div id="ocr-cin-detected" style="font-size: 13px; color: #6b7280;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 12px; font-size: 12px; color: #d97706; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-circle-info"></i>
+                Les 8 chiffres de votre CIN seront extraits et comparés automatiquement.
+            </div>
+        </div>
+
+        <!-- Étape 4: Détails du contrat -->
+        <div class="gc">
+            <div style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; text-transform: uppercase;">
+                <i class="fa-solid fa-file-contract"></i> Étape 4: Détails du contrat
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Date de début <span style="color:#dc2626">*</span></label>
+                    <input type="date" name="date_debut" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date de fin <span style="color:#dc2626">*</span></label>
+                    <input type="date" name="date_fin" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Prix de location (TND) <span style="color:#dc2626">*</span></label>
+                    <input type="number" name="montant" class="form-control" step="0.001" min="0" placeholder="Ex: 2200" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Caution (TND)</label>
+                    <input type="number" name="caution_montant" class="form-control" step="0.001" min="0" placeholder="Ex: 4400">
+                </div>
+            </div>
+        </div>
+
+        <!-- Étape 5: Signature électronique -->
+        <div class="gc">
+            <div style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 16px; text-transform: uppercase;">
+                <i class="fa-solid fa-signature"></i> Étape 5: Votre signature électronique
+            </div>
+            
+            <div class="signature-container">
+                <canvas id="signature-canvas" class="signature-canvas"></canvas>
+                <div class="signature-actions">
+                    <button type="button" class="btn-action-secondary" onclick="clearSignature()">
+                        <i class="fa-solid fa-eraser"></i> Effacer
+                    </button>
+                </div>
+                <div style="text-align: center; margin-top: 8px; font-size: 13px; color: #6b7280;">
+                    Signez dans le cadre ci-dessus avec votre doigt ou souris
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px;">
+            <a href="{{ path('locataire_contrats_liste') }}" class="btn-action-secondary">
+                <i class="fa-solid fa-xmark"></i> Annuler
+            </a>
+            <button type="submit" class="btn-action-primary" id="submit-btn">
+                <i class="fa-solid fa-check"></i> Enregistrer le contrat
+            </button>
+        </div>
+    </form>
+</div>
+
+{% include 'contrat/_js_web_speech_ocr.html.twig' with {
+    cin_input_id: 'cin-input',
+    cin_verified_id: 'cin-confirmed',
+    verified_ok_value: '1'
+} %}
+<script>
+// Signature Canvas
+const canvas = document.getElementById('signature-canvas');
+const ctx = canvas.getContext('2d');
+let isDrawing = false;
+let hasSignature = false;
+
+// Set canvas size
+function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Drawing functions
+function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+    };
+}
+
+function startDrawing(e) {
+    isDrawing = true;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    e.preventDefault();
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    hasSignature = true;
+    e.preventDefault();
+}
+
+function stopDrawing() {
+    isDrawing = false;
+}
+
+// Events
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseout', stopDrawing);
+canvas.addEventListener('touchstart', startDrawing);
+canvas.addEventListener('touchmove', draw);
+canvas.addEventListener('touchend', stopDrawing);
+
+function clearSignature() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSignature = false;
+}
+
+// Form submission
+document.getElementById('contrat-form').addEventListener('submit', function(e) {
+    if (!hasSignature) {
+        e.preventDefault();
+        alert('Veuillez signer électroniquement avant de soumettre le contrat.');
+        return false;
+    }
+    
+    // Save signature as data URL
+    document.getElementById('signature-data').value = canvas.toDataURL('image/png');
+});
+</script>
+{% endblock %}

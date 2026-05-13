@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Mon Profil</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-locataire.css">
+  <link rel="stylesheet" href="../../css_web/sakan-components.css">
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sakan-sidebar" id="sidebar-locataire">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="catalogue.html"><i class="fa-solid fa-magnifying-glass"></i> Explorer les biens</a></li>
+      <li><a href="mes_visites.html"><i class="fa-solid fa-calendar-check"></i> Mes visites</a></li>
+      <li><a href="mes_reservations.html"><i class="fa-solid fa-check"></i> Mes réservations</a></li>
+      <li><a href="mes_contrats.html"><i class="fa-solid fa-file-contract"></i> Mes contrats</a></li>
+      <li><a href="../paiement/finances.html"><i class="fa-solid fa-coins"></i> Espace financier</a></li>
+      <li><a href="../reclamations/reclamations_locataire.html"><i class="fa-solid fa-shield-halved"></i> Service client</a></li>
+      <li><a href="mon_profil.html" class="active"><i class="fa-solid fa-user"></i> Mon profil</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="../auth/login.html">
+        <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+      </a>
+    </div>
+  </nav>
+
+  <main class="sakan-main">
+
+    <!-- BANNIÈRE PROFIL HERO -->
+    <div class="profil-hero" style="background:linear-gradient(135deg,#5E17EB,#7c3aed); height:180px; position:relative;">
+      <div class="profil-avatar-wrapper" style="position:absolute; bottom:-60px; left:48px;">
+        <img src="https://i.pravatar.cc/150?img=5" alt="Fatma" style="width:120px;height:120px;border-radius:50%; border:4px solid white;object-fit:cover;">
+        <button class="btn-camera" onclick="showToast('📷 Modification photo (bientôt disponible)')" style="position:absolute;bottom:4px;right:4px; background:#5E17EB;border:2px solid white; border-radius:50%;width:34px;height:34px; cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-camera"></i>
+        </button>
+      </div>
+      <div style="position:absolute;bottom:-50px;left:196px;">
+        <h2 style="color:#070435;font-size:22px;font-weight:900; margin:0 0 8px 0;">Fatma Trabelsi</h2>
+        <span class="role-badge" style="background:rgba(94,23,235,0.1);color:#5E17EB; padding:4px 12px;border-radius:20px;font-size:12px; font-weight:700;">
+          🔑 LOCATAIRE
+        </span>
+      </div>
+    </div>
+
+    <div class="sakan-content" style="margin-top:80px;">
+
+      <!-- GRILLE 2 COLONNES -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+        <!-- COLONNE GAUCHE — Informations personnelles -->
+        <div class="profil-section-card">
+          <div class="profil-section-header">
+            <h3><i class="fa-solid fa-user-pen"></i> Informations personnelles</h3>
+            <button id="btn-edit" onclick="toggleEdit()" class="btn-outline btn-sm">
+              <i class="fa-solid fa-pen"></i> Modifier
+            </button>
+          </div>
+
+          <div class="profil-fields">
+            <div class="profil-field">
+              <label>Prénom</label>
+              <input type="text" id="f-prenom" value="Fatma" class="sakan-input" readonly>
+            </div>
+            <div class="profil-field">
+              <label>Nom</label>
+              <input type="text" id="f-nom" value="Trabelsi" class="sakan-input" readonly>
+            </div>
+            <div class="profil-field">
+              <label>Adresse email</label>
+              <input type="email" id="f-email" value="fatma@sakan.tn" class="sakan-input" readonly>
+            </div>
+            <div class="profil-field">
+              <label>Téléphone</label>
+              <input type="tel" id="f-tel" value="+216 55 987 654" class="sakan-input" readonly>
+            </div>
+            <div class="profil-field">
+              <label>Membre depuis</label>
+              <input type="text" value="Septembre 2024" class="sakan-input" readonly style="color:#6b7280;">
+            </div>
+          </div>
+
+          <!-- BOUTONS -->
+          <div id="edit-actions" style="display:none; margin-top:24px; gap:12px;">
+            <button class="btn-secondary" onclick="cancelEdit()" style="flex:1;">Annuler</button>
+            <button class="btn-primary" onclick="cancelEdit(); showToast('✅ Profil mis à jour avec succès !')" style="flex:1;">
+              <i class="fa-solid fa-check"></i> Sauvegarder
+            </button>
+          </div>
+        </div>
+
+        <!-- COLONNE DROITE — Sécurité & Mot de passe -->
+        <div class="profil-section-card">
+          <div class="profil-section-header">
+            <h3><i class="fa-solid fa-lock"></i> Sécurité</h3>
+          </div>
+
+          <div class="profil-fields">
+            <div class="profil-field">
+              <label>Mot de passe actuel</label>
+              <div class="sakan-input-wrapper">
+                <input type="password" id="pwd-current" placeholder="••••••••" class="sakan-input editable" style="background:white; border-color:var(--border);">
+                <button type="button" onclick="togglePwd('pwd-current')" style="background:none;border:none; cursor:pointer;color:#9ca3af;">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="profil-field">
+              <label>Nouveau mot de passe</label>
+              <div class="sakan-input-wrapper">
+                <input type="password" id="pwd-new" placeholder="Min. 8 caractères" class="sakan-input editable" oninput="updateStrength(this.value)" style="background:white; border-color:var(--border);">
+              </div>
+              <div class="password-strength">
+                <div id="strength-bar" style="height:4px;border-radius:2px; background:#e5e7eb;margin-top:6px;">
+                  <div id="strength-fill" style="height:100%;width:0%;border-radius:2px; background:#dc2626;transition:all 0.3s;"></div>
+                </div>
+                <span id="strength-label" style="font-size:11px;color:#9ca3af;font-weight:600;display:block;margin-top:4px;"></span>
+              </div>
+            </div>
+            <div class="profil-field">
+              <label>Confirmer nouveau mot de passe</label>
+              <div class="sakan-input-wrapper">
+                <input type="password" id="pwd-confirm" placeholder="••••••••" class="sakan-input editable" style="background:white; border-color:var(--border);">
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary" style="margin-top:24px;width:100%;" onclick="showToast('🔒 Mot de passe mis à jour !')">
+            <i class="fa-solid fa-lock"></i> Mettre à jour le mot de passe
+          </button>
+
+          <!-- SECTION DANGER ZONE -->
+          <div style="margin-top:32px;padding-top:20px; border-top:1px solid #fee2e2;">
+            <h4 style="color:#dc2626;margin-bottom:8px;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Zone de danger
+            </h4>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+              La suppression de votre compte est irréversible.
+            </p>
+            <button class="btn-primary btn-sm" style="background:var(--danger);border-color:var(--danger);" onclick="showToast('⚠️ Contactez le support pour supprimer votre compte')">
+              Supprimer mon compte
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION STATISTIQUES LOCATAIRE -->
+      <div class="profil-section-card" style="margin-top:24px;">
+        <div class="profil-section-header" style="margin-bottom: 16px;">
+          <h3><i class="fa-solid fa-chart-bar"></i> Récapitulatif de mon activité</h3>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr); gap:20px;">
+          <div class="kpi-stat">
+            <div class="kpi-stat-value">1</div>
+            <div class="kpi-stat-label">Contrat actif</div>
+          </div>
+          <div class="kpi-stat">
+            <div class="kpi-stat-value">3</div>
+            <div class="kpi-stat-label">Visites effectuées</div>
+          </div>
+          <div class="kpi-stat">
+            <div class="kpi-stat-value">24 350 TND</div>
+            <div class="kpi-stat-label">Total payé</div>
+          </div>
+          <div class="kpi-stat">
+            <div class="kpi-stat-value">2</div>
+            <div class="kpi-stat-label">Réclamations</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- TOAST + JS -->
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+  function toggleEdit() {
+    const inputs = document.querySelectorAll('#f-prenom,#f-nom,#f-email,#f-tel');
+    const editActions = document.getElementById('edit-actions');
+    const isReadonly = inputs[0].readOnly;
+    inputs.forEach(i => {
+      i.readOnly = !isReadonly;
+      if(!isReadonly) {
+        i.style.borderColor = '#5E17EB';
+        i.style.background = 'white';
+        i.parentElement.classList.add('editable');
+      } else {
+        i.style.borderColor = 'transparent';
+        i.style.background = 'transparent';
+        i.parentElement.classList.remove('editable');
+      }
+    });
+    editActions.style.display = isReadonly ? 'flex' : 'none';
+    document.getElementById('btn-edit').innerHTML = isReadonly
+      ? '<i class="fa-solid fa-xmark"></i> Annuler'
+      : '<i class="fa-solid fa-pen"></i> Modifier';
+  }
+  function cancelEdit() {
+    const inputs = document.querySelectorAll('#f-prenom,#f-nom,#f-email,#f-tel');
+    inputs.forEach(i => { 
+      i.readOnly = true; 
+      i.style.borderColor = 'transparent'; 
+      i.style.background = 'transparent'; 
+      i.parentElement.classList.remove('editable');
+    });
+    document.getElementById('edit-actions').style.display = 'none';
+    document.getElementById('btn-edit').innerHTML = '<i class="fa-solid fa-pen"></i> Modifier';
+  }
+  function updateStrength(val) {
+    const fill = document.getElementById('strength-fill');
+    const label = document.getElementById('strength-label');
+    let w = 0, color = '#dc2626', txt = '';
+    if (val.length > 0)   { w = 25; color = '#dc2626'; txt = 'Faible'; }
+    if (val.length >= 7)  { w = 50; color = '#d97706'; txt = 'Moyen'; }
+    if (val.length >= 10) { w = 75; color = '#2563eb'; txt = 'Fort'; }
+    if (val.length >= 12 && /[A-Z]/.test(val) && /[0-9]/.test(val)) {
+      w = 100; color = '#16a34a'; txt = 'Très fort';
+    }
+    fill.style.width = w + '%';
+    fill.style.background = color;
+    label.textContent = txt;
+    label.style.color = color;
+  }
+  function togglePwd(id) {
+    const i = document.getElementById(id);
+    i.type = i.type === 'password' ? 'text' : 'password';
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+</script>
+</body>
+</html>

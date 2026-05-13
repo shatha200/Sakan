@@ -1,0 +1,312 @@
+{# templates/contrat/proprietaire_liste.html.twig #}
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Gestion Contrats - Sakan{% endblock %}
+
+{% block content %}
+<!-- ═══ Page Header ═══════════════════════════════════════════════ -->
+<style>
+/* ═══════════════════════════════════════════════
+   PREMIUM SaaS UI 2026 - STYLE INTEGRE SAKAN
+   ═══════════════════════════════════════════════ */
+:root {
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 40px rgba(79,70,229,0.15);
+}
+
+/* Glass Cards */
+.gc {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.2s;
+}
+.gc:hover { box-shadow: var(--shadow-hover); }
+
+/* Section Label */
+.sec-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sec-label.primary { color: var(--primary); }
+
+/* Status Badges */
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+.badge-actif { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+.badge-attente { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+.badge-termine { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+/* Contrat Card */
+.contrat-row {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.contrat-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+    border-color: #c7d2fe;
+}
+.contrat-row.inactive { opacity: 0.8; background: #f8fafc; }
+
+/* Custom Inputs */
+.form-input {
+    width: 100%;
+    padding: 10px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.form-input:focus { border-color: var(--primary); background: white; outline: none; }
+
+/* Action Button */
+.btn-action-primary {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(79,70,229,0.3);
+    color: white;
+}
+.btn-action-secondary {
+    background: rgba(107,114,128,0.1);
+    color: #4b5563;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-action-secondary:hover { background: rgba(107,114,128,0.2); }
+</style>
+
+<div style="padding: 24px 32px;">
+
+    <!-- En-tête de page -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #111827;">
+                <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i> Gestion des Contrats
+            </h1>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Confirmez, signez et archivez les propositions de contrat de vos locataires.</p>
+        </div>
+    </div>
+
+    <!-- KPIs Row (4 cards) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px;">
+        
+        <div class="gc" style="border-left: 4px solid var(--primary); padding: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                <i class="fa-solid fa-folder-open"></i> Total Contrats
+            </div>
+            <div style="font-size: 32px; font-weight: 800; color: #111827;">
+                {{ contrats|length }}
+            </div>
+        </div>
+
+        <div class="gc" style="border-left: 4px solid #16a34a; padding: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                <i class="fa-solid fa-check-double"></i> Contrats Actifs
+            </div>
+            <div style="font-size: 32px; font-weight: 800; color: #16a34a;">
+                {{ contrats|filter(c => c.statut == 'ACTIF')|length }}
+            </div>
+        </div>
+
+        <div class="gc" style="border-left: 4px solid #f59e0b; padding: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                <i class="fa-solid fa-pen-nib"></i> À Signer
+            </div>
+            <div style="font-size: 32px; font-weight: 800; color: #d97706;">
+                {{ contrats|filter(c => c.statut == 'EN_ATTENTE_SIGNATURE')|length }}
+            </div>
+        </div>
+
+        <div class="gc" style="border-left: 4px solid #0891b2; padding: 20px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                <i class="fa-solid fa-coins"></i> Revenus Mensuels
+            </div>
+            <div style="font-size: 32px; font-weight: 800; color: #0891b2;">
+                {{ contrats|filter(c => c.statut == 'ACTIF')|reduce((carry, c) => carry + c.montant, 0)|number_format(0, ',', ' ') }} <span style="font-size:14px;">TND</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres Avancés -->
+    <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-card); margin-bottom: 24px;">
+        <form method="get" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 250px;">
+                <div style="position: relative;">
+                    <i class="fa-solid fa-search" style="position: absolute; left: 14px; top: 12px; color: #9ca3af;"></i>
+                    <input type="text" name="search" value="{{ search|default('') }}" class="form-input" style="padding-left: 40px;" placeholder="Rechercher par locataire, bien ou référence...">
+                </div>
+            </div>
+            <div style="min-width: 200px;">
+                <select name="statut" class="form-input">
+                    <option value="">Tous les statuts</option>
+                    <option value="ACTIF" {{ statut_filter == 'ACTIF' ? 'selected' : '' }}>Actif</option>
+                    <option value="PROPOSE" {{ statut_filter == 'PROPOSE' ? 'selected' : '' }}>Proposé (à confirmer)</option>
+                    <option value="EN_ATTENTE_SIGNATURE" {{ statut_filter == 'EN_ATTENTE_SIGNATURE' ? 'selected' : '' }}>En attente de signature</option>
+                    <option value="TERMINE" {{ statut_filter == 'TERMINE' ? 'selected' : '' }}>Terminé</option>
+                    <option value="REFUSE" {{ statut_filter == 'REFUSE' ? 'selected' : '' }}>Refusé</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-action-secondary" style="padding: 10px 24px;">
+                <i class="fa-solid fa-filter"></i> Filtrer
+            </button>
+            {% if search or statut_filter %}
+            <a href="{{ path('proprietaire_contrats_liste') }}" class="btn-action-secondary" style="padding: 10px 20px; background: #fef2f2; color: #dc2626;">
+                <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Liste des contrats -->
+    <div class="gc" style="background: rgba(255,255,255,0.9);">
+        <div class="sec-label primary">
+            <i class="fa-solid fa-list-ul"></i> Détails des Contrats
+        </div>
+
+        {% if contrats is empty %}
+            <div style="text-align: center; padding: 60px 20px;">
+                <i class="fa-solid fa-file-circle-xmark" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
+                <h4 style="font-size: 18px; font-weight: 700; color: #374151; margin-bottom: 8px;">Aucun contrat trouvé</h4>
+                <p style="font-size: 14px; color: #6b7280; margin: 0 0 20px 0;">Les locataires proposent des contrats, vous les confirmez. Vous n'avez aucune proposition en attente.</p>
+            </div>
+        {% else %}
+            {% for contrat in contrats %}
+                {% set estActif = contrat.statut == 'ACTIF' %}
+                {% set estAttente = contrat.statut == 'EN_ATTENTE_SIGNATURE' %}
+                {% set estPropose = contrat.statut == 'PROPOSE' %}
+                {% set estTermine = contrat.statut == 'TERMINE' %}
+
+                <div class="contrat-row {{ estTermine ? 'inactive' : '' }}">
+                    
+                    <!-- Apperçu Bien -->
+                    <div style="display: flex; align-items: center; gap: 16px; flex: 1.5; min-width: 280px;">
+                        <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(79,70,229,0.1); display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-building" style="font-size: 20px; color: var(--primary);"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Contrat #{{ contrat.id }}</div>
+                            <div style="font-size: 16px; font-weight: 800; color: #111827;">{{ contrat.annonce.titre ?? 'Bien #' ~ contrat.annonce.id }}</div>
+                            <div style="font-size: 13px; color: #4f46e5; margin-top: 2px; font-weight: 600;">
+                                <i class="fa-solid fa-user" style="margin-right: 4px;"></i> {{ contrat.locataire.email ?? 'Non assigné' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loyer -->
+                    <div style="flex: 1; min-width: 150px; border-left: 1px solid #f1f5f9; padding-left: 20px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase;">Loyer Mensuel</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #111827;">
+                            {{ contrat.montant|number_format(3, ',', ' ') }} <span style="font-size: 13px; color: #6b7280; font-weight: 600;">TND</span>
+                        </div>
+                    </div>
+
+                    <!-- Période -->
+                    <div style="flex: 1; min-width: 150px; border-left: 1px solid #f1f5f9; padding-left: 20px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase;">Période</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #374151;">
+                            Du {{ contrat.dateDebut|date('d/m/Y') }}
+                        </div>
+                        <div style="font-size: 13px; color: #6b7280;">
+                            au {{ contrat.dateFin|date('d/m/Y') }}
+                        </div>
+                    </div>
+
+                    <!-- Statut -->
+                    <div style="flex: 1; min-width: 120px; text-align: center;">
+                        {% if estActif %}
+                            <span class="status-badge badge-actif"><i class="fa-solid fa-circle-check"></i> Actif</span>
+                        {% elseif estAttente %}
+                            <span class="status-badge badge-attente"><i class="fa-solid fa-hourglass-half"></i> À signer</span>
+                        {% elseif estPropose %}
+                            <span class="status-badge" style="background:#e0e7ff; color:#4f46e5; border:1px solid #c7d2fe;"><i class="fa-solid fa-paper-plane"></i> À confirmer</span>
+                        {% elseif contrat.statut == 'REFUSE' %}
+                            <span class="status-badge" style="background:#fecaca; color:#dc2626; border:1px solid #fca5a5;"><i class="fa-solid fa-xmark"></i> Refusé</span>
+                        {% elseif estTermine %}
+                            <span class="status-badge badge-termine"><i class="fa-solid fa-lock"></i> Terminé</span>
+                        {% else %}
+                            <span class="status-badge" style="background:#e5e7eb; color:#4b5563;">{{ contrat.statut }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action -->
+                    <div style="text-align: right; display: flex; gap: 8px;">
+                        {% if estPropose %}
+                            <a href="{{ path('contrat_voir', {id: contrat.id}) }}" class="btn-action-primary" style="background:linear-gradient(135deg,#10b981,#059669);">
+                                <i class="fa-solid fa-file-signature"></i> Examiner & Signer
+                            </a>
+                            <form method="post" action="{{ path('contrat_refuser', {id: contrat.id}) }}" style="display:inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('refuser_contrat_' ~ contrat.id) }}">
+                                <button type="submit" class="btn-action-secondary" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">
+                                    <i class="fa-solid fa-xmark"></i> Refuser
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{{ path('contrat_voir', {id: contrat.id}) }}" class="btn-action-primary">
+                                <i class="fa-solid fa-eye"></i> Consulter
+                            </a>
+                            <a href="{{ path('contrat_pdf', {id: contrat.id}) }}" class="btn-action-secondary" title="Télécharger">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

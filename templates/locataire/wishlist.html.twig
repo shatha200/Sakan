@@ -1,0 +1,161 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Ma wishlist — Sakan{% endblock %}
+{% block page_title %}Ma wishlist{% endblock %}
+{% block page_subtitle %}Vos biens favoris en un coup d'œil{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  {% for label_f, messages in app.flashes(['error', 'success']) %}
+    {% for message in messages %}
+      <div style="padding:12px 16px;border-radius:12px;margin-bottom:16px;background:{{ label_f == 'success' ? '#dcfce7' : '#fee2e2' }};color:{{ label_f == 'success' ? '#166534' : '#991b1b' }};font-weight:600;">{{ message }}</div>
+    {% endfor %}
+  {% endfor %}
+
+  {% set total = annonces|length %}
+  {% set nb_dispo = annonces|filter(a => a.statut == 'disponible')|length %}
+  {% set nb_bient = annonces|filter(a => a.statut == 'bientot')|length %}
+
+  <!-- CHIPS -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <button type="button" class="chip-statut active" data-statut="all"
+            style="padding:9px 18px;border-radius:999px;border:1.5px solid #5E17EB;background:#5E17EB;color:white;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;">
+      Tous ({{ total }})
+    </button>
+    <button type="button" class="chip-statut" data-statut="disponible"
+            style="padding:9px 18px;border-radius:999px;border:1.5px solid #e2e8f0;background:white;color:#334155;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s;">
+      <span style="color:#10b981;">●</span> Disponibles ({{ nb_dispo }})
+    </button>
+    <button type="button" class="chip-statut" data-statut="bientot"
+            style="padding:9px 18px;border-radius:999px;border:1.5px solid #e2e8f0;background:white;color:#334155;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s;">
+      <span style="color:#d97706;">●</span> Bientôt ({{ nb_bient }})
+    </button>
+  </div>
+
+  <div class="annonces-grid">
+    {% if annonces is empty %}
+      <div style="grid-column:1/-1;padding:60px 40px;text-align:center;background:white;border-radius:20px;box-shadow:0 4px 18px rgba(15,23,42,0.06);">
+        <i class="fa-solid fa-heart-crack" style="font-size:48px;color:#cbd5e1;"></i>
+        <h3 style="margin:16px 0 6px 0;">Votre wishlist est vide</h3>
+        <p style="color:var(--text-muted);margin:0 0 18px 0;">Ajoutez vos biens favoris depuis le catalogue.</p>
+        <a href="{{ path('tenant_catalogue') }}" class="btn-primary" style="text-decoration:none;"><i class="fa-solid fa-magnifying-glass"></i> Explorer les biens</a>
+      </div>
+    {% endif %}
+
+    {% for a in annonces %}
+      {% set badge = a.statut == 'bientot' ? 'bientot' : (a.statut == 'occupe' ? 'reserve' : 'disponible') %}
+      {% set badge_label = a.statut == 'bientot' ? 'Bientôt' : (a.statut == 'occupe' ? 'Occupé' : 'Disponible') %}
+      <div class="annonce-card" data-statut="{{ a.statut }}" onclick="window.location.href='{{ a.slug is defined and a.slug ? path('tenant_annonce_detail_slug', {'slug': a.slug}) : path('tenant_annonce_detail', {'id': a.id}) }}'">
+        <div class="card-image-wrapper">
+          {% if a.cover %}
+            <img src="/{{ a.cover }}" alt="{{ a.titre }}" class="card-img">
+          {% else %}
+            <div class="card-img" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);"><i class="fa-solid fa-image" style="font-size:32px;"></i></div>
+          {% endif %}
+          <span class="badge-statut {{ badge }}">{{ badge_label }}</span>
+          <button type="button" class="btn-favori active" data-fav-id="{{ a.id }}"
+                  onclick="event.stopPropagation(); removeFav(this, {{ a.id }})" style="color:#ef4444;">
+            <i class="fa-solid fa-heart" style="color:#ef4444;"></i>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="card-prix">{{ a.prix ? a.prix|number_format(0, ',', ' ') : '—' }} TND<span>/mois</span></div>
+          <h3 class="card-titre">{{ a.titre }}</h3>
+          <div class="card-localisation">
+            <i class="fa-solid fa-location-dot"></i> {{ a.adresse_text ?: '—' }}
+          </div>
+          {% if a.statut == 'bientot' %}
+            <div class="countdown-timer" {% if a.total_seconds %}data-seconds="{{ a.total_seconds }}"{% endif %} style="margin:8px 0;padding:8px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12.5px;font-weight:600;color:#92400e;">
+              <i class="fa-solid fa-clock"></i>
+              {% if a.total_seconds %}
+                Ce bien sera disponible dans <span class="cd-text">{{ a.jours_restants }}j {{ '%02d'|format(a.heures_restantes) }}h {{ '%02d'|format(a.minutes_restantes) }}min</span>
+              {% else %}
+                Date de disponibilité imprévue
+              {% endif %}
+            </div>
+          {% endif %}
+          <div class="card-infos">
+            <span><i class="fa-solid fa-bed"></i> {{ a.nombreChambres ?: 0 }} ch</span>
+            <span><i class="fa-solid fa-ruler-combined"></i> {{ a.superficie ?: '—' }} m²</span>
+            {% if a.bien_type %}<span><i class="fa-solid fa-house"></i> {{ a.bien_type }}</span>{% endif %}
+          </div>
+          <div class="card-actions">
+            <button class="btn-voir" onclick="event.stopPropagation(); window.location.href='{{ a.slug is defined and a.slug ? path('tenant_annonce_detail_slug', {'slug': a.slug}) : path('tenant_annonce_detail', {'id': a.id}) }}'">
+              <i class="fa-solid fa-eye"></i> Voir l'annonce
+            </button>
+            {% if a.statut == 'disponible' %}
+              <button class="btn-visite" onclick="event.stopPropagation();">
+                <i class="fa-solid fa-calendar-check"></i> Visite
+              </button>
+            {% else %}
+              <button class="btn-visite" style="opacity:0.5;pointer-events:none;">
+                <i class="fa-solid fa-calendar-check"></i> Bientôt
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+  const FAV_CSRF = {{ csrf_token('tenant_wishlist_toggle')|json_encode|raw }};
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 2500);
+  }
+  function removeFav(btn, id) {
+    const fd = new FormData(); fd.append('_token', FAV_CSRF);
+    fetch('/locataire/wishlist/toggle/' + id, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && !data.added) {
+          btn.closest('.annonce-card').remove();
+          showToast('Retiré de la wishlist');
+        }
+      });
+  }
+
+  // Filtrage par statut (chips)
+  document.querySelectorAll('.chip-statut').forEach(chip => {
+    chip.addEventListener('click', function() {
+      const statut = this.dataset.statut;
+      document.querySelectorAll('.chip-statut').forEach(c => {
+        c.classList.remove('active');
+        c.style.background = 'white'; c.style.color = '#334155'; c.style.borderColor = '#e2e8f0';
+      });
+      this.classList.add('active');
+      this.style.background = '#5E17EB'; this.style.color = 'white'; this.style.borderColor = '#5E17EB';
+      document.querySelectorAll('.annonce-card').forEach(card => {
+        card.style.display = (statut === 'all' || card.dataset.statut === statut) ? '' : 'none';
+      });
+    });
+  });
+
+  // Minuteur temps réel
+  document.querySelectorAll('.countdown-timer[data-seconds]').forEach(el => {
+    let sec = parseInt(el.dataset.seconds) || 0;
+    const span = el.querySelector('.cd-text');
+    if (!span || sec <= 0) return;
+    function pad(n) { return String(n).padStart(2, '0'); }
+    const timer = setInterval(function() {
+      sec--;
+      if (sec <= 0) {
+        clearInterval(timer);
+        el.style.background = '#dcfce7'; el.style.borderColor = '#86efac'; el.style.color = '#166534';
+        el.innerHTML = '<i class="fa-solid fa-check-circle"></i> Disponible ! <a href="" style="color:#166534;font-weight:700;text-decoration:underline;margin-left:8px;">Rafraîchir</a>';
+        return;
+      }
+      const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+      span.textContent = d + 'j ' + pad(h) + 'h ' + pad(m) + 'min ' + pad(s) + 's';
+    }, 1000);
+  });
+</script>
+{% endblock %}

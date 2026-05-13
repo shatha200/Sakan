@@ -1,0 +1,59 @@
+liip_imagine:
+    driver: "gd"
+
+    # Where to read the original images from
+    loaders:
+        default:
+            filesystem:
+                data_root: "%kernel.project_dir%/public"
+
+    # Where to cache the processed images
+    resolvers:
+        default:
+            web_path:
+                web_root: "%kernel.project_dir%/public"
+                cache_prefix: "media/cache"
+
+    # Filter sets used by the templates
+    filter_sets:
+        cache: ~
+
+        # Thumbnail for annonce cards (list pages)
+        # 400x300, cropped and centered (outbound) so the card stays uniform
+        annonce_thumb:
+            jpeg_quality: 80
+            png_compression_level: 8
+            filters:
+                thumbnail:
+                    size: [400, 300]
+                    mode: outbound
+
+        # Large version for annonce detail pages
+        # 1200x800, keep aspect ratio (inset = no cropping)
+        annonce_large:
+            jpeg_quality: 85
+            png_compression_level: 8
+            filters:
+                thumbnail:
+                    size: [1200, 800]
+                    mode: inset
+
+        # Crop-only filters for detail pages.
+        # The Sakan logo is overlaid via CSS on top of the <img>, NOT baked into
+        # the image file — this guarantees visibility and avoids GD+WebP bugs
+        # with LiipImagine's watermark_image filter.
+        annonce_watermark:
+            jpeg_quality: 85
+            png_compression_level: 8
+            filters:
+                thumbnail:
+                    size: [1200, 800]
+                    mode: outbound
+
+        annonce_thumb_watermark:
+            jpeg_quality: 80
+            png_compression_level: 8
+            filters:
+                thumbnail:
+                    size: [400, 300]
+                    mode: outbound

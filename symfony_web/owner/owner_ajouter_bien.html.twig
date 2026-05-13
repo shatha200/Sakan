@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sakan — Ajouter un bien</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../../css_web/sakan-global.css">
+  <link rel="stylesheet" href="../../css_web/sakan-components.css">
+  <link rel="stylesheet" href="../../css_web/sakan-owner.css">
+</head>
+<body>
+<div class="sakan-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sakan-sidebar owner" id="sidebar-owner">
+    <div class="sidebar-logo"><i class="fa-solid fa-house"></i> <span class="logo-text">Sakan</span> <span class="role-badge">PRO</span></div>
+    <ul class="sidebar-menu">
+      <li><a href="owner_dashboard.html"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a></li>
+      <li><a href="owner_biens.html" class="active"><i class="fa-solid fa-building"></i> Mes propriétés</a></li>
+      <li><a href="owner_loyers.html"><i class="fa-solid fa-coins"></i> Suivi des loyers</a></li>
+      <li><a href="owner_cautions.html"><i class="fa-solid fa-money-bill-wave"></i> Gestion des cautions</a></li>
+    </ul>
+    <div class="sidebar-footer"><a href="../auth/login.html"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a></div>
+  </nav>
+
+  <main class="sakan-main">
+    <div class="sakan-content">
+
+      <!-- EN-TÊTE -->
+      <div class="page-header">
+        <div>
+          <a href="owner_biens.html" style="color:var(--text-muted);font-size:14px; text-decoration:none;display:flex; align-items:center;gap:6px;margin-bottom:8px;">
+            <i class="fa-solid fa-arrow-left"></i> Retour à mes biens
+          </a>
+          <h1 style="margin:0;"><i class="fa-solid fa-house-circle-plus"></i> Publier une nouvelle annonce</h1>
+        </div>
+      </div>
+
+      <!-- BARRE PROGRESSION -->
+      <div class="step-indicator" style="display:flex;gap:0;margin-bottom:32px; background:white;border-radius:16px; padding:20px 24px;box-shadow:var(--shadow-card);">
+        <div class="step" id="step-1" style="flex:1;text-align:center;">
+          <div style="width:36px;height:36px;border-radius:50%; background:#5E17EB;color:white; display:flex;align-items:center;justify-content:center; margin:0 auto 8px;font-weight:700;">1</div>
+          <div style="font-size:13px;font-weight:600;color:#5E17EB;">Informations</div>
+        </div>
+        <div style="flex:0.5;height:2px;background:#e5e7eb; margin-top:18px;align-self:flex-start;"></div>
+        <div class="step" id="step-2" style="flex:1;text-align:center; opacity:0.4;">
+          <div style="width:36px;height:36px;border-radius:50%; background:#e5e7eb;color:#6b7280; display:flex;align-items:center;justify-content:center; margin:0 auto 8px;font-weight:700;">2</div>
+          <div style="font-size:13px;color:#6b7280;">Photos</div>
+        </div>
+        <div style="flex:0.5;height:2px;background:#e5e7eb; margin-top:18px;"></div>
+        <div class="step" id="step-3" style="flex:1;text-align:center; opacity:0.4;">
+          <div style="width:36px;height:36px;border-radius:50%; background:#e5e7eb;color:#6b7280; display:flex;align-items:center;justify-content:center; margin:0 auto 8px;font-weight:700;">3</div>
+          <div style="font-size:13px;color:#6b7280;">Équipements</div>
+        </div>
+        <div style="flex:0.5;height:2px;background:#e5e7eb; margin-top:18px;"></div>
+        <div class="step" id="step-4" style="flex:1;text-align:center; opacity:0.4;">
+          <div style="width:36px;height:36px;border-radius:50%; background:#e5e7eb;color:#6b7280; display:flex;align-items:center;justify-content:center; margin:0 auto 8px;font-weight:700;">4</div>
+          <div style="font-size:13px;color:#6b7280;">Tarification</div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 1 -->
+      <div id="form-step-1" style="background:white;border-radius:20px;padding:32px; box-shadow:var(--shadow-card);">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;">
+          <i class="fa-solid fa-circle-info"></i> Informations générales du bien
+        </h2>
+
+        <div class="sakan-form-group">
+          <label>Titre de l'annonce *</label>
+          <input type="text" id="titre-bien" placeholder="Ex: Bel appartement lumineux au cœur de Tunis" class="sakan-input" style="width:100%;">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="sakan-form-group">
+            <label>Type de bien *</label>
+            <select class="sakan-input" style="width:100%;">
+              <option>-- Sélectionner --</option>
+              <option>Appartement</option><option>Villa</option><option>Studio</option>
+            </select>
+          </div>
+          <div class="sakan-form-group">
+            <label>Meublé</label>
+            <select class="sakan-input" style="width:100%;">
+              <option>Oui, entièrement meublé</option><option>Partiellement meublé</option><option>Non meublé</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div class="sakan-form-group"><label>Surface (m²) *</label><input type="number" class="sakan-input" style="width:100%;" placeholder="Ex: 95"></div>
+          <div class="sakan-form-group"><label>Chambres *</label><input type="number" class="sakan-input" style="width:100%;" placeholder="Ex: 3"></div>
+          <div class="sakan-form-group"><label>Salles de bain</label><input type="number" class="sakan-input" style="width:100%;" placeholder="Ex: 2"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="sakan-form-group">
+            <label>Ville *</label>
+            <select class="sakan-input" style="width:100%;"><option>Tunis</option></select>
+          </div>
+          <div class="sakan-form-group">
+            <label>Quartier / Zone *</label>
+            <input type="text" class="sakan-input" style="width:100%;" placeholder="Ex: Lac 2">
+          </div>
+        </div>
+
+        <div class="sakan-form-group">
+          <label style="display:flex;justify-content:space-between; align-items:center;">
+            Description *
+            <button type="button" id="btn-ia-desc" onclick="simulateIaGeneration()" style="background:linear-gradient(135deg,#5E17EB,#7c3aed); color:white;border:none;padding:8px 16px; border-radius:10px;cursor:pointer;font-size:13px; display:flex;align-items:center;gap:6px;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Générer avec l'IA ✨
+            </button>
+          </label>
+          <textarea id="desc-bien" class="sakan-input" rows="5" style="width:100%;" placeholder="Décrivez votre bien en détail..."></textarea>
+          <span style="font-size:11px;color:var(--text-muted);"><span id="char-count">0</span>/500 caractères</span>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+          <button class="btn-primary" onclick="nextStep(2)">Étape suivante : Photos <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 -->
+      <div id="form-step-2" style="display:none;background:white; border-radius:20px;padding:32px;box-shadow:var(--shadow-card);">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;">
+          <i class="fa-solid fa-images"></i> Photos du bien
+        </h2>
+
+        <div class="photo-drop-zone" onclick="showToast('📷 Simulation upload — 4 photos ajoutées !')" style="border:2px dashed #5E17EB;border-radius:20px; padding:48px;text-align:center;cursor:pointer; background:rgba(94,23,235,0.03);margin-bottom:24px;">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size:48px;color:#5E17EB;display:block; margin-bottom:12px;"></i>
+          <h3 style="color:#5E17EB; margin:0;">Glissez vos photos ici</h3>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:8px;">ou cliquez pour parcourir<br>JPG, PNG, WebP — Max 5 Mo par photo</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+          <div style="position:relative;border-radius:12px;overflow:hidden;">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=300" style="width:100%;height:100px;object-fit:cover;">
+            <div style="position:absolute;top:6px;right:6px; background:#5E17EB;color:white;font-size:10px; padding:2px 6px;border-radius:6px;">Photo principale</div>
+          </div>
+          <div style="border-radius:12px;overflow:hidden;"><img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=300" style="width:100%;height:100px;object-fit:cover;"></div>
+          <div style="border-radius:12px;overflow:hidden;"><img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=300" style="width:100%;height:100px;object-fit:cover;"></div>
+          <div style="border:2px dashed #e5e7eb;border-radius:12px; height:100px;display:flex;align-items:center; justify-content:center;cursor:pointer;color:#9ca3af;" onclick="showToast('📷 Ajout photo')">
+            <i class="fa-solid fa-plus" style="font-size:24px;"></i>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:24px;">
+          <button class="btn-outline" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Retour</button>
+          <button class="btn-primary" onclick="nextStep(3)">Étape suivante : Équipements <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 -->
+      <div id="form-step-3" style="display:none;background:white; border-radius:20px;padding:32px;box-shadow:var(--shadow-card);">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;">
+          <i class="fa-solid fa-list-check"></i> Équipements & Services
+        </h2>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr); gap:12px;margin-bottom:24px;">
+          <label style="display:flex;align-items:center;gap:10px; padding:12px 16px;border:1.5px solid #e5e7eb; border-radius:12px;cursor:pointer;">
+            <input type="checkbox" checked style="accent-color:#5E17EB;width:16px;height:16px;">
+            <i class="fa-solid fa-wifi" style="color:#5E17EB;"></i> WiFi haut débit
+          </label>
+          <label style="display:flex;align-items:center;gap:10px; padding:12px 16px;border:1.5px solid #e5e7eb; border-radius:12px;cursor:pointer;">
+            <input type="checkbox" checked style="accent-color:#5E17EB;width:16px;height:16px;">
+            <i class="fa-solid fa-square-parking" style="color:#5E17EB;"></i> Parking inclus
+          </label>
+          <label style="display:flex;align-items:center;gap:10px; padding:12px 16px;border:1.5px solid #e5e7eb; border-radius:12px;cursor:pointer;">
+            <input type="checkbox" style="accent-color:#5E17EB;width:16px;height:16px;">
+            <i class="fa-solid fa-snowflake" style="color:#5E17EB;"></i> Climatisation
+          </label>
+          <label style="display:flex;align-items:center;gap:10px; padding:12px 16px;border:1.5px solid #e5e7eb; border-radius:12px;cursor:pointer;">
+            <input type="checkbox" style="accent-color:#5E17EB;width:16px;height:16px;">
+            <i class="fa-solid fa-elevator" style="color:#5E17EB;"></i> Ascenseur
+          </label>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;">
+          <button class="btn-outline" onclick="nextStep(2)"><i class="fa-solid fa-arrow-left"></i> Retour</button>
+          <button class="btn-primary" onclick="nextStep(4)">Étape suivante : Tarification <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 -->
+      <div id="form-step-4" style="display:none;background:white; border-radius:20px;padding:32px;box-shadow:var(--shadow-card);">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;">
+          <i class="fa-solid fa-coins"></i> Tarification & Publication
+        </h2>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div>
+            <div class="sakan-form-group">
+              <label>Loyer mensuel (TND) *</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="number" id="loyer-input" placeholder="Ex: 2200" class="sakan-input" style="flex:1;" oninput="updatePrixPreview(this.value)">
+                <span style="font-weight:600; color:var(--text-muted);">TND</span>
+              </div>
+            </div>
+            <div class="sakan-form-group"><label>Charges mensuelles (TND)</label><input type="number" class="sakan-input" style="width:100%;" placeholder="Ex: 150"></div>
+            <div class="sakan-form-group">
+              <label>Caution (TND)</label>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <input type="number" id="caution-input" class="sakan-input" style="flex:1;" placeholder="= 2 mois de loyer" value="4400">
+                <button onclick="calcCaution()" class="btn-outline btn-sm">Auto</button>
+              </div>
+            </div>
+            <div class="sakan-form-group"><label>Disponible à partir du</label><input type="date" class="sakan-input" style="width:100%;" value="2025-09-01"></div>
+          </div>
+
+          <!-- APERÇU -->
+          <div>
+            <label style="font-size:13px;font-weight:600; display:block;margin-bottom:12px;">Aperçu de votre annonce</label>
+            <div id="prix-preview" style="background:#f8fafc;border-radius:20px; overflow:hidden;border:2px solid #e5e7eb;">
+              <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400" style="width:100%;height:160px;object-fit:cover;">
+              <div style="padding:16px;">
+                <div style="font-size:20px;font-weight:800;color:#5E17EB; margin-bottom:4px;" id="preview-prix">2 200 TND/mois</div>
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;" id="preview-titre">Votre annonce</div>
+                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-location-dot"></i> Tunis, Tunisie</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #e5e7eb; padding-top:24px;margin-top:24px; display:flex;justify-content:space-between; align-items:center;">
+          <button class="btn-outline" onclick="nextStep(3)"><i class="fa-solid fa-arrow-left"></i> Retour</button>
+          <button class="btn-primary" style="background:linear-gradient(135deg,#5E17EB,#10b981); font-size:16px;padding:14px 32px;"
+            onclick="showToast('🎉 Annonce publiée avec succès ! Réf: BIEN-006'); setTimeout(() => window.location.href = 'owner_biens.html', 2000)">
+            <i class="fa-solid fa-rocket"></i> Publier l'annonce
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+  let currentStep = 1;
+  function nextStep(step) {
+    document.getElementById('form-step-' + currentStep).style.display = 'none';
+    document.getElementById('form-step-' + step).style.display = 'block';
+    
+    for (let i = 1; i <= 4; i++) {
+        const stepEl = document.getElementById('step-' + i);
+        const circle = stepEl.querySelector('div:first-child');
+        const label  = stepEl.querySelector('div:last-child');
+        stepEl.style.opacity = '1';
+        if (i < step) {
+            circle.style.background = '#10b981'; circle.style.color = 'white'; circle.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else if (i === step) {
+            circle.style.background = '#5E17EB'; circle.style.color = 'white'; circle.innerHTML = i; label.style.color = '#5E17EB';
+        } else {
+            circle.style.background = '#e5e7eb'; circle.style.color = '#6b7280'; circle.innerHTML = i; stepEl.style.opacity = '0.4'; label.style.color = '#6b7280';
+        }
+    }
+    currentStep = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function simulateIaGeneration() {
+    const btn = document.getElementById('btn-ia-desc');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Génération...';
+    btn.disabled = true;
+    setTimeout(() => {
+      const titre = document.getElementById('titre-bien').value || 'votre bien';
+      document.getElementById('desc-bien').value = 'Découvrez ce magnifique ' + titre + ', idéalement situé dans l\'un des quartiers les plus prisés de Tunis. Ce bien d\'exception allie confort moderne et élégance, avec des espaces de vie lumineux et une cuisine entièrement équipée. Profitez d\'un parking sécurisé, d\'une connexion WiFi haut débit et d\'une climatisation dans toutes les pièces. Proche de toutes les commodités : commerces, transports, écoles. Idéal pour une famille ou un couple exigeant.';
+      document.getElementById('char-count').textContent = document.getElementById('desc-bien').value.length;
+      btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Générer avec l\'IA ✨';
+      btn.disabled = false;
+      showToast('✨ Description générée par IA avec succès !');
+    }, 1800);
+  }
+
+  function updatePrixPreview(val) {
+    if (val) document.getElementById('preview-prix').textContent = parseInt(val).toLocaleString('fr-FR') + ' TND/mois';
+    const titre = document.getElementById('titre-bien')?.value;
+    if (titre) document.getElementById('preview-titre').textContent = titre;
+  }
+
+  function calcCaution() {
+    const loyer = document.getElementById('loyer-input')?.value || 2200;
+    document.getElementById('caution-input').value = loyer * 2;
+    showToast('🔄 Caution calculée automatiquement');
+  }
+
+  document.getElementById('desc-bien')?.addEventListener('input', function() {
+    document.getElementById('char-count').textContent = this.value.length;
+  });
+
+  document.getElementById('titre-bien')?.addEventListener('input', function() {
+    updatePrixPreview(document.getElementById('loyer-input').value);
+  });
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3500);
+  }
+</script>
+</body>
+</html>

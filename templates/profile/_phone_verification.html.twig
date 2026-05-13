@@ -1,0 +1,40 @@
+{% if phone_verification_pending and not profil.phone_verified %}
+  <div class="profil-verification-card">
+    <p class="profil-muted-text" style="margin-top: 0; margin-bottom: 14px;">
+      Un code de vérification a été envoyé par SMS au
+      <strong>{{ phone_verification_pending.telephone|default(profil.telephone) }}</strong>.
+    </p>
+
+    <form class="profil-form" method="post" action="{{ path(route_name) }}">
+      <input type="hidden" name="action" value="verify_phone_code">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('phone_verification_' ~ app.user.id) }}">
+
+      <div class="profil-fields" style="margin-bottom: 0;">
+        <div class="profil-field">
+          <label>Code SMS</label>
+          <input type="text" name="phone_verification_code" class="sakan-input" inputmode="numeric" pattern="[0-9]{4,10}" maxlength="10" placeholder="Code reçu par SMS" required>
+        </div>
+      </div>
+
+      <div class="profil-verification-actions">
+        <button type="submit" class="btn-primary btn-sm">
+          <i class="fa-solid fa-check"></i> Valider le numéro
+        </button>
+      </div>
+    </form>
+
+    <div class="profil-verification-actions">
+      <form method="post" action="{{ path(route_name) }}" class="profil-inline-form">
+        <input type="hidden" name="action" value="resend_phone_verification">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('phone_verification_' ~ app.user.id) }}">
+        <button type="submit" class="btn-outline btn-sm profil-btn-phone profil-btn-phone--unverified">Renvoyer le code</button>
+      </form>
+
+      <form method="post" action="{{ path(route_name) }}" class="profil-inline-form">
+        <input type="hidden" name="action" value="cancel_phone_verification">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('phone_verification_' ~ app.user.id) }}">
+        <button type="submit" class="btn-secondary btn-sm">Annuler</button>
+      </form>
+    </div>
+  </div>
+{% endif %}

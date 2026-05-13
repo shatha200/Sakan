@@ -1,0 +1,2433 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sakan — Louer, signer et gérer votre logement autrement{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+
+<style>
+/* ╔════════════════════════════════════════════════════════════╗
+   ║ SAKAN LANDING — Premium Sakan 2026                        ║
+   ║ Direction UI/UX: liquid glass sélectif, motion utile,      ║
+   ║ storytelling court, sections non-template, responsive.     ║
+   ╚════════════════════════════════════════════════════════════╝ */
+
+:root {
+  --sk-blue: var(--blue, #5A69E5);
+  --sk-blue-2: var(--blue-lit, #7C89FF);
+  --sk-navy: var(--navy, #070435);
+  --sk-text: var(--text, #101325);
+  --sk-muted: var(--text-muted, #697086);
+  --sk-bg: var(--bg-color, #F7F5F0);
+  --sk-surface: var(--surface, #FFFFFF);
+  --sk-border: var(--border, rgba(18, 25, 38, .10));
+  --sk-divider: var(--divider, rgba(18, 25, 38, .08));
+  --sk-warm: #C17A4B;
+  --sk-warm-2: #E3B46C;
+  --sk-green: #16A36A;
+  --sk-purple: #8B5CF6;
+  --sk-danger: #F97373;
+
+  --sk-radius-sm: 14px;
+  --sk-radius-md: 20px;
+  --sk-radius-lg: 28px;
+  --sk-radius-xl: 36px;
+
+  --sk-shadow-sm: 0 8px 28px rgba(7, 4, 53, .08);
+  --sk-shadow-md: 0 18px 55px rgba(7, 4, 53, .12);
+  --sk-shadow-lg: 0 28px 90px rgba(7, 4, 53, .18);
+
+  --sk-ease: cubic-bezier(.22, 1, .36, 1);
+  --sk-ease-pop: cubic-bezier(.34, 1.35, .64, 1);
+}
+
+html[data-theme="dark"] {
+  --sk-bg: #080C18;
+  --sk-surface: #101727;
+  --sk-text: #EEF2FF;
+  --sk-muted: #9AA4BE;
+  --sk-border: rgba(255, 255, 255, .10);
+  --sk-divider: rgba(255, 255, 255, .08);
+}
+
+.lp-sakan,
+.lp-sakan *,
+.lp-sakan *::before,
+.lp-sakan *::after {
+  box-sizing: border-box;
+}
+
+.lp-sakan {
+  position: relative;
+  overflow-x: clip;
+  font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--sk-text);
+  background:
+    radial-gradient(circle at 12% 5%, rgba(90,105,229,.13), transparent 34%),
+    radial-gradient(circle at 90% 18%, rgba(193,122,75,.12), transparent 32%),
+    linear-gradient(180deg, var(--sk-bg) 0%, color-mix(in srgb, var(--sk-bg) 92%, white 8%) 100%);
+}
+
+.lp-sakan a { color: inherit; }
+.lp-sakan img { max-width: 100%; display: block; }
+
+.sk-container {
+  width: min(1240px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+.sk-section {
+  padding: 112px 0;
+}
+
+.sk-section-tight {
+  padding: 84px 0;
+}
+
+.sk-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  padding: 8px 13px;
+  border: 1px solid color-mix(in srgb, var(--sk-blue) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-blue) 9%, transparent);
+  color: var(--sk-blue);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .035em;
+}
+
+.sk-eyebrow .pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 35%, transparent);
+  animation: skPulse 2.2s infinite;
+}
+
+@keyframes skPulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 35%, transparent); }
+  70% { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.sk-h1,
+.sk-h2,
+.sk-h3 {
+  font-family: 'Sora', 'Poppins', sans-serif;
+  letter-spacing: -.045em;
+  color: var(--sk-text);
+}
+
+.sk-h1 {
+  margin: 22px 0 0;
+  font-size: clamp(3rem, 7.4vw, 6.85rem);
+  line-height: .91;
+  font-weight: 850;
+}
+
+.sk-h2 {
+  margin: 18px 0 0;
+  font-size: clamp(2.15rem, 4.2vw, 4.35rem);
+  line-height: .96;
+  font-weight: 850;
+}
+
+.sk-h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.1vw, 2rem);
+  line-height: 1.08;
+  font-weight: 800;
+}
+
+.sk-lead {
+  margin: 24px 0 0;
+  max-width: 640px;
+  color: var(--sk-muted);
+  font-size: clamp(1rem, 1.3vw, 1.15rem);
+  line-height: 1.75;
+}
+
+.sk-gradient {
+  background: linear-gradient(120deg, var(--sk-blue), var(--sk-blue-2) 45%, var(--sk-warm));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sk-warm-gradient {
+  background: linear-gradient(120deg, var(--sk-warm), var(--sk-warm-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Buttons */
+.sk-btn {
+  --btn-bg: var(--sk-blue);
+  --btn-color: #fff;
+  --btn-border: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 13px 23px;
+  border-radius: 999px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--btn-bg) 28%, transparent);
+  transition:
+    transform .25s var(--sk-ease),
+    box-shadow .25s var(--sk-ease),
+    background .25s var(--sk-ease),
+    border-color .25s var(--sk-ease);
+}
+
+.sk-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 46px color-mix(in srgb, var(--btn-bg) 34%, transparent);
+}
+
+.sk-btn:active { transform: translateY(0) scale(.985); }
+
+.sk-btn-ghost {
+  --btn-bg: color-mix(in srgb, var(--sk-surface) 78%, transparent);
+  --btn-color: var(--sk-text);
+  --btn-border: var(--sk-border);
+  box-shadow: none;
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.sk-btn-warm {
+  --btn-bg: var(--sk-warm);
+}
+.sk-btn-white {
+  --btn-bg: #5A69E5;
+  --btn-color: #fff;
+}
+
+/* ═════════════════ NAV — Liquid Class 2026 ═════════════════ */
+
+.sk-liquid-nav-shell {
+  position: sticky;
+  top: 14px;
+  z-index: 600;
+  padding-inline: 18px;
+  pointer-events: none;
+}
+
+.sk-liquid-nav {
+  pointer-events: auto;
+  width: min(1160px, 100%);
+  height: 66px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.44);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.74), rgba(255,255,255,.38)),
+    color-mix(in srgb, var(--sk-surface) 70%, transparent);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  box-shadow:
+    0 18px 60px rgba(7,4,53,.10),
+    inset 0 1px 0 rgba(255,255,255,.65),
+    inset 0 -1px 0 rgba(255,255,255,.20);
+  transition:
+    width .32s var(--sk-ease),
+    box-shadow .32s var(--sk-ease),
+    background .32s var(--sk-ease),
+    transform .32s var(--sk-ease);
+}
+
+html[data-theme="dark"] .sk-liquid-nav {
+  border-color: rgba(255,255,255,.10);
+  background:
+    linear-gradient(135deg, rgba(20,28,48,.74), rgba(20,28,48,.42)),
+    rgba(11,16,32,.62);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.sk-liquid-nav.sk-nav-compact {
+  width: min(980px, 100%);
+  box-shadow:
+    0 24px 70px rgba(7,4,53,.14),
+    inset 0 1px 0 rgba(255,255,255,.55);
+}
+
+.sk-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.sk-brand img {
+  height: 34px;
+  object-fit: contain;
+}
+
+.sk-brand-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-blue) 10%, transparent);
+  color: var(--sk-blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sk-nav-links {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.24);
+  border: 1px solid rgba(255,255,255,.28);
+}
+
+html[data-theme="dark"] .sk-nav-links {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.08);
+}
+
+.sk-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--sk-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color .24s var(--sk-ease), background .24s var(--sk-ease);
+}
+
+.sk-nav-link:hover,
+.sk-nav-link.is-active {
+  color: var(--sk-text);
+  background: color-mix(in srgb, var(--sk-surface) 66%, transparent);
+}
+
+.sk-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.sk-mobile-menu-btn {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--sk-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-surface) 70%, transparent);
+  color: var(--sk-text);
+  cursor: pointer;
+}
+
+.sk-mobile-drawer {
+  display: none;
+}
+
+/* ═════════════════ HERO ═════════════════ */
+
+.sk-hero {
+  position: relative;
+  min-height: calc(100svh - 90px);
+  padding: 78px 0 64px;
+  overflow: hidden;
+}
+
+.sk-hero::before {
+  content: "";
+  position: absolute;
+  inset: -80px -160px auto auto;
+  width: 650px;
+  height: 650px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(90,105,229,.20), transparent 63%);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.sk-hero-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(420px, .98fr);
+  align-items: center;
+  gap: clamp(44px, 6vw, 90px);
+}
+
+.sk-hero-copy {
+  padding-top: 32px;
+}
+
+.sk-hero-title-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .16em;
+}
+
+.sk-hero-title-mark {
+  position: relative;
+  display: inline-block;
+}
+
+.sk-hero-title-mark::after {
+  content: "";
+  position: absolute;
+  left: .04em;
+  right: .04em;
+  bottom: .045em;
+  height: .12em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-warm) 45%, transparent);
+  z-index: -1;
+  transform: rotate(-1deg);
+}
+
+.sk-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-wrap: wrap;
+  margin-top: 34px;
+}
+
+.sk-hero-assurance {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.sk-assurance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sk-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sk-assurance-pill i {
+  color: var(--sk-blue);
+}
+
+/* Hero visual — non-template */
+.sk-hero-stage {
+  position: relative;
+  min-height: 620px;
+  perspective: 1200px;
+}
+
+.sk-orbit {
+  position: absolute;
+  inset: 22px 0 0 0;
+  margin: auto;
+  width: min(520px, 100%);
+  height: 520px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.68), rgba(255,255,255,.28) 42%, transparent 68%),
+    radial-gradient(circle at 42% 38%, rgba(90,105,229,.25), transparent 38%),
+    radial-gradient(circle at 68% 64%, rgba(193,122,75,.18), transparent 40%);
+  border: 1px solid rgba(255,255,255,.44);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--sk-shadow-lg);
+  overflow: hidden;
+  transform: rotateX(4deg) rotateY(-8deg);
+}
+
+html[data-theme="dark"] .sk-orbit {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(22,31,52,.72), rgba(22,31,52,.35) 42%, transparent 68%),
+    radial-gradient(circle at 42% 38%, rgba(90,105,229,.25), transparent 38%),
+    radial-gradient(circle at 68% 64%, rgba(193,122,75,.16), transparent 40%);
+  border-color: rgba(255,255,255,.10);
+}
+
+.sk-orbit::before,
+.sk-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 58px;
+  border-radius: 50%;
+  border: 1px dashed rgba(90,105,229,.32);
+  animation: skSpin 22s linear infinite;
+}
+
+.sk-orbit::after {
+  inset: 104px;
+  border-color: rgba(193,122,75,.30);
+  animation-duration: 30s;
+  animation-direction: reverse;
+}
+
+@keyframes skSpin {
+  to { transform: rotate(360deg); }
+}
+
+.sk-home-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 315px;
+  transform: translate(-50%, -48%);
+  border-radius: 30px;
+  overflow: hidden;
+  background: var(--sk-surface);
+  border: 1px solid var(--sk-border);
+  box-shadow: var(--sk-shadow-lg);
+  animation: skFloatMain 7s ease-in-out infinite;
+}
+
+@keyframes skFloatMain {
+  0%, 100% { transform: translate(-50%, -48%) translateY(0) rotate(-1.5deg); }
+  50% { transform: translate(-50%, -48%) translateY(-14px) rotate(1deg); }
+}
+
+.sk-home-photo {
+  height: 205px;
+  position: relative;
+  background:
+    linear-gradient(180deg, transparent, rgba(7,4,53,.55)),
+    url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80') center/cover;
+}
+
+.sk-ai-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(7,4,53,.70);
+  color: #fff;
+  backdrop-filter: blur(14px);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sk-ai-badge span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #3BE681;
+}
+
+.sk-home-body {
+  padding: 18px;
+}
+
+.sk-price {
+  font-family: 'Sora', sans-serif;
+  font-size: 25px;
+  font-weight: 850;
+  letter-spacing: -.03em;
+}
+
+.sk-price small {
+  color: var(--sk-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sk-home-title {
+  margin-top: 5px;
+  color: var(--sk-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.sk-home-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sk-divider);
+}
+
+.sk-home-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--sk-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sk-home-meta i { color: var(--sk-blue); }
+
+.sk-float-card {
+  position: absolute;
+  z-index: 3;
+  border: 1px solid rgba(255,255,255,.44);
+  border-radius: 22px;
+  background: rgba(255,255,255,.66);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: var(--sk-shadow-md);
+  color: var(--sk-text);
+}
+
+html[data-theme="dark"] .sk-float-card {
+  background: rgba(16,23,39,.68);
+  border-color: rgba(255,255,255,.10);
+}
+
+.sk-float-card.card-search {
+  left: 0;
+  top: 96px;
+  width: 235px;
+  padding: 15px;
+  animation: skFloatA 8s ease-in-out infinite;
+}
+
+.sk-float-card.card-contract {
+  right: 4px;
+  bottom: 106px;
+  width: 242px;
+  padding: 16px;
+  animation: skFloatB 7s ease-in-out infinite;
+}
+
+.sk-float-card.card-caution {
+  left: 28px;
+  bottom: 42px;
+  width: 220px;
+  padding: 15px;
+  animation: skFloatA 7.5s ease-in-out infinite reverse;
+}
+
+@keyframes skFloatA {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(13px); }
+}
+
+@keyframes skFloatB {
+  0%,100% { transform: translateY(0) rotate(1deg); }
+  50% { transform: translateY(-12px) rotate(-1deg); }
+}
+
+.sk-float-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--sk-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.sk-float-value {
+  margin-top: 9px;
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -.03em;
+}
+
+.sk-progress {
+  position: relative;
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-blue) 12%, transparent);
+  overflow: hidden;
+}
+
+.sk-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 28% 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sk-blue), var(--sk-blue-2));
+}
+
+.sk-contract-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 12px;
+}
+
+.sk-contract-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--sk-green) 13%, transparent);
+  color: var(--sk-green);
+}
+
+.sk-contract-text strong {
+  display: block;
+  font-size: 13px;
+}
+
+.sk-contract-text span {
+  display: block;
+  margin-top: 2px;
+  color: var(--sk-muted);
+  font-size: 12px;
+}
+
+.sk-caution-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin-top: 10px;
+}
+
+.sk-caution-row strong {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+}
+
+.sk-status-ok {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-green) 13%, transparent);
+  color: var(--sk-green);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+/* Break rhythm strip */
+.sk-rhythm-break {
+  position: relative;
+  padding: 28px 0;
+  border-block: 1px solid var(--sk-border);
+  background:
+    linear-gradient(90deg, transparent, rgba(90,105,229,.06), transparent),
+    color-mix(in srgb, var(--sk-surface) 72%, transparent);
+  overflow: hidden;
+}
+
+.sk-rhythm-track {
+  display: flex;
+  gap: 18px;
+  width: max-content;
+  animation: skMarquee 34s linear infinite;
+}
+
+.sk-rhythm-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  color: var(--sk-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sk-rhythm-item i {
+  color: var(--sk-blue);
+}
+
+.sk-rhythm-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-warm) 65%, transparent);
+}
+
+@keyframes skMarquee {
+  to { transform: translateX(-50%); }
+}
+
+/* Problem / decision section */
+.sk-decision-grid {
+  display: grid;
+  grid-template-columns: .92fr 1.08fr;
+  gap: 46px;
+  align-items: start;
+}
+
+.sk-decision-panel {
+  position: sticky;
+  top: 112px;
+}
+
+.sk-decision-list {
+  display: grid;
+  gap: 14px;
+}
+
+.sk-decision-card {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 15px;
+  padding: 20px;
+  border-radius: 26px;
+  border: 1px solid var(--sk-border);
+  background: color-mix(in srgb, var(--sk-surface) 86%, transparent);
+  box-shadow: var(--sk-shadow-sm);
+}
+
+.sk-decision-card:nth-child(2) {
+  transform: translateX(28px);
+}
+
+.sk-decision-card:nth-child(4) {
+  transform: translateX(44px);
+}
+
+.sk-decision-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--sk-blue) 10%, transparent);
+  color: var(--sk-blue);
+}
+
+.sk-decision-card h3 {
+  margin: 0;
+  color: var(--sk-text);
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.sk-decision-card p {
+  margin: 6px 0 0;
+  color: var(--sk-muted);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+/* Properties */
+.sk-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 28px;
+  margin-bottom: 34px;
+}
+
+.sk-properties-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.sk-prop-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid var(--sk-border);
+  background: var(--sk-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--sk-shadow-sm);
+  transform: translateZ(0);
+  transition:
+    transform .34s var(--sk-ease),
+    box-shadow .34s var(--sk-ease),
+    border-color .34s var(--sk-ease);
+}
+
+.sk-prop-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--sk-shadow-md);
+  border-color: color-mix(in srgb, var(--sk-blue) 25%, var(--sk-border));
+}
+
+.sk-prop-media {
+  height: 192px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-prop-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .7s var(--sk-ease);
+}
+
+.sk-prop-card:hover .sk-prop-media img {
+  transform: scale(1.07);
+}
+
+.sk-prop-media::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 72px;
+  background: linear-gradient(transparent, rgba(0,0,0,.48));
+}
+
+.sk-prop-badges {
+  position: absolute;
+  inset: 12px 12px auto 12px;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sk-prop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(7,4,53,.68);
+  color: #fff;
+  backdrop-filter: blur(14px);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sk-prop-heart {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255,255,255,.80);
+  color: var(--sk-text);
+  display: grid;
+  place-items: center;
+}
+
+.sk-prop-body {
+  padding: 16px;
+}
+
+.sk-prop-price {
+  font-family: 'Sora', sans-serif;
+  color: var(--sk-blue);
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: -.035em;
+}
+
+.sk-prop-price small {
+  color: var(--sk-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.sk-prop-title {
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sk-text);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.sk-prop-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--sk-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sk-prop-location i {
+  color: var(--sk-warm);
+}
+
+.sk-prop-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--sk-divider);
+}
+
+.sk-prop-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--sk-muted);
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+.sk-prop-meta i {
+  color: var(--sk-blue);
+}
+
+/* Value split */
+.sk-split-shell {
+  border-block: 1px solid var(--sk-border);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(90,105,229,.09), transparent 30%),
+    color-mix(in srgb, var(--sk-surface) 78%, transparent);
+}
+
+.sk-persona-switch {
+  display: flex;
+  width: fit-content;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--sk-border);
+  background: color-mix(in srgb, var(--sk-surface) 74%, transparent);
+  margin: 34px auto 0;
+}
+
+.sk-persona-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sk-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: color .24s var(--sk-ease), background .24s var(--sk-ease), box-shadow .24s var(--sk-ease);
+}
+
+.sk-persona-btn.is-active {
+  color: #fff;
+  background: var(--sk-blue);
+  box-shadow: 0 12px 28px rgba(90,105,229,.30);
+}
+
+.sk-persona-panel {
+  display: none;
+  margin-top: 44px;
+}
+
+.sk-persona-panel.is-active {
+  display: grid;
+  grid-template-columns: .92fr 1.08fr;
+  gap: 44px;
+  align-items: center;
+}
+
+.sk-persona-visual {
+  position: relative;
+  min-height: 410px;
+  border-radius: 36px;
+  overflow: hidden;
+  border: 1px solid var(--sk-border);
+  background:
+    linear-gradient(135deg, rgba(90,105,229,.20), rgba(193,122,75,.10)),
+    url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1000&q=80') center/cover;
+  box-shadow: var(--sk-shadow-md);
+}
+
+#persona-prop .sk-persona-visual {
+  background:
+    linear-gradient(135deg, rgba(193,122,75,.22), rgba(90,105,229,.12)),
+    url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1000&q=80') center/cover;
+}
+
+.sk-persona-glass {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  padding: 18px;
+  border-radius: 26px;
+  background: rgba(255,255,255,.68);
+  border: 1px solid rgba(255,255,255,.45);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+html[data-theme="dark"] .sk-persona-glass {
+  background: rgba(12,18,32,.72);
+  border-color: rgba(255,255,255,.12);
+}
+
+.sk-persona-glass strong {
+  display: block;
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  letter-spacing: -.03em;
+}
+
+.sk-persona-glass span {
+  display: block;
+  margin-top: 6px;
+  color: var(--sk-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.sk-feature-list {
+  display: grid;
+  gap: 13px;
+  margin-top: 28px;
+}
+
+.sk-feature-line {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 13px;
+  align-items: start;
+  padding: 15px;
+  border: 1px solid var(--sk-border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--sk-surface) 78%, transparent);
+  transition: transform .28s var(--sk-ease), border-color .28s var(--sk-ease);
+}
+
+.sk-feature-line:hover {
+  transform: translateX(5px);
+  border-color: color-mix(in srgb, var(--sk-blue) 24%, var(--sk-border));
+}
+
+.sk-feature-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--sk-blue) 10%, transparent);
+  color: var(--sk-blue);
+}
+
+.sk-feature-line h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.sk-feature-line p {
+  margin: 5px 0 0;
+  color: var(--sk-muted);
+  font-size: 12.7px;
+  line-height: 1.55;
+}
+
+/* Bento */
+.sk-bento {
+  display: grid;
+  grid-template-columns: 1.35fr .82fr .82fr;
+  grid-auto-rows: minmax(220px, auto);
+  gap: 16px;
+}
+
+.sk-bento-card {
+  position: relative;
+  overflow: hidden;
+  padding: 26px;
+  border-radius: 30px;
+  border: 1px solid var(--sk-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sk-surface) 96%, white 4%), var(--sk-surface));
+  box-shadow: var(--sk-shadow-sm);
+  transition: transform .32s var(--sk-ease), box-shadow .32s var(--sk-ease), border-color .32s var(--sk-ease);
+}
+
+.sk-bento-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--sk-shadow-md);
+  border-color: color-mix(in srgb, var(--sk-blue) 24%, var(--sk-border));
+}
+
+.sk-bento-large {
+  grid-row: span 2;
+}
+
+.sk-bento-wide {
+  grid-column: span 2;
+}
+
+.sk-bento-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 19px;
+  margin-bottom: 22px;
+  background: color-mix(in srgb, var(--sk-blue) 11%, transparent);
+  color: var(--sk-blue);
+  font-size: 22px;
+}
+
+.sk-bento-card h3 {
+  margin: 0;
+  font-family: 'Sora', sans-serif;
+  color: var(--sk-text);
+  font-size: 20px;
+  letter-spacing: -.035em;
+  line-height: 1.15;
+}
+
+.sk-bento-card p {
+  margin: 12px 0 0;
+  color: var(--sk-muted);
+  font-size: 13.4px;
+  line-height: 1.65;
+}
+
+.sk-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.sk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sk-blue) 8%, transparent);
+  color: var(--sk-blue);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+/* Security dark */
+.sk-dark-band {
+  position: relative;
+  overflow: hidden;
+  padding: 112px 0;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(90,105,229,.25), transparent 34%),
+    radial-gradient(circle at 88% 72%, rgba(139,92,246,.18), transparent 36%),
+    #050421;
+  color: #fff;
+}
+
+.sk-dark-band .sk-h2,
+.sk-dark-band .sk-h3 {
+  color: #fff;
+}
+
+.sk-dark-band .sk-lead {
+  color: rgba(255,255,255,.62);
+}
+
+.sk-security-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 46px;
+}
+
+.sk-security-card {
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.105);
+  transition: transform .32s var(--sk-ease), background .32s var(--sk-ease), border-color .32s var(--sk-ease);
+}
+
+.sk-security-card:hover {
+  transform: translateY(-6px);
+  background: rgba(90,105,229,.12);
+  border-color: rgba(124,137,255,.38);
+}
+
+.sk-security-card i {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 18px;
+  background: rgba(124,137,255,.16);
+  color: #8F9AFF;
+  font-size: 21px;
+}
+
+.sk-security-card h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.sk-security-card p {
+  margin: 9px 0 0;
+  color: rgba(255,255,255,.58);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* Steps */
+.sk-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 42px;
+  counter-reset: step;
+}
+
+.sk-step {
+  position: relative;
+  min-height: 245px;
+  padding: 22px;
+  border-radius: 30px;
+  border: 1px solid var(--sk-border);
+  background: var(--sk-surface);
+  box-shadow: var(--sk-shadow-sm);
+  overflow: hidden;
+}
+
+.sk-step::before {
+  counter-increment: step;
+  content: "0" counter(step);
+  position: absolute;
+  right: 18px;
+  top: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 56px;
+  font-weight: 850;
+  letter-spacing: -.06em;
+  color: color-mix(in srgb, var(--sk-blue) 12%, transparent);
+}
+
+.sk-step-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sk-blue) 10%, transparent);
+  color: var(--sk-blue);
+  font-size: 21px;
+}
+
+.sk-step h3 {
+  position: relative;
+  margin: 22px 0 0;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.sk-step p {
+  position: relative;
+  margin: 9px 0 0;
+  color: var(--sk-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* CTA */
+.sk-final-cta {
+  padding: 0 0 68px;
+}
+
+.sk-final-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(48px, 7vw, 82px);
+  border-radius: 42px;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255,255,255,.18), transparent 28%),
+    radial-gradient(circle at 88% 22%, rgba(193,122,75,.22), transparent 30%),
+    linear-gradient(135deg, #070435 0%, #17195E 55%, #342061 100%);
+  box-shadow: var(--sk-shadow-lg);
+  color: #fff;
+}
+
+.sk-final-card::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -160px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: rgba(124,137,255,.18);
+}
+
+.sk-final-card-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+}
+
+.sk-final-card .sk-h2 {
+  color: #fff;
+}
+
+.sk-final-card .sk-lead {
+  color: rgba(255,255,255,.66);
+}
+
+.sk-final-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+  margin-top: 32px;
+}
+
+/* Footer */
+.sk-footer {
+  padding: 64px 0 34px;
+  border-top: 1px solid var(--sk-border);
+  background: color-mix(in srgb, var(--sk-surface) 78%, transparent);
+}
+
+.sk-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr repeat(3, 1fr);
+  gap: 34px;
+}
+
+.sk-footer-logo {
+  height: 34px;
+  width: fit-content;
+}
+
+.sk-footer p,
+.sk-footer a,
+.sk-footer span {
+  color: var(--sk-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.sk-footer a {
+  text-decoration: none;
+  transition: color .22s var(--sk-ease);
+}
+
+.sk-footer a:hover {
+  color: var(--sk-blue);
+}
+
+.sk-footer h4 {
+  margin: 0 0 14px;
+  color: var(--sk-text);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.sk-footer-links {
+  display: grid;
+  gap: 10px;
+}
+
+.sk-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 42px;
+  padding-top: 24px;
+  border-top: 1px solid var(--sk-divider);
+}
+
+/* Reveals */
+.sk-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity .75s var(--sk-ease),
+    transform .75s var(--sk-ease);
+  will-change: transform, opacity;
+}
+
+.sk-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sk-delay-1 { transition-delay: .08s; }
+.sk-delay-2 { transition-delay: .16s; }
+.sk-delay-3 { transition-delay: .24s; }
+.sk-delay-4 { transition-delay: .32s; }
+
+/* Responsive */
+@media (max-width: 1120px) {
+  .sk-hero-grid,
+  .sk-decision-grid,
+  .sk-persona-panel.is-active {
+    grid-template-columns: 1fr;
+  }
+
+  .sk-hero-stage {
+    min-height: 560px;
+  }
+
+  .sk-decision-panel {
+    position: static;
+  }
+
+  .sk-properties-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sk-bento {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sk-bento-large,
+  .sk-bento-wide {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .sk-security-grid,
+  .sk-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sk-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sk-nav-links {
+    display: none;
+  }
+
+  .sk-liquid-nav {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .sk-mobile-menu-btn {
+    display: grid;
+    place-items: center;
+  }
+
+  .sk-mobile-drawer {
+    position: fixed;
+    inset: 92px 18px auto;
+    z-index: 590;
+    display: none;
+    padding: 14px;
+    border-radius: 26px;
+    border: 1px solid var(--sk-border);
+    background: color-mix(in srgb, var(--sk-surface) 86%, transparent);
+    backdrop-filter: blur(26px) saturate(160%);
+    box-shadow: var(--sk-shadow-lg);
+  }
+
+  .sk-mobile-drawer.is-open {
+    display: grid;
+    gap: 8px;
+  }
+
+  .sk-mobile-drawer a {
+    padding: 13px 14px;
+    border-radius: 18px;
+    color: var(--sk-text);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .sk-mobile-drawer a:hover {
+    background: color-mix(in srgb, var(--sk-blue) 8%, transparent);
+  }
+}
+
+@media (max-width: 760px) {
+  .sk-container {
+    width: min(100% - 32px, 1240px);
+  }
+
+  .sk-section,
+  .sk-dark-band {
+    padding: 76px 0;
+  }
+
+  .sk-hero {
+    padding-top: 46px;
+  }
+
+  .sk-h1 {
+    font-size: clamp(3rem, 15vw, 4.4rem);
+  }
+
+  .sk-liquid-nav-shell {
+    top: 10px;
+    padding-inline: 10px;
+  }
+
+  .sk-liquid-nav {
+    height: 62px;
+    padding-left: 13px;
+  }
+
+  .sk-brand-chip,
+  .sk-nav-actions > .sk-nav-link,
+  .sk-nav-actions > .sk-btn {
+    display: none;
+  }
+
+  .sk-hero-assurance {
+    grid-template-columns: 1fr;
+  }
+
+  .sk-hero-stage {
+    min-height: 470px;
+  }
+
+  .sk-orbit {
+    width: 410px;
+    height: 410px;
+    left: 50%;
+    transform: translateX(-50%) rotateX(0) rotateY(0);
+  }
+
+  .sk-home-card {
+    width: 280px;
+  }
+
+  .sk-float-card.card-search {
+    left: 2px;
+    top: 62px;
+    width: 205px;
+  }
+
+  .sk-float-card.card-contract {
+    right: 0;
+    bottom: 88px;
+    width: 210px;
+  }
+
+  .sk-float-card.card-caution {
+    left: 16px;
+    bottom: 10px;
+    width: 200px;
+  }
+
+  .sk-section-head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .sk-properties-grid,
+  .sk-bento,
+  .sk-security-grid,
+  .sk-steps,
+  .sk-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sk-decision-card,
+  .sk-decision-card:nth-child(2),
+  .sk-decision-card:nth-child(4) {
+    transform: none;
+  }
+
+  .sk-persona-switch {
+    width: 100%;
+  }
+
+  .sk-persona-btn {
+    flex: 1;
+  }
+
+  .sk-persona-visual {
+    min-height: 360px;
+  }
+
+  .sk-final-card {
+    border-radius: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}
+</style>
+
+<div class="lp-sakan">
+
+  {# ═════════════════ NAV ═════════════════ #}
+  <div class="sk-liquid-nav-shell">
+    <header class="sk-liquid-nav" id="sk-nav">
+      <a class="sk-brand" href="{{ path('app_home') }}" aria-label="Sakan Accueil">
+        <img src="{{ asset('images/logo.png') }}" alt="Sakan">
+        <span class="sk-brand-chip"><i class="fa-solid fa-sparkles"></i> Sakan</span>
+      </a>
+
+      <nav class="sk-nav-links" aria-label="Navigation principale">
+        <a class="sk-nav-link" href="#annonces">Annonces</a>
+        <a class="sk-nav-link" href="#experience">Expérience</a>
+        <a class="sk-nav-link" href="#fonctionnalites">IA & gestion</a>
+        <a class="sk-nav-link" href="#securite">Sécurité</a>
+      </nav>
+
+      <div class="sk-nav-actions">
+        <button class="theme-toggle" onclick="window.toggleSakanTheme ? toggleSakanTheme() : null" aria-label="Changer le thème">
+          <div class="knob">
+            <i class="fa-solid fa-sun icon-sun"></i>
+            <i class="fa-solid fa-moon icon-moon"></i>
+          </div>
+        </button>
+
+        <a href="{{ path('app_login') }}" class="sk-nav-link">Connexion</a>
+
+        <a href="{{ path('app_register') }}" class="sk-btn" style="min-height:42px;padding:0 18px;font-size:13px;">
+          Commencer <i class="fa-solid fa-arrow-right"></i>
+        </a>
+
+        <button class="sk-mobile-menu-btn" id="sk-mobile-menu-btn" aria-label="Ouvrir le menu" aria-expanded="false">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </header>
+
+    <nav class="sk-mobile-drawer" id="sk-mobile-drawer" aria-label="Menu mobile">
+      <a href="#annonces">Annonces</a>
+      <a href="#experience">Expérience</a>
+      <a href="#fonctionnalites">IA & gestion</a>
+      <a href="#securite">Sécurité</a>
+      <a href="{{ path('app_login') }}">Connexion</a>
+      <a href="{{ path('app_register') }}">Créer un compte</a>
+    </nav>
+  </div>
+
+  {# ═════════════════ HERO ═════════════════ #}
+  <section class="sk-hero">
+    <div class="sk-container sk-hero-grid">
+      <div class="sk-hero-copy">
+        <div class="sk-eyebrow sk-reveal">
+          <span class="pulse"></span>
+          Plateforme locative intelligente
+        </div>
+
+        <h1 class="sk-h1 sk-reveal sk-delay-1">
+          Louer.<br>
+          Signer.<br>
+          <span class="sk-hero-title-mark">Gérer.</span>
+          <span class="sk-gradient">Sans friction.</span>
+        </h1>
+
+        <p class="sk-lead sk-reveal sk-delay-2">
+          Sakan transforme la location longue durée en Tunisie : annonces vérifiées,
+          réservation, contrat électronique, paiements, caution, réclamations et
+          assistance IA dans une seule expérience claire.
+        </p>
+
+        <div class="sk-hero-actions sk-reveal sk-delay-3">
+          <a href="{{ path('app_register') }}" class="sk-btn">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Trouver un logement
+          </a>
+          <a href="{{ path('app_register') }}" class="sk-btn sk-btn-ghost">
+            <i class="fa-solid fa-key"></i>
+            Publier un bien
+          </a>
+        </div>
+
+        <div class="sk-hero-assurance sk-reveal sk-delay-4">
+          <span class="sk-assurance-pill"><i class="fa-solid fa-id-card"></i> OCR CIN</span>
+          <span class="sk-assurance-pill"><i class="fa-solid fa-file-signature"></i> Contrat digital</span>
+          <span class="sk-assurance-pill"><i class="fa-solid fa-shield-halved"></i> Paiement sécurisé</span>
+        </div>
+      </div>
+
+      <div class="sk-hero-stage sk-reveal sk-delay-2" aria-hidden="true">
+        <div class="sk-orbit"></div>
+
+        <article class="sk-home-card">
+          <div class="sk-home-photo">
+            <div class="sk-ai-badge"><span></span> Annonce vérifiée</div>
+          </div>
+          <div class="sk-home-body">
+            <div class="sk-price">1 800 TND <small>/ mois</small></div>
+            <div class="sk-home-title">Appartement S+3 — La Marsa</div>
+            <div class="sk-home-meta">
+              <span><i class="fa-solid fa-vector-square"></i>145 m²</span>
+              <span><i class="fa-solid fa-bed"></i>3 ch.</span>
+              <span><i class="fa-solid fa-bath"></i>2 sdb.</span>
+            </div>
+          </div>
+        </article>
+
+        <div class="sk-float-card card-search">
+          <div class="sk-float-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Matching IA</div>
+          <div class="sk-float-value">Profil compatible</div>
+          <div class="sk-progress"></div>
+        </div>
+
+        <div class="sk-float-card card-contract">
+          <div class="sk-float-label"><i class="fa-solid fa-file-signature"></i> Bail numérique</div>
+          <div class="sk-contract-row">
+            <div class="sk-contract-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="sk-contract-text">
+              <strong>Signature prête</strong>
+              <span>PDF, historique, statut.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sk-float-card card-caution">
+          <div class="sk-float-label"><i class="fa-solid fa-vault"></i> Caution</div>
+          <div class="sk-caution-row">
+            <strong>5 400 TND</strong>
+            <span class="sk-status-ok">suivie</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ RHYTHM BREAK ═════════════════ #}
+  <div class="sk-rhythm-break" aria-hidden="true">
+    <div class="sk-rhythm-track">
+      {% for i in 1..2 %}
+        <span class="sk-rhythm-item"><i class="fa-solid fa-circle-check"></i> Annonces plus fiables</span>
+        <span class="sk-rhythm-dot"></span>
+        <span class="sk-rhythm-item"><i class="fa-solid fa-bolt"></i> Moins de papier</span>
+        <span class="sk-rhythm-dot"></span>
+        <span class="sk-rhythm-item"><i class="fa-solid fa-lock"></i> Paiements sécurisés</span>
+        <span class="sk-rhythm-dot"></span>
+        <span class="sk-rhythm-item"><i class="fa-solid fa-robot"></i> Assistance augmentée par IA</span>
+        <span class="sk-rhythm-dot"></span>
+        <span class="sk-rhythm-item"><i class="fa-solid fa-chart-line"></i> Gestion propriétaire claire</span>
+        <span class="sk-rhythm-dot"></span>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ═════════════════ DECISION SECTION ═════════════════ #}
+  <section id="experience" class="sk-section">
+    <div class="sk-container sk-decision-grid">
+      <div class="sk-decision-panel sk-reveal">
+        <span class="sk-eyebrow"><span class="pulse"></span> Pourquoi Sakan existe</span>
+        <h2 class="sk-h2">
+          Le vrai problème n’est pas de trouver une annonce.
+          <span class="sk-gradient">C’est de pouvoir lui faire confiance.</span>
+        </h2>
+        <p class="sk-lead">
+          La landing ne doit pas vendre “de l’IA” comme décoration. Elle doit montrer
+          comment Sakan réduit les risques réels : faux profils, perte de temps, impayés,
+          documents dispersés et litiges de caution.
+        </p>
+      </div>
+
+      <div class="sk-decision-list">
+        <article class="sk-decision-card sk-reveal sk-delay-1">
+          <div class="sk-decision-icon"><i class="fa-solid fa-id-card"></i></div>
+          <div>
+            <h3>Identité vérifiée dès l’entrée</h3>
+            <p>OCR CIN, validation de profil et connexion sécurisée pour limiter les comptes douteux.</p>
+          </div>
+        </article>
+
+        <article class="sk-decision-card sk-reveal sk-delay-2">
+          <div class="sk-decision-icon"><i class="fa-solid fa-file-contract"></i></div>
+          <div>
+            <h3>Contrat centralisé, pas envoyé partout</h3>
+            <p>Le bail, les statuts, les signatures et les PDF restent dans le même espace.</p>
+          </div>
+        </article>
+
+        <article class="sk-decision-card sk-reveal sk-delay-3">
+          <div class="sk-decision-icon"><i class="fa-solid fa-credit-card"></i></div>
+          <div>
+            <h3>Paiements lisibles pour les deux côtés</h3>
+            <p>Loyers, charges, caution et factures avec suivi clair côté locataire et propriétaire.</p>
+          </div>
+        </article>
+
+        <article class="sk-decision-card sk-reveal sk-delay-4">
+          <div class="sk-decision-icon"><i class="fa-solid fa-camera"></i></div>
+          <div>
+            <h3>Litiges mieux documentés</h3>
+            <p>Photos, réclamations et historique donnent une base plus objective aux décisions.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ ANNONCES ═════════════════ #}
+  <section id="annonces" class="sk-section-tight">
+    <div class="sk-container">
+      <div class="sk-section-head">
+        <div>
+          <span class="sk-eyebrow sk-reveal"><span class="pulse"></span> Aperçu du marché</span>
+          <h2 class="sk-h2 sk-reveal sk-delay-1">
+            Des logements présentés avec <span class="sk-gradient">plus de contexte.</span>
+          </h2>
+        </div>
+
+        <a href="{{ path('app_login') }}" class="sk-btn sk-btn-ghost sk-reveal sk-delay-2">
+          Voir les annonces <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="sk-properties-grid">
+        {% if annonces is defined and annonces|length > 0 %}
+          {% for annonce in annonces|slice(0,4) %}
+            <a href="{{ path('app_login') }}" class="sk-prop-card sk-reveal sk-delay-{{ loop.index }}">
+              <div class="sk-prop-media">
+                {% if annonce.photoPrincipale %}
+                  <img src="{{ asset(annonce.photoPrincipale) }}" alt="{{ annonce.titre }}" loading="lazy">
+                {% else %}
+                  {% set imgs = [
+                    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=700&q=75',
+                    'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=700&q=75',
+                    'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=700&q=75',
+                    'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=700&q=75'
+                  ] %}
+                  <img src="{{ imgs[loop.index0 % 4] }}" alt="{{ annonce.titre }}" loading="lazy">
+                {% endif %}
+
+                <div class="sk-prop-badges">
+                  <span class="sk-prop-badge">
+                    <i class="fa-solid fa-house"></i>
+                    {{ annonce.type is defined ? annonce.type : 'Location' }}
+                  </span>
+                  <span class="sk-prop-heart"><i class="fa-regular fa-heart"></i></span>
+                </div>
+              </div>
+
+              <div class="sk-prop-body">
+                <div class="sk-prop-price">
+                  {{ annonce.prixFloat is defined ? annonce.prixFloat|number_format(0, ',', ' ') : annonce.prix }} TND
+                  <small>/ mois</small>
+                </div>
+                <div class="sk-prop-title">{{ annonce.titre }}</div>
+                <div class="sk-prop-location">
+                  <i class="fa-solid fa-location-dot"></i>
+                  {{ annonce.ville ?? annonce.adresse ?? 'Tunisie' }}
+                </div>
+                <div class="sk-prop-meta">
+                  {% if annonce.surface is defined %}
+                    <span><i class="fa-solid fa-vector-square"></i>{{ annonce.surface }} m²</span>
+                  {% endif %}
+                  {% if annonce.chambres is defined %}
+                    <span><i class="fa-solid fa-bed"></i>{{ annonce.chambres }} ch.</span>
+                  {% endif %}
+                  {% if annonce.sallesDeBain is defined %}
+                    <span><i class="fa-solid fa-bath"></i>{{ annonce.sallesDeBain }} sdb.</span>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        {% else %}
+          {% set dummies = [
+            {titre:'Appartement S+3 Ennasr', prix:'1 200', ville:'Ariana', surface:110, chambres:3, sdb:2, img:'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=700&q=75', type:'Appartement'},
+            {titre:'Studio meublé Lac 2', prix:'750', ville:'Tunis', surface:52, chambres:1, sdb:1, img:'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=700&q=75', type:'Studio'},
+            {titre:'Villa S+4 La Marsa', prix:'3 500', ville:'La Marsa', surface:240, chambres:4, sdb:3, img:'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=700&q=75', type:'Villa'},
+            {titre:'Duplex S+2 Menzah 9', prix:'980', ville:'Ariana', surface:88, chambres:2, sdb:1, img:'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=700&q=75', type:'Duplex'}
+          ] %}
+
+          {% for d in dummies %}
+            <a href="{{ path('app_login') }}" class="sk-prop-card sk-reveal sk-delay-{{ loop.index }}">
+              <div class="sk-prop-media">
+                <img src="{{ d.img }}" alt="{{ d.titre }}" loading="lazy">
+                <div class="sk-prop-badges">
+                  <span class="sk-prop-badge"><i class="fa-solid fa-house"></i>{{ d.type }}</span>
+                  <span class="sk-prop-heart"><i class="fa-regular fa-heart"></i></span>
+                </div>
+              </div>
+              <div class="sk-prop-body">
+                <div class="sk-prop-price">{{ d.prix }} TND <small>/ mois</small></div>
+                <div class="sk-prop-title">{{ d.titre }}</div>
+                <div class="sk-prop-location"><i class="fa-solid fa-location-dot"></i>{{ d.ville }}</div>
+                <div class="sk-prop-meta">
+                  <span><i class="fa-solid fa-vector-square"></i>{{ d.surface }} m²</span>
+                  <span><i class="fa-solid fa-bed"></i>{{ d.chambres }} ch.</span>
+                  <span><i class="fa-solid fa-bath"></i>{{ d.sdb }} sdb.</span>
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ PERSONA SPLIT ═════════════════ #}
+  <section class="sk-split-shell sk-section">
+    <div class="sk-container">
+      <div class="section-center" style="text-align:center;">
+        <span class="sk-eyebrow sk-reveal"><span class="pulse"></span> Deux parcours, une seule plateforme</span>
+        <h2 class="sk-h2 sk-reveal sk-delay-1">
+          Pensé pour le locataire.<br>
+          Rentable pour le propriétaire.
+        </h2>
+
+        <div class="sk-persona-switch sk-reveal sk-delay-2">
+          <button class="sk-persona-btn is-active" data-persona="loc">Locataire</button>
+          <button class="sk-persona-btn" data-persona="prop">Propriétaire</button>
+        </div>
+      </div>
+
+      <div class="sk-persona-panel is-active" id="persona-loc">
+        <div class="sk-persona-visual sk-reveal sk-delay-1">
+          <div class="sk-persona-glass">
+            <strong>Réduire la recherche à l’essentiel</strong>
+            <span>Voir, vérifier, réserver et signer depuis le même parcours.</span>
+          </div>
+        </div>
+
+        <div class="sk-reveal sk-delay-2">
+          <span class="sk-eyebrow"><span class="pulse"></span> Côté locataire</span>
+          <h3 class="sk-h3" style="margin-top:18px;">Un parcours court, rassurant, sans aller-retour inutile.</h3>
+          <p class="sk-lead">Sakan aide le locataire à comprendre rapidement si un bien est fiable, disponible et compatible avec son besoin.</p>
+
+          <div class="sk-feature-list">
+            <div class="sk-feature-line">
+              <div class="sk-feature-icon"><i class="fa-solid fa-id-card"></i></div>
+              <div><h4>Inscription assistée par OCR</h4><p>Moins de saisie, moins d’erreurs, profil plus vite prêt.</p></div>
+            </div>
+            <div class="sk-feature-line">
+              <div class="sk-feature-icon"><i class="fa-solid fa-calendar-check"></i></div>
+              <div><h4>Visites et réservation</h4><p>Suivi clair des demandes et prochaines actions.</p></div>
+            </div>
+            <div class="sk-feature-line">
+              <div class="sk-feature-icon"><i class="fa-solid fa-file-signature"></i></div>
+              <div><h4>Signature électronique</h4><p>Bail généré, signé, archivé et accessible.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sk-persona-panel" id="persona-prop">
+        <div class="sk-persona-visual sk-reveal sk-delay-1">
+          <div class="sk-persona-glass">
+            <strong>Une gestion moins dispersée</strong>
+            <span>Annonces, candidats, paiements, caution et réclamations au même endroit.</span>
+          </div>
+        </div>
+
+        <div class="sk-reveal sk-delay-2">
+          <span class="sk-eyebrow" style="color:var(--sk-warm);background:color-mix(in srgb,var(--sk-warm) 10%,transparent);border-color:color-mix(in srgb,var(--sk-warm) 22%,transparent);">
+            <span class="pulse"></span> Côté propriétaire
+          </span>
+          <h3 class="sk-h3" style="margin-top:18px;">Des décisions plus rapides, avec preuves et historique.</h3>
+          <p class="sk-lead">Sakan centralise l’exploitation du bien pour éviter les pertes d’information et améliorer la visibilité financière.</p>
+
+          <div class="sk-feature-list">
+            <div class="sk-feature-line">
+              <div class="sk-feature-icon" style="background:color-mix(in srgb,var(--sk-warm) 12%,transparent);color:var(--sk-warm);"><i class="fa-solid fa-chart-line"></i></div>
+              <div><h4>Tableau financier</h4><p>Loyers, charges, paiements et statut de chaque contrat.</p></div>
+            </div>
+            <div class="sk-feature-line">
+              <div class="sk-feature-icon" style="background:color-mix(in srgb,var(--sk-warm) 12%,transparent);color:var(--sk-warm);"><i class="fa-solid fa-camera"></i></div>
+              <div><h4>Caution documentée</h4><p>Photos, demandes et historique pour mieux traiter les litiges.</p></div>
+            </div>
+            <div class="sk-feature-line">
+              <div class="sk-feature-icon" style="background:color-mix(in srgb,var(--sk-warm) 12%,transparent);color:var(--sk-warm);"><i class="fa-solid fa-robot"></i></div>
+              <div><h4>Assistance IA</h4><p>Aide à la rédaction, modération et compréhension des documents.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  {# ═════════════════ BENTO FEATURES ═════════════════ #}
+  <section id="fonctionnalites" class="sk-section">
+    <div class="sk-container">
+      <div style="max-width:760px;">
+        <span class="sk-eyebrow sk-reveal"><span class="pulse"></span> Système intelligent</span>
+        <h2 class="sk-h2 sk-reveal sk-delay-1">
+          Pas une vitrine d’IA.
+          <span class="sk-gradient">Une infrastructure de location.</span>
+        </h2>
+        <p class="sk-lead sk-reveal sk-delay-2">
+          Chaque module répond à une friction concrète du cycle locatif : identifier,
+          publier, signer, payer, réclamer, suivre.
+        </p>
+      </div>
+
+      <div class="sk-bento" style="margin-top:46px;">
+        <article class="sk-bento-card sk-bento-large sk-reveal sk-delay-1">
+          <div class="sk-bento-icon"><i class="fa-solid fa-robot"></i></div>
+          <h3>Copilote IA intégré</h3>
+          <p>
+            Assistance conversationnelle, aide documentaire, compréhension des demandes,
+            génération de contenus utiles et support au suivi quotidien.
+          </p>
+          <div class="sk-chip-row">
+            <span class="sk-chip"><i class="fa-solid fa-comment-dots"></i> Support</span>
+            <span class="sk-chip"><i class="fa-solid fa-file-lines"></i> Documents</span>
+            <span class="sk-chip"><i class="fa-solid fa-eye"></i> Vision</span>
+            <span class="sk-chip"><i class="fa-solid fa-wand-magic-sparkles"></i> Modération</span>
+          </div>
+        </article>
+
+        <article class="sk-bento-card sk-reveal sk-delay-2">
+          <div class="sk-bento-icon" style="background:color-mix(in srgb,var(--sk-warm) 12%,transparent);color:var(--sk-warm);"><i class="fa-solid fa-id-card"></i></div>
+          <h3>OCR CIN</h3>
+          <p>Créer un profil plus vite avec extraction assistée des informations d’identité.</p>
+        </article>
+
+        <article class="sk-bento-card sk-reveal sk-delay-3">
+          <div class="sk-bento-icon" style="background:color-mix(in srgb,var(--sk-purple) 12%,transparent);color:var(--sk-purple);"><i class="fa-solid fa-face-smile"></i></div>
+          <h3>Connexion moderne</h3>
+          <p>Préparer une expérience plus sûre avec authentification forte et parcours simplifié.</p>
+        </article>
+
+        <article class="sk-bento-card sk-bento-wide sk-reveal sk-delay-2">
+          <div class="sk-bento-icon" style="background:color-mix(in srgb,var(--sk-green) 12%,transparent);color:var(--sk-green);"><i class="fa-solid fa-chart-pie"></i></div>
+          <h3>Gestion financière claire</h3>
+          <p>
+            Suivi des loyers, charges, paiements, cautions et statuts pour éviter les
+            zones grises entre locataire et propriétaire.
+          </p>
+          <div class="sk-chip-row">
+            <span class="sk-chip" style="color:var(--sk-green);background:color-mix(in srgb,var(--sk-green) 10%,transparent);"><i class="fa-solid fa-circle-check"></i> Loyers</span>
+            <span class="sk-chip" style="color:var(--sk-green);background:color-mix(in srgb,var(--sk-green) 10%,transparent);"><i class="fa-solid fa-circle-check"></i> Charges</span>
+            <span class="sk-chip" style="color:var(--sk-green);background:color-mix(in srgb,var(--sk-green) 10%,transparent);"><i class="fa-solid fa-circle-check"></i> Factures</span>
+          </div>
+        </article>
+
+        <article class="sk-bento-card sk-reveal sk-delay-3">
+          <div class="sk-bento-icon"><i class="fa-solid fa-file-signature"></i></div>
+          <h3>Bail digital</h3>
+          <p>Contrat généré, signé, archivé, avec statut visible pour chaque partie.</p>
+        </article>
+
+        <article class="sk-bento-card sk-reveal sk-delay-4">
+          <div class="sk-bento-icon" style="background:color-mix(in srgb,var(--sk-warm) 12%,transparent);color:var(--sk-warm);"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+          <h3>Réclamations</h3>
+          <p>Tickets, photos, historique et suivi pour gérer les incidents sans chaos.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ SECURITY ═════════════════ #}
+  <section id="securite" class="sk-dark-band">
+    <div class="sk-container">
+      <span class="sk-eyebrow sk-reveal" style="background:rgba(124,137,255,.16);border-color:rgba(124,137,255,.28);color:#AEB6FF;">
+        <span class="pulse"></span> Confiance & sécurité
+      </span>
+
+      <h2 class="sk-h2 sk-reveal sk-delay-1">
+        La location digitale ne marche que si
+        <span style="background:linear-gradient(120deg,#AEB6FF,#E3B46C);-webkit-background-clip:text;background-clip:text;color:transparent;">la confiance est visible.</span>
+      </h2>
+
+      <p class="sk-lead sk-reveal sk-delay-2">
+        Sakan présente la sécurité comme une expérience : identité, accès, paiements,
+        documents et historiques compréhensibles pour les utilisateurs.
+      </p>
+
+      <div class="sk-security-grid">
+        <article class="sk-security-card sk-reveal sk-delay-1">
+          <i class="fa-solid fa-id-card"></i>
+          <h3>Identité structurée</h3>
+          <p>Un profil plus fiable commence par des données saisies correctement et un parcours d’identification propre.</p>
+        </article>
+
+        <article class="sk-security-card sk-reveal sk-delay-2">
+          <i class="fa-solid fa-key"></i>
+          <h3>Accès renforcé</h3>
+          <p>Connexion moderne, limitation de la dépendance aux mots de passe et réduction des risques d’usurpation.</p>
+        </article>
+
+        <article class="sk-security-card sk-reveal sk-delay-3">
+          <i class="fa-solid fa-credit-card"></i>
+          <h3>Paiements protégés</h3>
+          <p>Centraliser les transactions et les statuts permet de réduire l’ambiguïté autour des loyers et charges.</p>
+        </article>
+
+        <article class="sk-security-card sk-reveal sk-delay-1">
+          <i class="fa-solid fa-file-shield"></i>
+          <h3>Documents conservés</h3>
+          <p>Baux, factures et preuves restent accessibles dans le même espace pour éviter les pertes d’information.</p>
+        </article>
+
+        <article class="sk-security-card sk-reveal sk-delay-2">
+          <i class="fa-solid fa-eye"></i>
+          <h3>Modération assistée</h3>
+          <p>Photos et contenus peuvent être contrôlés avant de dégrader la qualité de la plateforme.</p>
+        </article>
+
+        <article class="sk-security-card sk-reveal sk-delay-3">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <h3>Historique exploitable</h3>
+          <p>Une décision est plus juste quand elle s’appuie sur un historique clair, pas sur des messages dispersés.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ STEPS ═════════════════ #}
+  <section class="sk-section">
+    <div class="sk-container">
+      <div style="max-width:720px;">
+        <span class="sk-eyebrow sk-reveal"><span class="pulse"></span> Parcours</span>
+        <h2 class="sk-h2 sk-reveal sk-delay-1">
+          Une progression simple.
+          <span class="sk-gradient">Pas un tunnel compliqué.</span>
+        </h2>
+      </div>
+
+      <div class="sk-steps">
+        <article class="sk-step sk-reveal sk-delay-1">
+          <div class="sk-step-icon"><i class="fa-solid fa-user-check"></i></div>
+          <h3>Créer son profil</h3>
+          <p>Locataire ou propriétaire : profil clair, données utiles, accès sécurisé.</p>
+        </article>
+
+        <article class="sk-step sk-reveal sk-delay-2">
+          <div class="sk-step-icon"><i class="fa-solid fa-house"></i></div>
+          <h3>Publier ou chercher</h3>
+          <p>Les annonces montrent les informations essentielles sans surcharge inutile.</p>
+        </article>
+
+        <article class="sk-step sk-reveal sk-delay-3">
+          <div class="sk-step-icon"><i class="fa-solid fa-handshake"></i></div>
+          <h3>Réserver et signer</h3>
+          <p>Le contrat devient un flux guidé, pas un échange manuel dispersé.</p>
+        </article>
+
+        <article class="sk-step sk-reveal sk-delay-4">
+          <div class="sk-step-icon"><i class="fa-solid fa-chart-line"></i></div>
+          <h3>Gérer dans le temps</h3>
+          <p>Loyers, charges, réclamations, caution et documents restent suivis.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ CTA ═════════════════ #}
+  <section class="sk-final-cta">
+    <div class="sk-container">
+      <div class="sk-final-card sk-reveal">
+        <div class="sk-final-card-inner">
+          <span class="sk-eyebrow" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);color:#fff;">
+            <span class="pulse"></span> Prêt à tester Sakan
+          </span>
+          <h2 class="sk-h2">
+            Construire la location comme elle aurait dû être dès le départ.
+          </h2>
+          <p class="sk-lead">
+            Une plateforme plus claire pour chercher, louer, signer et gérer — avec une expérience moderne, utile et crédible.
+          </p>
+
+          <div class="sk-final-actions">
+            <a href="{{ path('app_register') }}" class="sk-btn sk-btn-white">
+              S'inscrire <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <a href="{{ path('app_login') }}" class="sk-btn sk-btn-ghost" style="--btn-bg:rgba(255,255,255,.08);--btn-color:#fff;--btn-border:rgba(255,255,255,.22);">
+              Me connecter
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ═════════════════ FOOTER ═════════════════ #}
+  <footer class="sk-footer">
+    <div class="sk-container">
+      <div class="sk-footer-grid">
+        <div>
+          <img class="sk-footer-logo" src="{{ asset('images/logo.png') }}" alt="Sakan">
+          <p style="max-width:340px;margin-top:16px;">
+            Plateforme Sakan pour simplifier la location longue durée :
+            annonces, contrats, paiements, caution, réclamations et assistance.
+          </p>
+          <div style="display:flex;gap:15px;margin-top:20px;">
+            <a href="https://www.instagram.com/sakan_tun/" target="_blank" aria-label="Instagram" style="color:var(--sk-muted);font-size:20px;transition:color .24s var(--sk-ease);">
+              <i class="fa-brands fa-instagram"></i>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Plateforme</h4>
+          <div class="sk-footer-links">
+            <a href="#annonces">Annonces</a>
+            <a href="#experience">Expérience</a>
+            <a href="#fonctionnalites">IA & gestion</a>
+            <a href="#securite">Sécurité</a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Espaces</h4>
+          <div class="sk-footer-links">
+            <a href="{{ path('app_register') }}">Locataire</a>
+            <a href="{{ path('app_register') }}">Propriétaire</a>
+            <a href="{{ path('app_login') }}">Connexion</a>
+            <a href="{{ path('app_register') }}">Créer un compte</a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Technologies</h4>
+          <div class="sk-footer-links">
+            <span>OCR CIN</span>
+            <span>Contrat digital</span>
+            <span>Paiement sécurisé</span>
+            <span>Assistance IA</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sk-footer-bottom">
+        <p>&copy; {{ 'now'|date('Y') }} Sakan. Tous droits réservés.</p>
+        <p><i class="fa-solid fa-heart" style="color:var(--sk-warm);"></i> Made in Tunisia · Sakan intelligente</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+
+<script>
+(function () {
+  'use strict';
+
+  const nav = document.getElementById('sk-nav');
+  const mobileBtn = document.getElementById('sk-mobile-menu-btn');
+  const mobileDrawer = document.getElementById('sk-mobile-drawer');
+
+  function handleScrollNav() {
+    if (!nav) return;
+    nav.classList.toggle('sk-nav-compact', window.scrollY > 32);
+  }
+
+  window.addEventListener('scroll', handleScrollNav, { passive: true });
+  handleScrollNav();
+
+  if (mobileBtn && mobileDrawer) {
+    mobileBtn.addEventListener('click', function () {
+      const isOpen = mobileDrawer.classList.toggle('is-open');
+      mobileBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      mobileBtn.innerHTML = isOpen
+        ? '<i class="fa-solid fa-xmark"></i>'
+        : '<i class="fa-solid fa-bars"></i>';
+    });
+
+    mobileDrawer.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        mobileDrawer.classList.remove('is-open');
+        mobileBtn.setAttribute('aria-expanded', 'false');
+        mobileBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      });
+    });
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+    anchor.addEventListener('click', function (event) {
+      const targetId = anchor.getAttribute('href').slice(1);
+      const target = document.getElementById(targetId);
+      if (!target) return;
+
+      event.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      revealObserver.unobserve(entry.target);
+    });
+  }, {
+    threshold: 0.13,
+    rootMargin: '0px 0px -44px 0px'
+  });
+
+  document.querySelectorAll('.sk-reveal').forEach(function (el) {
+    revealObserver.observe(el);
+  });
+
+  setTimeout(function () {
+    document.querySelectorAll('.sk-hero .sk-reveal').forEach(function (el, index) {
+      setTimeout(function () {
+        el.classList.add('is-visible');
+      }, index * 90);
+    });
+  }, 80);
+
+  const personaButtons = document.querySelectorAll('.sk-persona-btn');
+  const personaPanels = document.querySelectorAll('.sk-persona-panel');
+
+  personaButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      const persona = button.dataset.persona;
+
+      personaButtons.forEach(function (btn) {
+        btn.classList.toggle('is-active', btn === button);
+      });
+
+      personaPanels.forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.id === 'persona-' + persona);
+      });
+
+      const activePanel = document.getElementById('persona-' + persona);
+      if (activePanel) {
+        activePanel.querySelectorAll('.sk-reveal').forEach(function (el, index) {
+          el.classList.remove('is-visible');
+          setTimeout(function () {
+            el.classList.add('is-visible');
+          }, 80 + index * 90);
+        });
+      }
+    });
+  });
+
+  const sections = Array.from(document.querySelectorAll('section[id]'));
+  const navLinks = Array.from(document.querySelectorAll('.sk-nav-link[href^="#"]'));
+
+  const activeObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+
+      navLinks.forEach(function (link) {
+        link.classList.toggle(
+          'is-active',
+          link.getAttribute('href') === '#' + entry.target.id
+        );
+      });
+    });
+  }, {
+    threshold: 0.35
+  });
+
+  sections.forEach(function (section) {
+    activeObserver.observe(section);
+  });
+})();
+</script>
+{% endblock %}

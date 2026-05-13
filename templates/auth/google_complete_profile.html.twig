@@ -1,0 +1,54 @@
+{% extends 'layouts/base_auth.html.twig' %}
+
+{% block title %}Completer le profil Google - Sakan{% endblock %}
+
+{% block auth_content %}
+    <div class="brand-title">
+        <img src="{{ asset('images/logo.png') }}" alt="Sakan" style="height: 40px; object-fit: contain;">
+    </div>
+
+    <h1 class="auth-title">Completer votre profil</h1>
+    <p class="muted">Premiere connexion Google : confirmez vos informations avant de creer le compte.</p>
+
+    <form class="auth-form-card" method="post" action="{{ path('app_google_complete_profile') }}">
+        {% if register_error %}
+            <div class="auth-error-stack">
+                <div class="auth-alert auth-alert-error">{{ register_error }}</div>
+            </div>
+        {% endif %}
+        {% for message in app.flashes('auth_error') %}
+            <div class="auth-error-stack">
+                <div class="auth-alert auth-alert-error">{{ message }}</div>
+            </div>
+        {% endfor %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="auth-input-wrapper">
+                <input type="text" name="prenom" placeholder="Prenom*" value="{{ form.prenom|default('') }}" required>
+            </div>
+            <div class="auth-input-wrapper">
+                <input type="text" name="nom" placeholder="Nom*" value="{{ form.nom|default('') }}" required>
+            </div>
+        </div>
+
+        <div class="auth-input-wrapper">
+            <i class="fa-solid fa-envelope input-icon" aria-hidden="true"></i>
+            <input type="email" name="email" placeholder="Email*" value="{{ form.email|default('') }}" required>
+        </div>
+
+        <p class="muted" style="margin-top: -6px; margin-bottom: 12px;">
+            Email Google detecte : <strong>{{ google_email }}</strong>
+        </p>
+
+        <div class="auth-input-wrapper">
+            <i class="fa-solid fa-phone input-icon" aria-hidden="true"></i>
+            <input type="text" name="telephone" pattern="[2-9][0-9]{7}" value="{{ form.telephone|default('') }}" placeholder="Telephone tunisien (8 chiffres)*" required>
+        </div>
+
+        <button type="submit" class="btn-sakan-primary">Creer mon compte avec Google &rarr;</button>
+
+        <p class="auth-login-link">
+            Vous avez change d'avis ? <a href="{{ path(return_route|default('app_login')) }}">Retour</a>
+        </p>
+    </form>
+{% endblock %}

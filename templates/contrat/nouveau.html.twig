@@ -1,0 +1,284 @@
+{# templates/contrat/nouveau.html.twig #}
+{# Formulaire de création d'un nouveau contrat (SaaS 2026) #}
+
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Nouveau Contrat - Sakan{% endblock %}
+
+{% block content %}
+<style>
+/* ═══════════════════════════════════════════════
+   PREMIUM SaaS UI 2026 - STYLE INTEGRE SAKAN
+   ═══════════════════════════════════════════════ */
+:root {
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.gc {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: var(--shadow-card);
+}
+
+.sec-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: all 0.2s;
+    outline: none;
+}
+.form-input:focus {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(79,70,229,0.1);
+}
+.form-input::placeholder {
+    color: #9ca3af;
+}
+
+.form-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    width: 100%;
+}
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(79,70,229,0.3);
+}
+
+.btn-cancel {
+    background: rgba(107,114,128,0.1);
+    color: #4b5563;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    width: 100%;
+}
+.btn-cancel:hover { background: rgba(107,114,128,0.2); }
+
+.card-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    height: 100%;
+}
+</style>
+
+<div style="padding: 24px 32px; max-width: 1000px; margin: 0 auto;">
+
+    <!-- Navigation rapide -->
+    <div style="margin-bottom: 24px;">
+        <a href="{{ path('proprietaire_contrats_liste') }}" style="color: #6b7280; text-decoration: none; font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-arrow-left"></i> Retour aux contrats
+        </a>
+    </div>
+
+    <!-- En-tête -->
+    <div style="margin-bottom: 32px;">
+        <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #111827;">
+            <i class="fa-solid fa-file-contract" style="color: var(--primary);"></i> Nouveau Contrat
+        </h1>
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Paramétrez un nouveau bail de location. Une fois validé, il sera envoyé au locataire pour signature.</p>
+    </div>
+
+    <div class="gc">
+        <form method="post" action="{{ path('contrat_nouveau') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('nouveau_contrat') }}">
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;">
+                
+                <!-- Bloc Bien -->
+                <div class="card-section">
+                    <div class="sec-label"><i class="fa-solid fa-house"></i> Sélection du Bien</div>
+                    <div class="form-group">
+                        <label for="annonce_id" class="form-label">Propriété à louer *</label>
+                        <select name="annonce_id" id="annonce_id" class="form-input" required>
+                            <option value="">Sélectionnez un bien de votre parc...</option>
+                            {% for annonce in annonces %}
+                                <option value="{{ annonce.id }}">
+                                    {{ annonce.titre ?? 'Bien #' ~ annonce.id }} 
+                                    {% if annonce.ville %}({{ annonce.ville }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text"><i class="fa-solid fa-circle-info"></i> Le bien doit être actuellement disponible.</div>
+                        
+                        {% if annonces is empty %}
+                            <div style="margin-top: 12px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; font-size: 13px; font-weight: 600;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Vous n'avez aucune annonce disponible. <a href="{{ path('owner_ajouter_bien') }}" style="color: #991b1b; text-decoration: underline;">Ajoutez un bien</a>.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Bloc Locataire -->
+                <div class="card-section">
+                    <div class="sec-label" style="color: #10b981;"><i class="fa-solid fa-user"></i> Identification du Locataire</div>
+                    <div class="form-group">
+                        <label for="locataire_email" class="form-label">Adresse Email Sakan *</label>
+                        <input type="email" name="locataire_email" id="locataire_email" class="form-input" placeholder="exemple@email.com" required>
+                        <div class="form-text"><i class="fa-solid fa-circle-info"></i> Le locataire doit posséder un compte sur la plateforme.</div>
+                    </div>
+                </div>
+
+                <!-- Bloc Durée -->
+                <div class="card-section">
+                    <div class="sec-label" style="color: #f59e0b;"><i class="fa-solid fa-calendar-alt"></i> Durée du Bail</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label for="date_debut" class="form-label">Date de début *</label>
+                            <input type="date" name="date_debut" id="date_debut" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_fin" class="form-label">Date de fin *</label>
+                            <input type="date" name="date_fin" id="date_fin" class="form-input" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc Finance -->
+                <div class="card-section">
+                    <div class="sec-label" style="color: #06b6d4;"><i class="fa-solid fa-coins"></i> Aspects Financiers</div>
+                    <div class="form-group">
+                        <label for="montant" class="form-label">Montant du Loyer Mensuel (TND) *</label>
+                        <div style="position: relative;">
+                            <input type="number" name="montant" id="montant" class="form-input" style="padding-left: 40px;" step="0.001" min="0" placeholder="850.000" required>
+                            <i class="fa-solid fa-money-bill" style="position: absolute; left: 14px; top: 14px; color: #9ca3af;"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="caution_montant" class="form-label">Montant de la Caution (TND)</label>
+                        <div style="position: relative;">
+                            <input type="number" name="caution_montant" id="caution_montant" class="form-input" style="padding-left: 40px;" step="0.001" min="0" placeholder="850.000">
+                            <i class="fa-solid fa-shield" style="position: absolute; left: 14px; top: 14px; color: #9ca3af;"></i>
+                        </div>
+                        <div class="form-text"><i class="fa-solid fa-circle-info"></i> Si laissé vide, la caution sera égale à 1 mois de loyer.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloc Pénalités -->
+            <div class="card-section" style="margin-top: 24px;">
+                <div class="sec-label" style="color: #e11d48;"><i class="fa-solid fa-gavel"></i> Règles de pénalité de retard</div>
+                <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 16px; border-radius: 12px;">
+                    <div style="margin-bottom: 16px;">
+                        <label class="form-label">Délai de grâce (Jours)</label>
+                        <input type="number" name="penalite_jourRemise" class="form-input" value="5" min="0" required>
+                        <div class="form-text">Jours autorisés avant d'appliquer une pénalité.</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                        <div>
+                            <label class="form-label">Montant Fixe (TND)</label>
+                            <input type="number" step="0.01" name="penalite_montant" class="form-input" value="0" min="0">
+                        </div>
+                        <div>
+                            <label class="form-label">% par jour de retard</label>
+                            <input type="number" step="0.01" name="penalite_pourcentage" class="form-input" value="0" min="0">
+                        </div>
+                        <div>
+                            <label class="form-label">Plafond Maximum (%)</label>
+                            <input type="number" step="0.01" name="penalite_plafond" class="form-input" value="10" min="0" max="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px dashed #cbd5e1; display: grid; grid-template-columns: 1fr 2fr; gap: 16px;">
+                <a href="{{ path('proprietaire_contrats_liste') }}" class="btn-cancel">Annuler</a>
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-file-signature"></i> Générer le contrat & Envoyer pour signature
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const debutInput = document.getElementById('date_debut');
+    const finInput = document.getElementById('date_fin');
+    const montantInput = document.getElementById('montant');
+    const cautionInput = document.getElementById('caution_montant');
+
+    // Validation dynamique des dates
+    debutInput.addEventListener('change', function() {
+        if(this.value) finInput.min = this.value;
+    });
+
+    // Auto-remplissage de la caution si le propriétaire saute le champ
+    montantInput.addEventListener('blur', function() {
+        if (!cautionInput.value && this.value) {
+            cautionInput.value = this.value;
+        }
+    });
+
+    // Optionnel : ne pas autoriser les dates passées
+    const today = new Date().toISOString().split('T')[0];
+    debutInput.min = today;
+});
+</script>
+{% endblock %}

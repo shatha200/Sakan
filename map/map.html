@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Localisation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/disc:\Users\habbo\Downloads\piSakan-master _test_last\piSakan-master - Copie_migration_synfony\src\main\resources\mapt/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f3f4f6;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        #search-wrap {
+            flex-shrink: 0;
+            padding: 8px 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        #search {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        #search-wrap button {
+            padding: 8px 14px;
+            background: #7C3AED;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #search-wrap button:hover {
+            background: #6d28d9;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            border-radius: 0 0 14px 14px;
+        }
+        .leaflet-container {
+            background: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+<div id="search-wrap">
+    <input type="text" id="search" placeholder="Rechercher zone (ex: Tunis, Sfax, Nabeul)..." />
+    <button type="button" onclick="searchLocation()">Chercher</button>
+</div>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+    var map = L.map('map', { zoomControl: false }).setView([34.0, 9.0], 6);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker;
+    window.marker = null;
+
+    function updateMarker(m) {
+        marker = m;
+        window.marker = m;
+    }
+
+    map.on('click', function(e) {
+        if (marker) map.removeLayer(marker);
+        var m = L.marker(e.latlng).addTo(map);
+        updateMarker(m);
+        if (window.javaConnector) {
+            window.javaConnector.setCoordinates(e.latlng.lat, e.latlng.lng);
+        }
+    });
+
+    function searchLocation() {
+        var zone = document.getElementById("search").value.trim();
+        if (!zone) return;
+        var url = "https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(zone) + ",Tunisia";
+        fetch(url)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.length > 0) {
+                    var lat = parseFloat(data[0].lat);
+                    var lon = parseFloat(data[0].lon);
+                    map.setView([lat, lon], 13);
+                    if (marker) map.removeLayer(marker);
+                    var m = L.marker([lat, lon]).addTo(map);
+                    updateMarker(m);
+                    if (window.javaConnector) {
+                        window.javaConnector.setCoordinates(lat, lon);
+                    }
+                }
+            });
+    }
+
+    function setInitialLocation(lat, lng, label) {
+        if (!label) label = "Localisation";
+        if (marker) map.removeLayer(marker);
+        var m = L.marker([lat, lng]).addTo(map);
+        m.bindPopup(label);
+        updateMarker(m);
+        map.setView([lat, lng], 14);
+    }
+
+    function focusOnMarker() {
+        if (marker) {
+            map.setView(marker.getLatLng(), 15);
+            marker.openPopup();
+        }
+    }
+</script>
+</body>
+</html>

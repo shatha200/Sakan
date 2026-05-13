@@ -1,0 +1,365 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Service client — Sakan{% endblock %}
+{% block page_title %}Service Client{% endblock %}
+{% block page_subtitle %}Signalez un problème et suivez vos tickets{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  <!-- FLASH MESSAGES - z-index superieur au modal (9999) -->
+  {% for message in app.flashes('success') %}
+    <div style="position:relative; z-index:10000; background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:12px 20px;border-radius:10px;margin-bottom:16px;font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <i class="fa-solid fa-circle-check"></i> {{ message }}
+    </div>
+  {% endfor %}
+  {% for message in app.flashes('error') %}
+    <div style="position:relative; z-index:10000; background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:12px 20px;border-radius:10px;margin-bottom:16px;font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+    </div>
+  {% endfor %}
+
+  <!-- PAGE HEADER -->
+  <div class="page-header" style="justify-content: space-between; align-items: center;">
+    <div>
+      <h1 style="display:flex; align-items:center; gap:12px;"><i class="fa-solid fa-headset"></i> Service Client</h1>
+      <p class="result-count" style="margin-top: 4px;">{{ stats.total }} ticket(s) au total</p>
+    </div>
+    <button class="btn-primary" onclick="showModal('modal-new-reclamation')">
+      <i class="fa-solid fa-plus"></i> Nouveau ticket
+    </button>
+  </div>
+
+  <!-- STATS RAPIDES -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr); gap:16px;margin-bottom:24px;">
+    <div class="kpi-card" style="border-left:4px solid #dc2626;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-circle-exclamation" style="color:#dc2626; font-size: 32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">En cours</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.en_cours }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #f59e0b;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-clock" style="color:#f59e0b; font-size: 32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Ouverts</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.ouvert }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #16a34a;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-circle-check" style="color:#16a34a; font-size: 32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Résolus</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.resolu }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #4f46e5;">
+      <div class="kpi-icon" style="margin-bottom:0;"><i class="fa-solid fa-ticket" style="color:#4f46e5; font-size: 32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Total tickets</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.total }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLETS -->
+  <div class="section-tabs">
+    <button class="tab-btn active" onclick="filterTickets('all', this)">Tous ({{ stats.total }})</button>
+    <button class="tab-btn" onclick="filterTickets('en-cours', this)">En cours ({{ stats.en_cours }})</button>
+    <button class="tab-btn" onclick="filterTickets('ouvert', this)">Ouverts ({{ stats.ouvert }})</button>
+    <button class="tab-btn" onclick="filterTickets('resolu', this)">Résolus ({{ stats.resolu }})</button>
+  </div>
+
+  <!-- LISTE DES TICKETS -->
+  <div class="tickets-list">
+    {% if reclamations is empty %}
+      <div class="card" style="padding:60px;text-align:center;color:var(--text-muted);">
+        <i class="fa-solid fa-headset" style="font-size:48px;margin-bottom:16px;opacity:0.3;"></i>
+        <h3 style="margin-bottom:8px;">Aucun ticket pour l'instant</h3>
+        <p style="margin-bottom:24px;">Signalez un problème en cliquant sur "Nouveau ticket".</p>
+        <button class="btn-primary" onclick="showModal('modal-new-reclamation')">
+          <i class="fa-solid fa-plus"></i> Nouveau ticket
+        </button>
+      </div>
+    {% else %}
+      {% for rcl in reclamations %}
+        {% set cssStatut = rcl.statutCssClass %}
+        {% set prioCouleur = rcl.prioriteCssColor %}
+        {% set isResolu = rcl.statut == 'RESOLU' %}
+        {% set isEnCours = rcl.statut == 'EN_COURS' %}
+
+        <div class="reclamation-card {{ isResolu ? '' : 'priorite-' ~ rcl.priorite|lower }}"
+             data-statut="{{ cssStatut }}"
+             style="border-left:4px solid {{ prioCouleur }};{{ isResolu ? 'opacity:0.85;' : '' }}">
+
+          <!-- HEADER TICKET -->
+          <div class="ticket-header">
+            <div>
+              <span class="ticket-id">#RCL-{{ '%04d'|format(rcl.id) }}</span>
+              <span class="ticket-type"><i class="fa-solid fa-tag"></i> {{ rcl.typeLabel }}</span>
+              {% if rcl.contrat %}
+                <span class="ticket-bien">— {{ rcl.contrat.annonce.titre ?? 'Bien #' ~ rcl.contrat.annonce.id }}</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              {# Badge Priorité #}
+              {% if rcl.priorite == 'HAUTE' %}
+                <span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🔴 HAUTE</span>
+              {% elseif rcl.priorite == 'URGENTE' %}
+                <span style="background:#7c2d12;color:white;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🚨 URGENTE</span>
+              {% elseif rcl.priorite == 'BASSE' %}
+                <span style="background:#dbeafe;color:#2563eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🔵 BASSE</span>
+              {% else %}
+                <span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🟡 MOYENNE</span>
+              {% endif %}
+
+              {# Badge Statut #}
+              {% if isResolu %}
+                <span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">RÉSOLU ✓</span>
+              {% elseif isEnCours %}
+                <span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">EN COURS</span>
+              {% else %}
+                <span style="background:#f3f4f6;color:#374151;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">OUVERT</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- CORPS TICKET -->
+          <div class="ticket-body">
+            <p class="ticket-desc">"{{ rcl.description|slice(0, 150) }}{{ rcl.description|length > 150 ? '...' : '' }}"</p>
+            <div class="ticket-meta">
+              <span><i class="fa-solid fa-calendar"></i> {{ rcl.dateCreation|date('d/m/Y') }}</span>
+              {% if isResolu and rcl.dateResolution %}
+                <span><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Résolu le {{ rcl.dateResolution|date('d/m/Y') }}</span>
+              {% else %}
+                <span><i class="fa-solid fa-clock"></i> En attente de traitement</span>
+              {% endif %}
+            </div>
+            {% if rcl.commentaireAdmin %}
+              <div style="margin-top:12px;padding:10px 14px;background:#fef9c3;border-left:3px solid #d97706;border-radius:8px;font-size:13px;">
+                <i class="fa-solid fa-shield-halved" style="color:#d97706;"></i>
+                <strong> Réponse du propriétaire :</strong> {{ rcl.commentaireAdmin }}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- PHOTO SI DISPONIBLE -->
+          {% if rcl.photoPath %}
+          <div style="padding:0 24px 16px;">
+            <a href="{{ asset('uploads/reclamations/' ~ rcl.photoPath) }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#4f46e5;text-decoration:none;">
+              <i class="fa-solid fa-image"></i> Voir la photo jointe
+            </a>
+          </div>
+          {% endif %}
+
+          <!-- ACTIONS -->
+          <div class="ticket-actions" style="display:flex; justify-content:space-between; align-items:center;">
+            {% if rcl.statut == 'OUVERT' %}
+              <span style="font-size:13px;color:#6b7280;"><i class="fa-solid fa-info-circle"></i> En attente de traitement par le propriétaire</span>
+              <div style="display:flex; gap:10px;">
+                  <button type="button" 
+                          class="btn-edit-rcl"
+                          data-id="{{ rcl.id }}"
+                          data-type="{{ rcl.type }}"
+                          data-precision="{{ rcl.typePrecision }}"
+                          data-desc="{{ rcl.description }}"
+                          data-priorite="{{ rcl.priorite }}"
+                          style="background:none;border:none;color:#4f46e5;cursor:pointer;font-size:13px;font-weight:600;">
+                      <i class="fa-solid fa-pen"></i> Modifier
+                  </button>
+                  <form action="{{ path('reclamation_supprimer', {id: rcl.id}) }}" method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette réclamation ?');">
+                      <input type="hidden" name="_token" value="{{ csrf_token('supprimer_reclamation_' ~ rcl.id) }}">
+                      <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-weight:600;"><i class="fa-solid fa-trash"></i> Supprimer</button>
+                  </form>
+              </div>
+            {% elseif not isResolu %}
+              <span style="font-size:13px;color:#6b7280;"><i class="fa-solid fa-info-circle"></i> En cours de traitement par le propriétaire</span>
+            {% else %}
+              <span style="font-size:13px;color:#16a34a;font-weight:600;"><i class="fa-solid fa-circle-check"></i> Ticket clôturé avec succès</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- MODAL CRÉATION DE TICKET (FORM DYNAMIQUE) -->
+<!-- ════════════════════════════════════════════ -->
+<div id="modal-new-reclamation" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div class="modal-card" style="background:white; border-radius:16px; width:100%; max-width:600px; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+      <h3 style="margin:0; font-size:18px;" id="modal-title"><i class="fa-solid fa-plus"></i> Nouveau ticket de réclamation</h3>
+      <button type="button" style="border:none;background:none;font-size:24px;cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center;" onclick="closeModal('modal-new-reclamation')">✕</button>
+    </div>
+    <form method="post" action="{{ path('reclamation_creer') }}" enctype="multipart/form-data" id="form-reclamation" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+      <input type="hidden" name="_token" value="{{ csrf_token('creer_reclamation') }}">
+      <div class="modal-body" style="padding:24px; overflow-y:auto; flex:1;">
+
+        <!-- Type de problème -->
+        <label style="display:block;margin-bottom:8px;font-weight:600;">Type de problème *</label>
+        <select class="sakan-input" id="type-reclamation" name="type" style="width:100%;margin-bottom:16px;" required>
+          <option value="">-- Choisissez un type --</option>
+          {% for key, label in types %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <div id="autre-precision" style="display:none;margin-bottom:16px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;">Précisez *</label>
+          <input type="text" name="type_precision" class="sakan-input" placeholder="Décrivez le type de problème" style="width:100%;">
+        </div>
+
+        <!-- Bien concerné (sélecteur de contrat) -->
+        {% if contratsActifs is not empty %}
+        <label style="display:block;margin-bottom:8px;font-weight:600;">Bien concerné</label>
+        <select class="sakan-input" name="contrat_id" style="width:100%;margin-bottom:16px;">
+          <option value="">-- Sélectionnez le bien (optionnel) --</option>
+          {% for contrat in contratsActifs %}
+            <option value="{{ contrat.id }}">{{ contrat.annonce.titre ?? 'Bien #' ~ contrat.annonce.id }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+
+        <!-- Priorité -->
+        <label style="display:block;margin-bottom:8px;font-weight:600;">Niveau d'urgence</label>
+        <select class="sakan-input" name="priorite" style="width:100%;margin-bottom:16px;" required>
+          <option value="BASSE">🔵 Faible — Aucune urgence</option>
+          <option value="MOYENNE" selected>🟡 Normale — Traitement standard</option>
+          <option value="HAUTE">🔴 Haute — Problème important</option>
+          <option value="URGENTE">🚨 Urgente — Nécessite intervention immédiate</option>
+        </select>
+
+        <!-- Description -->
+        <label style="display:block;margin-bottom:8px;font-weight:600;">Description détaillée *</label>
+        <textarea class="sakan-input" name="description" id="desc-reclamation" rows="4"
+          placeholder="Décrivez le problème en détail...&#10;Ex: La fuite se situe sous l'évier, elle date de ce matin..."
+          style="width:100%;margin-bottom:16px;"></textarea>
+        <div id="desc-counter" style="font-size:12px;color:#9ca3af;text-align:right;margin-top:-12px;margin-bottom:12px;">0 / 1000 caractères</div>
+
+        <!-- Upload Photo -->
+        <label style="display:block;margin-bottom:8px;font-weight:600;">Photo du problème (optionnel)</label>
+        <div style="border:2px dashed #5E17EB;border-radius:14px;padding:20px;text-align:center;background:rgba(94,23,235,0.03);margin-bottom:8px;">
+          <i class="fa-solid fa-camera" style="font-size:28px;color:#5E17EB;margin-bottom:8px;display:block;"></i>
+          <input type="file" name="photo" id="photo-input" accept="image/*" style="font-size:13px; max-width:100%;">
+          <p style="margin-top:8px;color:#6b7280;font-size:12px;">(JPG, PNG — Max 5 Mo)</p>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="padding:16px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:12px; flex-shrink:0; background:#fafafa; border-radius:0 0 16px 16px;">
+        <button type="button" class="btn-secondary" style="padding:10px 20px; border-radius:8px; border:1px solid #d1d5db; background:white; cursor:pointer;" onclick="closeModal('modal-new-reclamation')">Annuler</button>
+        <button type="submit" class="btn-primary" id="submit-btn" style="padding:10px 24px; border-radius:8px; border:none; background:#5E17EB; color:white; cursor:pointer; font-weight:600;">
+          <i class="fa-solid fa-paper-plane"></i> Soumettre le ticket
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+  function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id) { 
+    document.getElementById(id).style.display = 'none'; 
+    // Reset form to "create" mode when closing if we were editing
+    if (id === 'modal-new-reclamation') {
+        document.getElementById('form-reclamation').reset();
+        document.getElementById('form-reclamation').action = "{{ path('reclamation_creer') }}";
+        document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-plus"></i> Nouveau ticket de réclamation';
+        document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-paper-plane"></i> Soumettre le ticket';
+        document.getElementById('autre-precision').style.display = 'none';
+        
+        let descLen = document.getElementById('desc-reclamation').value.length;
+        if(document.getElementById('desc-counter')) document.getElementById('desc-counter').textContent = descLen + ' / 1000 caractères';
+    }
+  }
+
+  function openEditModal(id, type, precision, description, priorite) {
+      const form = document.getElementById('form-reclamation');
+      form.action = '/locataire/reclamation/' + id + '/modifier';
+      
+      document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen"></i> Modifier la réclamation';
+      document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-save"></i> Enregistrer les modifications';
+      
+      document.getElementById('type-reclamation').value = type;
+      if (type === 'autre') {
+          document.getElementById('autre-precision').style.display = 'block';
+          document.querySelector('input[name="type_precision"]').value = precision;
+      } else {
+          document.getElementById('autre-precision').style.display = 'none';
+          document.querySelector('input[name="type_precision"]').value = '';
+      }
+      
+      document.querySelector('select[name="priorite"]').value = priorite;
+      
+      const descField = document.getElementById('desc-reclamation');
+      descField.value = description;
+      if (document.getElementById('desc-counter')) {
+          document.getElementById('desc-counter').textContent = description.length + ' / 1000 caractères';
+      }
+      
+      showModal('modal-new-reclamation');
+  }
+
+  // Bind EventListeners to edit buttons to avoid inline JS quoting issues
+  document.querySelectorAll('.btn-edit-rcl').forEach(btn => {
+      btn.addEventListener('click', function() {
+          openEditModal(
+              this.dataset.id,
+              this.dataset.type,
+              this.dataset.precision,
+              this.dataset.desc,
+              this.dataset.priorite
+          );
+      });
+  });
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  // Toggle champ "autre"
+  document.getElementById('type-reclamation')?.addEventListener('change', function () {
+    document.getElementById('autre-precision').style.display = (this.value === 'autre') ? 'block' : 'none';
+  });
+
+  // Compteur de caractères description
+  const descTextarea = document.getElementById('desc-reclamation');
+  const descCounter  = document.getElementById('desc-counter');
+  if (descTextarea && descCounter) {
+    descTextarea.addEventListener('input', function () {
+      const len = this.value.length;
+      descCounter.textContent = len + ' / 1000 caractères';
+      descCounter.style.color = len > 900 ? '#dc2626' : '#9ca3af';
+      if (len > 1000) this.value = this.value.slice(0, 1000);
+    });
+  }
+
+  // TEST: Pas de validation JavaScript - tout est géré côté serveur
+  // pour identifier si le problème est côté client ou serveur
+  document.getElementById('form-reclamation')?.addEventListener('submit', function (e) {
+    console.log('Formulaire soumis - données vont partir au serveur');
+  });
+
+  // Filtre par statut
+  function filterTickets(statut, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.reclamation-card').forEach(card => {
+      if (statut === 'all' || card.dataset.statut === statut) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
+{% endblock %}

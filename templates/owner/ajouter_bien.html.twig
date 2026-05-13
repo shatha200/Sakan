@@ -1,0 +1,732 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Ajouter un bien — Sakan{% endblock %}
+
+{% block page_title %}Ajouter un bien{% endblock %}
+{% block page_subtitle %}Référencez votre propriété sur Sakan{% endblock %}
+
+{% macro err(errors, field) %}
+  {% if errors[field] is defined %}
+    <small style="display:block;margin-top:6px;color:#dc2626;font-size:12.5px;font-weight:600;">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ errors[field] }}
+    </small>
+  {% endif %}
+{% endmacro %}
+{% set errStyle = 'border:1.5px solid #dc2626 !important;background:#fef2f2;' %}
+
+{% block content %}
+{% import _self as f %}
+{% set old = old|default({}) %}
+{% set errors = errors|default({}) %}
+<div class="sakan-content">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ path('owner_biens') }}" style="color:var(--text-muted);font-size:14px; text-decoration:none;display:flex; align-items:center;gap:6px;margin-bottom:8px;">
+        <i class="fa-solid fa-arrow-left"></i> Retour à mes biens
+      </a>
+      <h1 style="margin:0;"><i class="fa-solid fa-house-circle-plus"></i> Publier une nouvelle annonce</h1>
+    </div>
+  </div>
+
+  {% if errors|length > 0 %}
+    <div style="padding:14px 18px;border-radius:12px;margin-bottom:16px;background:#fee2e2;color:#991b1b;font-weight:600;">
+      <i class="fa-solid fa-triangle-exclamation"></i> Veuillez corriger les champs en rouge ci-dessous.
+    </div>
+  {% endif %}
+
+  {% for label, messages in app.flashes(['error', 'success']) %}
+    {% for message in messages %}
+      <div style="padding:12px 16px;border-radius:12px;margin-bottom:16px;background:{{ label == 'success' ? '#dcfce7' : '#fee2e2' }};color:{{ label == 'success' ? '#166534' : '#991b1b' }};font-weight:600;">{{ message }}</div>
+    {% endfor %}
+  {% endfor %}
+
+  <form method="post" enctype="multipart/form-data" action="{{ path('owner_ajouter_bien') }}" novalidate>
+    <input type="hidden" name="_token" value="{{ csrf_token('owner_ajouter_bien') }}">
+
+    <div style="background:white;border-radius:20px;padding:32px; box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-circle-info"></i> Informations générales du bien</h2>
+
+      <div class="sakan-form-group">
+        <label>Titre de l'annonce *</label>
+        <input type="text" name="titre" value="{{ old.titre|default('') }}" placeholder="Ex: Bel appartement lumineux au cœur de Tunis" class="sakan-input" style="width:100%;{{ errors.titre is defined ? errStyle : '' }}" required minlength="3" maxlength="150">
+        {{ f.err(errors, 'titre') }}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="sakan-form-group">
+          <label>Type de bien *</label>
+          <select name="type" class="sakan-input" style="width:100%;{{ errors.type is defined ? errStyle : '' }}" required>
+            <option value="">-- Sélectionner --</option>
+            {% for opt in ['Appartement', 'Villa', 'Studio', 'Maison', 'Bureau'] %}
+              <option value="{{ opt }}" {{ old.type|default('') == opt ? 'selected' : '' }}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+          {{ f.err(errors, 'type') }}
+        </div>
+        <div class="sakan-form-group">
+          <label>Meublé</label>
+          <select name="meuble" class="sakan-input" style="width:100%;{{ errors.meuble is defined ? errStyle : '' }}">
+            {% for opt in ['Oui, entièrement meublé', 'Partiellement meublé', 'Non meublé'] %}
+              <option value="{{ opt }}" {{ old.meuble|default('') == opt ? 'selected' : '' }}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+          {{ f.err(errors, 'meuble') }}
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div class="sakan-form-group">
+          <label>Surface (m²) * <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(min 70)</span></label>
+          <input type="number" step="0.01" min="70" max="10000" name="superficie" value="{{ old.superficie|default('') }}" class="sakan-input" style="width:100%;{{ errors.superficie is defined ? errStyle : '' }}" placeholder="Ex: 95" required>
+          {{ f.err(errors, 'superficie') }}
+        </div>
+        <div class="sakan-form-group">
+          <label>Chambres *</label>
+          <input type="number" min="0" max="50" step="1" name="nombreChambres" value="{{ old.nombreChambres|default('') }}" class="sakan-input" style="width:100%;{{ errors.nombreChambres is defined ? errStyle : '' }}" placeholder="Ex: 3" required>
+          {{ f.err(errors, 'nombreChambres') }}
+        </div>
+        <div class="sakan-form-group">
+          <label>Salles de bain</label>
+          <input type="number" min="0" max="20" step="1" name="sallesBain" value="{{ old.sallesBain|default('') }}" class="sakan-input" style="width:100%;{{ errors.sallesBain is defined ? errStyle : '' }}" placeholder="Ex: 2">
+          {{ f.err(errors, 'sallesBain') }}
+        </div>
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Gouvernorat *</label>
+        <select id="gouvernorat-select" class="sakan-input" style="width:100%;">
+          <option value="">Chargement des gouvernorats…</option>
+        </select>
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Rechercher une adresse *</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="address-search" autocomplete="off" class="sakan-input" style="flex:1;" placeholder="Ex: Avenue Habib Bourguiba">
+          <button type="button" id="address-search-btn" class="btn-primary" style="white-space:nowrap;">
+            <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+          </button>
+        </div>
+        <ul id="address-results" style="list-style:none;padding:0;margin:8px 0 0 0;max-height:180px;overflow-y:auto;border-radius:10px;"></ul>
+      </div>
+
+      <div class="sakan-form-group">
+        <label>Sélectionnez l'emplacement sur la carte</label>
+        <div id="map-picker" style="height:400px; border-radius:8px; margin-top:1rem;"></div>
+        <div id="adresse-apercu" style="margin-top:10px;padding:10px 14px;background:#f1f5f9;border-radius:10px;font-size:13px;color:#334155;display:none;">
+          <i class="fa-solid fa-location-dot" style="color:#5E17EB;"></i>
+          <strong>Adresse sélectionnée :</strong> <span id="adresse-apercu-text">—</span>
+        </div>
+        <input type="hidden" name="adresse_text" id="adresse-hidden" value="{{ old.adresse_text|default('') }}">
+        {{ f.err(errors, 'adresse_text') }}
+      </div>
+
+    </div>
+
+    <div style="background:white;border-radius:20px;padding:32px; box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-camera"></i> Photos du bien *</h2>
+      <div class="sakan-form-group">
+        <label>Photos (jpg, png, webp, gif — 5 Mo max) — <strong>au moins une photo requise</strong></label>
+        <input type="file" name="photos[]" class="sakan-input" style="width:100%;{{ errors.photos is defined ? errStyle : '' }}" multiple accept="image/*" required>
+        {{ f.err(errors, 'photos') }}
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:20px;padding:32px; box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-tag"></i> Tarification & disponibilité</h2>
+
+      <div class="sakan-form-group" style="margin-bottom:16px;">
+        <label>Prix (TND) * <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(min 100)</span></label>
+        <div style="display:flex;gap:8px;align-items:stretch;max-width:420px;">
+          <input type="number" step="0.01" min="100" max="1000000" name="prix" value="{{ old.prix|default('') }}" class="sakan-input" style="flex:1;{{ errors.prix is defined ? errStyle : '' }}" placeholder="Ex: 1200" required>
+          <button type="button" id="gemini-price-btn" title="Estimer le prix avec l'IA"
+                  style="background:linear-gradient(135deg,#8b5cf6,#5E17EB);color:white;border:none;padding:0 14px;border-radius:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Estimer
+          </button>
+        </div>
+        <div id="gemini-price-suggestion" style="display:none;margin-top:10px;max-width:420px;"></div>
+        {{ f.err(errors, 'prix') }}
+      </div>
+
+      <div class="sakan-form-group" style="margin-bottom:16px;">
+        <label>Caution *</label>
+        <select name="caution_mois" class="sakan-input" style="width:100%;max-width:300px;{{ errors.caution_mois is defined ? errStyle : '' }}" required>
+          <option value="">-- Sélectionner --</option>
+          {% for m in [1, 2, 3] %}
+            <option value="{{ m }}" {{ old.caution_mois|default('') == m ? 'selected' : '' }}>{{ m }} mois</option>
+          {% endfor %}
+        </select>
+        {{ f.err(errors, 'caution_mois') }}
+      </div>
+
+      <div class="sakan-form-group" style="margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" id="dateImprevu" name="dateImprevu" value="1" {{ old.dateImprevu|default(false) ? 'checked' : '' }}
+                 style="width:18px;height:18px;accent-color:#5E17EB;">
+          <span style="font-weight:600;">Date de disponibilité imprévue</span>
+          <span style="color:var(--text-muted);font-size:12.5px;">(l'annonce sera visible avec mention "date imprévue")</span>
+        </label>
+      </div>
+
+      <div id="dateFields" style="{{ old.dateImprevu|default(false) ? 'display:none;' : '' }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div class="sakan-form-group">
+            <label>Date de disponibilité *</label>
+            <input type="date" id="dateDisponibilite" name="dateDisponibilite" value="{{ old.dateVal|default('') }}" class="sakan-input" style="width:100%;{{ errors.dateDisponibilite is defined ? errStyle : '' }}">
+            <span id="dateError" class="sakan-field-error" style="color:#e74c3c;font-size:13px;display:none;"></span>
+            {{ f.err(errors, 'dateDisponibilite') }}
+          </div>
+          <div class="sakan-form-group">
+            <label>Heure <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(optionnel)</span></label>
+            <input type="time" id="heureDisponibilite" name="heureDisponibilite" value="{{ old.heureVal|default('') }}" class="sakan-input" style="width:100%;">
+          </div>
+          <div class="sakan-form-group">
+            <label>Statut <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(automatique)</span></label>
+            <div id="statutPreview" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;font-weight:600;font-size:14px;color:var(--text-muted);">
+              <i class="fa-solid fa-circle-info"></i> Choisissez une date
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="imprevuInfo" style="{{ old.dateImprevu|default(false) ? '' : 'display:none;' }}padding:14px 18px;border-radius:14px;background:#fffbeb;border:1.5px solid #fcd34d;display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-clock" style="font-size:20px;color:#d97706;"></i>
+        <div>
+          <div style="font-weight:700;color:#92400e;font-size:14px;">Statut : Bientôt disponible</div>
+          <div style="font-size:12.5px;color:#a16207;">L'annonce sera visible avec la mention "date de disponibilité imprévue".</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:20px;padding:32px; box-shadow:var(--shadow-card);margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px;"><i class="fa-solid fa-align-left"></i> Description</h2>
+
+      <div class="sakan-form-group">
+        <label>Description détaillée *</label>
+
+        <div style="background:#faf5ff;border:1px dashed #c4b5fd;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:8px;align-items:center;">
+          <button type="button" id="gemini-generate-btn" class="btn-primary" style="white-space:nowrap;background:linear-gradient(135deg,#8b5cf6,#5E17EB);">
+            ✨ Générer la description avec l'IA
+          </button>
+          <span style="font-size:12px;color:#7c3aed;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Pré-remplit la description à partir des autres champs
+          </span>
+          <input type="hidden" id="gemini-key" value="{{ gemini_api_key|default('') }}">
+        </div>
+
+        <textarea name="description" class="sakan-input" rows="5" style="width:100%;{{ errors.description is defined ? errStyle : '' }}" placeholder="Décrivez votre bien en détail (10 caractères minimum)..." required minlength="10" maxlength="5000">{{ old.description|default('') }}</textarea>
+        {{ f.err(errors, 'description') }}
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+      <a href="{{ path('owner_biens') }}" class="btn-secondary">Annuler</a>
+      <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Publier l'annonce</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function() {
+    const form = document.querySelector('form[action*="ajouter_bien"]');
+    const dateInput = document.getElementById('dateDisponibilite');
+    const timeInput = document.getElementById('heureDisponibilite');
+    const dateError = document.getElementById('dateError');
+    const statutPreview = document.getElementById('statutPreview');
+    const imprevuCheck = document.getElementById('dateImprevu');
+    const dateFields = document.getElementById('dateFields');
+    const imprevuInfo = document.getElementById('imprevuInfo');
+
+    function getNowString() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    function hoursDiff(dateStr, timeStr) {
+        const now = new Date();
+        const t = timeStr || '00:00';
+        const target = new Date(dateStr + 'T' + t + ':00');
+        return Math.max(0, (target - now) / 3600000);
+    }
+
+    function updateStatutPreview() {
+        const val = dateInput.value.trim();
+        const time = timeInput.value.trim();
+        if (!val) {
+            statutPreview.innerHTML = '<i class="fa-solid fa-circle-info"></i> Choisissez une date';
+            statutPreview.style.borderColor = '#e2e8f0';
+            statutPreview.style.background = '#f8fafc';
+            statutPreview.style.color = 'var(--text-muted)';
+            return;
+        }
+        const h = hoursDiff(val, time);
+        const days = Math.floor(h / 24);
+        const hrs = Math.floor(h % 24);
+        if (h <= 0) {
+            statutPreview.innerHTML = '<span style="color:#10b981;">●</span> Disponible';
+            statutPreview.style.borderColor = '#10b981';
+            statutPreview.style.background = '#ecfdf5';
+            statutPreview.style.color = '#065f46';
+        } else if (h <= 7 * 24) {
+            let label = days > 0 ? days + ' j' : '';
+            if (hrs > 0) label += (label ? ' ' : '') + hrs + ' h';
+            statutPreview.innerHTML = '<span style="color:#d97706;">●</span> Bientôt (dans ' + label + ')';
+            statutPreview.style.borderColor = '#d97706';
+            statutPreview.style.background = '#fffbeb';
+            statutPreview.style.color = '#92400e';
+        } else {
+            statutPreview.innerHTML = '<span style="color:#ef4444;">●</span> Occupé (archivé)';
+            statutPreview.style.borderColor = '#ef4444';
+            statutPreview.style.background = '#fef2f2';
+            statutPreview.style.color = '#991b1b';
+        }
+    }
+
+    function toggleImprevu() {
+        if (imprevuCheck.checked) {
+            dateFields.style.display = 'none';
+            imprevuInfo.style.display = 'flex';
+        } else {
+            dateFields.style.display = '';
+            imprevuInfo.style.display = 'none';
+            updateStatutPreview();
+        }
+    }
+
+    function validateDate() {
+        if (imprevuCheck.checked) return true;
+        const val = dateInput.value.trim();
+        const today = getNowString();
+        if (val === '') {
+            dateError.textContent = "La date de disponibilité est requise.";
+            dateError.style.display = 'block';
+            dateInput.style.borderColor = '#e74c3c';
+            return false;
+        }
+        if (val < today) {
+            dateError.textContent = "La date doit être supérieure ou égale à aujourd'hui.";
+            dateError.style.display = 'block';
+            dateInput.style.borderColor = '#e74c3c';
+            return false;
+        }
+        dateError.style.display = 'none';
+        dateInput.style.borderColor = '';
+        return true;
+    }
+
+    imprevuCheck.addEventListener('change', toggleImprevu);
+    dateInput.addEventListener('change', function() { validateDate(); updateStatutPreview(); });
+    timeInput.addEventListener('change', function() { validateDate(); updateStatutPreview(); });
+    toggleImprevu();
+    if (!imprevuCheck.checked) updateStatutPreview();
+
+    form.addEventListener('submit', function(e) {
+        if (!validateDate()) { e.preventDefault(); dateInput.focus(); }
+    });
+})();
+</script>
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// --- Gemini AI description generator ---
+(function() {
+    var btn = document.getElementById('gemini-generate-btn');
+    if (!btn) return;
+    var originalLabel = btn.innerHTML;
+
+    btn.addEventListener('click', function() {
+        var apiKey = document.getElementById('gemini-key').value.trim();
+        if (!apiKey) {
+            alert('Clé Gemini manquante dans le fichier .env (GEMINI_API_KEY)');
+            return;
+        }
+
+        var val = function(name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            return el ? (el.value || '').trim() : '';
+        };
+
+        var typeBien     = val('type');
+        var surface      = val('superficie');
+        var nbPieces     = val('nombreChambres');
+        var sdb          = val('sallesBain');
+        var loyer        = val('prix');
+        var adresse      = val('adresse_text');
+        var gouvSelect   = document.getElementById('gouvernorat-select');
+        var ville        = gouvSelect ? gouvSelect.value : '';
+        var equipements  = val('meuble') || '—';
+        var titre        = val('titre');
+
+        // Qualifier la taille sans donner la valeur exacte
+        var surfaceNum = parseFloat(surface) || 0;
+        var surfaceQual = '';
+        if (surfaceNum > 0 && surfaceNum < 90) {
+            surfaceQual = 'plutôt petit';
+        } else if (surfaceNum >= 130) {
+            surfaceQual = 'spacieux';
+        }
+
+        var prompt = 'Rédige la description d\'une annonce de location en Tunisie, ton spontané et chaleureux, comme quelqu\'un qui parle de chez soi.\n\n' +
+            'Infos :\n' +
+            '- Type: ' + (typeBien || '—') + '\n' +
+            (surfaceQual ? '- Taille ressentie: ' + surfaceQual + '\n' : '') +
+            '- Chambres: ' + (nbPieces || '—') + '\n' +
+            (sdb ? '- Salles d\'eau: ' + sdb + '\n' : '') +
+            '- Loyer: ' + (loyer || '—') + ' TND/mois\n' +
+            '- Ville: ' + (ville || '—') + '\n' +
+            '- Équipements: ' + equipements + '\n\n' +
+            'RÈGLES STRICTES :\n' +
+            '1. Réponds UNIQUEMENT avec la description. Aucun préambule type "Voici...". Aucun commentaire.\n' +
+            '2. Maximum 2 phrases. Maximum 200 caractères au total.\n' +
+            '3. N\'INDIQUE JAMAIS la surface exacte en m². Utilise simplement "spacieux" ou "petit" si pertinent, sinon ne mentionne pas la taille du tout.\n' +
+            '4. Mentionne le nombre de chambres et de salles d\'eau.\n' +
+            '5. Ton spontané, humain, chaleureux. Pas de publicité, pas de superlatifs excessifs, pas d\'émojis.';
+
+        var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=' + encodeURIComponent(apiKey);
+
+        btn.disabled = true;
+        btn.innerHTML = 'Génération…';
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        })
+        .then(function(res) {
+            return res.json().then(function(data) { return { status: res.status, data: data }; });
+        })
+        .then(function(result) {
+            var data = result.data;
+            console.log('Gemini response:', data);
+
+            if (data && data.error) {
+                alert('Erreur Gemini ' + (data.error.code || result.status) + ' : ' + (data.error.message || 'inconnue'));
+                return;
+            }
+            if (data && data.candidates && data.candidates[0]) {
+                var cand = data.candidates[0];
+                if (cand.finishReason && cand.finishReason !== 'STOP' && cand.finishReason !== 'MAX_TOKENS') {
+                    alert('Gemini a bloqué la génération (finishReason: ' + cand.finishReason + ')');
+                    return;
+                }
+                if (cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text) {
+                    var descEl = document.querySelector('[name="description"]');
+                    if (descEl) descEl.value = cand.content.parts[0].text.trim();
+                    return;
+                }
+            }
+            alert('Réponse Gemini inattendue — ouvre la console (F12) pour voir le détail');
+        })
+        .catch(function(err) {
+            console.error('Gemini fetch error:', err);
+            alert('Erreur réseau : ' + (err && err.message ? err.message : 'inconnue'));
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = originalLabel;
+        });
+    });
+})();
+</script>
+<script>
+// --- Gemini AI price estimator ---
+(function() {
+    var btn = document.getElementById('gemini-price-btn');
+    if (!btn) return;
+    var box = document.getElementById('gemini-price-suggestion');
+    var originalHtml = btn.innerHTML;
+
+    btn.addEventListener('click', async function() {
+        var keyEl = document.getElementById('gemini-key');
+        var apiKey = keyEl ? keyEl.value.trim() : '';
+        if (!apiKey) {
+            alert('Clé Gemini manquante dans le fichier .env (GEMINI_API_KEY)');
+            return;
+        }
+
+        var val = function(name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            return el ? (el.value || '').trim() : '';
+        };
+
+        var typeBien  = val('type');
+        var surface   = val('superficie');
+        var chambres  = val('nombreChambres');
+        var sdb       = val('sallesBain');
+        var meuble    = val('meuble') || 'non précisé';
+        var gouvSel   = document.getElementById('gouvernorat-select');
+        var ville     = gouvSel ? gouvSel.value : '';
+
+        if (!typeBien || !surface || !ville) {
+            alert('Remplis au moins le type, la surface et le gouvernorat pour une estimation pertinente.');
+            return;
+        }
+
+        var prompt =
+            'Tu es un expert en estimation de loyers locatifs en Tunisie en 2026.\n\n' +
+            'Estime le loyer mensuel en TND pour ce bien :\n' +
+            '- Type: ' + typeBien + '\n' +
+            '- Gouvernorat: ' + ville + '\n' +
+            '- Surface: ' + surface + ' m²\n' +
+            '- Chambres: ' + (chambres || '—') + '\n' +
+            '- Salles de bain: ' + (sdb || '—') + '\n' +
+            '- Meublé: ' + meuble + '\n\n' +
+            'RÈGLES STRICTES :\n' +
+            '1. Réponds UNIQUEMENT avec un JSON valide, rien d\'autre. Pas de ```json, pas de texte avant/après.\n' +
+            '2. Format EXACT : {"prix":1200,"min":1000,"max":1400,"explication":"Courte phrase"}\n' +
+            '3. Prix en TND entier (pas de décimales, pas de symbole, pas de virgule).\n' +
+            '4. Fourchette réaliste pour le marché tunisien actuel.\n' +
+            '5. Explication 1 phrase max sur les comparables du marché.';
+
+        var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=' + encodeURIComponent(apiKey);
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Estimation...';
+        if (box) box.style.display = 'none';
+
+        try {
+            var res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: 'application/json' }
+                })
+            });
+            var data = await res.json();
+
+            if (data.error) {
+                alert('Erreur Gemini : ' + (data.error.message || 'inconnue'));
+                return;
+            }
+
+            var text = (data && data.candidates && data.candidates[0] && data.candidates[0].content
+                        && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
+                        && data.candidates[0].content.parts[0].text) || '';
+            text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+            var parsed;
+            try { parsed = JSON.parse(text); }
+            catch (e) {
+                alert('Réponse Gemini mal formée : ' + text.slice(0, 120));
+                return;
+            }
+
+            // Compute min/max/moyenne from whatever Gemini returns
+            var minP = parseInt(parsed.min, 10);
+            var maxP = parseInt(parsed.max, 10);
+            var midP = parseInt(parsed.prix, 10);
+            if (isNaN(minP) && !isNaN(midP)) minP = Math.round(midP * 0.85);
+            if (isNaN(maxP) && !isNaN(midP)) maxP = Math.round(midP * 1.15);
+            if (isNaN(midP) && !isNaN(minP) && !isNaN(maxP)) midP = Math.round((minP + maxP) / 2);
+            if (isNaN(minP) || isNaN(maxP)) {
+                alert('Gemini n\'a pas retourné de fourchette exploitable.');
+                return;
+            }
+
+            box.innerHTML =
+                '<div style="padding:14px 16px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);border-radius:12px;border:1px solid #c4b5fd;">' +
+                    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' +
+                        '<div style="font-size:24px;">💡</div>' +
+                        '<div style="flex:1;min-width:0;">' +
+                            '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#6d28d9;font-weight:600;margin-bottom:2px;">Estimation IA</div>' +
+                            '<div style="font-weight:800;color:#5b21b6;font-size:22px;line-height:1.1;">' + minP + ' – ' + maxP + ' <span style="font-size:13px;font-weight:600;">TND/mois</span></div>' +
+                        '</div>' +
+                    '</div>' +
+                    (parsed.explication ? '<div style="font-size:12px;color:#6b7280;line-height:1.4;margin-bottom:10px;">' + parsed.explication + '</div>' : '') +
+                    '<div style="display:flex;gap:6px;">' +
+                        '<button type="button" class="use-gemini-price" data-val="' + minP + '" style="flex:1;background:white;color:#5E17EB;border:1.5px solid #c4b5fd;padding:8px 10px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Min ('  + minP + ')</button>' +
+                        '<button type="button" class="use-gemini-price" data-val="' + midP + '" style="flex:1;background:#5E17EB;color:white;border:none;padding:8px 10px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">Moyen (' + midP + ')</button>' +
+                        '<button type="button" class="use-gemini-price" data-val="' + maxP + '" style="flex:1;background:white;color:#5E17EB;border:1.5px solid #c4b5fd;padding:8px 10px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">Max ('  + maxP + ')</button>' +
+                    '</div>' +
+                '</div>';
+            box.style.display = 'block';
+
+            box.querySelectorAll('.use-gemini-price').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    var prixInput = document.querySelector('[name="prix"]');
+                    if (prixInput) prixInput.value = b.dataset.val;
+                    box.style.display = 'none';
+                });
+            });
+        } catch (err) {
+            alert('Erreur réseau : ' + (err && err.message ? err.message : 'inconnue'));
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    });
+})();
+</script>
+<script>
+(function() {
+    var adresseHidden = document.getElementById('adresse-hidden');
+    var apercu        = document.getElementById('adresse-apercu');
+    var apercuText    = document.getElementById('adresse-apercu-text');
+    var govSelect     = document.getElementById('gouvernorat-select');
+    var searchInput   = document.getElementById('address-search');
+    var searchBtn     = document.getElementById('address-search-btn');
+    var resultsList   = document.getElementById('address-results');
+    var mapDiv        = document.getElementById('map-picker');
+    if (!mapDiv || typeof L === 'undefined') return;
+
+    var map = L.map('map-picker').setView([33.8869, 9.5375], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker = null;
+
+    function updateAdresse(precise) {
+        var gov = govSelect.value || '';
+        var parts = [];
+        if (precise) parts.push(precise);
+        if (gov) parts.push(gov);
+        var full = parts.join(', ');
+        adresseHidden.value = full;
+        if (full) {
+            apercu.style.display = 'block';
+            apercuText.textContent = full;
+        } else {
+            apercu.style.display = 'none';
+        }
+    }
+
+    function placeMarker(lat, lng, fly) {
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            marker.on('dragend', function() {
+                var p = marker.getLatLng();
+                reverseGeocode(p.lat, p.lng);
+            });
+        }
+        if (fly !== false) map.flyTo([lat, lng], 14);
+    }
+
+    function reverseGeocode(lat, lng) {
+        fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json', {
+            headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data && data.display_name) {
+                updateAdresse(data.display_name);
+            }
+        })
+        .catch(function() {});
+    }
+
+    map.on('click', function(e) {
+        placeMarker(e.latlng.lat, e.latlng.lng, false);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+
+    // --- Governorates via GeoNames ---
+    fetch('https://secure.geonames.org/childrenJSON?geonameId=2464461&username=jerbi.sara')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            govSelect.innerHTML = '<option value="">— Sélectionnez un gouvernorat —</option>';
+            if (data && data.geonames) {
+                data.geonames.forEach(function(g) {
+                    var opt = document.createElement('option');
+                    opt.value = g.name;
+                    opt.textContent = g.name;
+                    opt.dataset.lat = g.lat;
+                    opt.dataset.lng = g.lng;
+                    govSelect.appendChild(opt);
+                });
+            }
+        })
+        .catch(function() {
+            govSelect.innerHTML = '<option value="">(Gouvernorats indisponibles)</option>';
+        });
+
+    govSelect.addEventListener('change', function() {
+        var opt = govSelect.options[govSelect.selectedIndex];
+        if (opt && opt.dataset && opt.dataset.lat) {
+            map.flyTo([parseFloat(opt.dataset.lat), parseFloat(opt.dataset.lng)], 10);
+        }
+        // refresh apercu with new governorate suffix
+        if (adresseHidden.value) {
+            var currentPrecise = adresseHidden.value.split(',').slice(0, -1).join(',').trim() || adresseHidden.value;
+            updateAdresse(currentPrecise);
+        }
+    });
+
+    // --- Search with button + debounce 500ms fallback ---
+    var debounceTimer = null;
+    function runSearch() {
+        var q = searchInput.value.trim();
+        if (q.length < 3) { resultsList.innerHTML = ''; return; }
+        var gov = govSelect.value;
+        var full = gov ? (q + ', ' + gov + ', Tunisia') : (q + ', Tunisia');
+        resultsList.innerHTML = '<li style="padding:10px;color:#64748b;font-size:13px;">Recherche en cours…</li>';
+        fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(full) + '&countrycodes=tn&format=json&limit=10', {
+            headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(results) {
+            resultsList.innerHTML = '';
+            if (!Array.isArray(results) || results.length === 0) {
+                resultsList.innerHTML = '<li style="padding:10px;color:#64748b;font-size:13px;">Aucun résultat</li>';
+                return;
+            }
+            results.forEach(function(r) {
+                var li = document.createElement('li');
+                li.textContent = r.display_name;
+                li.style.cssText = 'padding:10px 12px;background:#f8fafc;margin-bottom:4px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #e2e8f0;';
+                li.addEventListener('mouseover', function() { li.style.background = '#eef2ff'; });
+                li.addEventListener('mouseout', function() { li.style.background = '#f8fafc'; });
+                li.addEventListener('click', function() {
+                    updateAdresse(r.display_name);
+                    placeMarker(parseFloat(r.lat), parseFloat(r.lon), true);
+                    resultsList.innerHTML = '';
+                    searchInput.value = '';
+                });
+                resultsList.appendChild(li);
+            });
+        })
+        .catch(function() {
+            resultsList.innerHTML = '<li style="padding:10px;color:#dc2626;font-size:13px;">Erreur de recherche</li>';
+        });
+    }
+
+    searchBtn.addEventListener('click', runSearch);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
+    });
+    // Auto-trigger after 500ms of inactivity (debounce complément)
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(runSearch, 500);
+    });
+
+    // Pre-fill if adresse_text existant (retour d'erreur form)
+    if (adresseHidden.value.trim().length > 3) {
+        apercu.style.display = 'block';
+        apercuText.textContent = adresseHidden.value;
+        fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(adresseHidden.value) + '&countrycodes=tn&format=json&limit=1', {
+            headers: { 'User-Agent': 'SakanApp/1.0 (esprit.tn)' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(results) {
+            if (results && results.length > 0) {
+                placeMarker(parseFloat(results[0].lat), parseFloat(results[0].lon), true);
+            }
+        })
+        .catch(function() {});
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,248 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Mes Réservations — Sakan{% endblock %}
+{% block page_title %}Mes Réservations{% endblock %}
+{% block page_subtitle %}Gérez vos demandes de location en cours{% endblock %}
+
+{% block content %}
+    {# Flash messages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'error' ? 'danger' : label }}" style="padding: 12px 20px; margin-bottom: 20px; border-radius: 12px; background: {{ label == 'success' ? '#d1fae5' : (label == 'error' or label == 'danger' ? '#fee2e2' : '#fef3c7') }}; color: {{ label == 'success' ? '#065f46' : (label == 'error' or label == 'danger' ? '#991b1b' : '#92400e') }}; border: 1px solid {{ label == 'success' ? '#a7f3d0' : (label == 'error' or label == 'danger' ? '#fecaca' : '#fde68a') }};">
+                <i class="fa-solid {{ label == 'success' ? 'fa-check-circle' : (label == 'error' or label == 'danger' ? 'fa-exclamation-circle' : 'fa-info-circle') }}"></i> {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="annonces-grid">
+        {% for reservation in reservations %}
+            <div class="annonce-card" style="height: auto; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; background: white; border-radius: 20px; transition: all 0.3s ease;">
+                <div class="card-body" style="padding: 24px; flex: 1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px;">
+                        <h3 class="card-titre" style="font-size: 20px; color: var(--blue-dark); font-weight: 700; margin: 0; line-height: 1.2;">
+                            {{ reservation.annonce.titre }}
+                        </h3>
+                        
+                        {% set statut_class = 'en-attente' %}
+                        {% if reservation.statut|lower == 'approuvée' %}{% set statut_class = 'disponible' %}{% endif %}
+                        {% if reservation.statut|lower == 'refusée' %}{% set statut_class = 'reserve' %}{% endif %}
+                        
+                        <span class="badge {{ statut_class == 'disponible' ? 'badge-ok' : (statut_class == 'reserve' ? 'badge-err' : 'badge-warn') }}" style="font-size: 11px;">
+                            {{ reservation.statut }}
+                        </span>
+                    </div>
+
+                    {% if qrCodesMap is defined and qrCodesMap[reservation.id] is defined %}
+                        <div style="text-align: center; margin-bottom: 20px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 15px; border-radius: 12px; border: 1px dashed var(--blue);">
+                            <p style="font-size: 12px; font-weight: 700; color: var(--blue-dark); margin-bottom: 10px;"><i class="fa-solid fa-qrcode"></i> Votre Billet SAKAN Pass</p>
+                            <img src="{{ qrCodesMap[reservation.id] }}" alt="QR Code Pass" style="width: 120px; height: 120px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            <p style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">À présenter au propriétaire le {{ reservation.dateDebut|date('d/m/Y') }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 12px; display: flex; text-align: center; margin-bottom: 20px; border: 1px solid var(--border);">
+                        <div style="flex: 1; border-right: 1px solid var(--border);">
+                            <div style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">Arrivée</div>
+                            <div style="font-weight: 700; font-size: 14px;">
+                                {{ reservation.dateDebut|date('d/m/Y') }}
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">Départ</div>
+                            <div style="font-weight: 700; font-size: 14px;">{{ reservation.dateFin|date('d/m/Y') }}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 16px;">
+                        <span style="font-size: 18px; font-weight: 800; color: var(--blue);">{{ reservation.annonce.prix }} TND</span>
+                        <div style="display: flex; gap: 8px;">
+                            {% if reservation.statut|lower == 'en attente' %}
+                                <button onclick="openEditModal('{{ path('tenant_reservation_edit', {'id': reservation.id}) }}')" class="btn-secondary" style="padding: 6px 15px; font-size: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; border: 1px solid var(--blue); color: var(--blue); background: transparent;">
+                                    <i class="fa-solid fa-pen"></i> Modifier
+                                </button>
+                                <form action="{{ path('tenant_reservation_cancel', {'id': reservation.id}) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment annuler cette réservation ?')">
+                                    <button type="submit" class="btn-primary" style="background: var(--danger); border-color: var(--danger); padding: 6px 12px; font-size: 12px; border-radius: 8px;">
+                                        Annuler
+                                    </button>
+                                </form>
+                            {% elseif reservation.statut|lower starts with 'approuv' %}
+                                {% if contratsMap[reservation.id] is defined %}
+                                    {% set contrat = contratsMap[reservation.id] %}
+                                    {% if contrat.statut == 'ACTIF' %}
+                                        {# Contrat actif - rediriger vers contrats #}
+                                        <a href="{{ path('tenant_contrats') }}" class="btn-primary" style="padding: 8px 16px; font-size: 13px; border-radius: 8px; background: #10b981; color: white; text-decoration: none; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-file-contract"></i> Voir mon contrat actif
+                                        </a>
+                                    {% elseif contrat.statut == 'EN_ATTENTE_SIGNATURE' and not contrat.signeLocataire %}
+                                        <a href="{{ path('tenant_contrat_finaliser', {'id': contrat.id}) }}" class="btn-primary" style="padding: 8px 16px; font-size: 13px; border-radius: 8px; background: linear-gradient(90deg, #5E17EB, #f59e0b); color: white; text-decoration: none; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-file-signature"></i> Finaliser le contrat
+                                        </a>
+                                    {% elseif contrat.statut == 'EN_ATTENTE_SIGNATURE' %}
+                                        <a href="{{ path('contrat_voir', {'id': contrat.id}) }}" class="btn-primary" style="padding: 8px 16px; font-size: 13px; border-radius: 8px; background: linear-gradient(90deg, #5E17EB, #f59e0b); color: white; text-decoration: none; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-eye"></i> Voir le contrat
+                                        </a>
+                                    {% else %}
+                                        <span style="font-size: 12px; color: #6b7280;">
+                                            <i class="fa-solid fa-clock"></i> Contrat en cours
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {# Réservation approuvée mais contrat pas encore créé par proprio #}
+                                    <span style="font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-hourglass-half"></i> En attente de création de contrat
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 100px 0;">
+                <i class="fa-solid fa-calendar-xmark" style="font-size: 60px; color: var(--border); margin-bottom: 24px; display: block;"></i>
+                <p style="color: var(--text-muted); font-size: 18px;">Aucune réservation en cours.</p>
+                <a href="{{ path('tenant_catalogue') }}" class="btn-primary" style="margin-top: 24px; text-decoration: none;">Voir le catalogue</a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- MODALE DE MODIFICATION (Unique pour la page) -->
+    <div id="edit-modal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 2000; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
+        <div class="glass-card" style="width: 90%; max-width: 500px; padding: 40px; background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative;">
+            <button onclick="closeEditModal()" style="position: absolute; top: 20px; right: 20px; border: none; background: #f1f5f9; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;">×</button>
+            <div id="modal-loader" style="text-align: center; padding: 40px; display: none;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 32px; color: var(--blue);"></i>
+                <p style="margin-top: 15px; color: var(--text-muted);">Chargement du formulaire...</p>
+            </div>
+            <div id="modal-body">
+                <!-- Le formulaire sera injecté ici -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Ouvre la modale et configure la soumission AJAX
+         */
+        async function openEditModal(url) {
+            const modal = document.getElementById('edit-modal');
+            const body = document.getElementById('modal-body');
+            const loader = document.getElementById('modal-loader');
+            
+            modal.style.display = 'flex';
+            body.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                // On force le paramètre ajax pour une détection robuste
+                const ajaxUrl = url + (url.includes('?') ? '&' : '?') + 'ajax=1';
+                const response = await fetch(ajaxUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) throw new Error("Erreur serveur (" + response.status + ")");
+                
+                const data = await response.json();
+                
+                loader.style.display = 'none';
+                body.innerHTML = '<div style="text-align:center; margin-bottom:20px;"><h3 style="color:var(--blue-dark);">Modifier la réservation</h3></div>';
+                
+                if (data.html) {
+                    body.insertAdjacentHTML('beforeend', data.html);
+                    const form = body.querySelector('form');
+                    if (form) setupAjaxForm(form, body);
+                } else {
+                    throw new Error("Impossible de charger le formulaire.");
+                }
+            } catch (err) {
+                console.error("AJAX Error:", err);
+                loader.style.display = 'none';
+                body.innerHTML = `
+                    <div style="text-align:center; padding: 20px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 40px; color: var(--err); margin-bottom: 15px;"></i>
+                        <p style="font-weight: 700; color: var(--blue-dark);">Oops ! Une erreur est survenue.</p>
+                        <p style="color: var(--text-muted); font-size: 14px;">${err.message}</p>
+                        <button onclick="closeEditModal()" class="btn-secondary" style="margin-top:20px;">Fermer</button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Intercepte la soumission du formulaire pour l'envoyer via AJAX
+         */
+        function setupAjaxForm(form, container) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Enregistrement...';
+
+                try {
+                    const formData = new FormData(form);
+                    const ajaxUrl = form.action + (form.action.includes('?') ? '&' : '?') + 'ajax=1';
+                    const response = await fetch(ajaxUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!response.ok) {
+                        const text = await response.text();
+                        console.error("Server Error:", text);
+                        throw new Error("Erreur serveur (" + response.status + "). Veuillez vérifier les dates.");
+                    }
+
+                    let data;
+                    const responseClone = response.clone();
+                    try {
+                        data = await response.json();
+                    } catch (parseError) {
+                        const rawText = await responseClone.text();
+                        console.error("Non-JSON Response detected:", rawText);
+                        const snippet = rawText.substring(0, 200).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        throw new Error("Le serveur a renvoyé du HTML au lieu du JSON. Vérifiez si vous êtes toujours connecté. Début de réponse : " + snippet);
+                    }
+                    
+                    if (data.success) {
+                        window.location.reload();
+                    } else if (data.html) {
+                        // Erreur de validation ou conflit, on réaffiche le formulaire avec message
+                        container.innerHTML = '<div style="text-align:center; margin-bottom:20px;"><h3 style="color:var(--blue-dark);">Modifier la réservation</h3></div>';
+                        container.insertAdjacentHTML('beforeend', data.html);
+                        const newForm = container.querySelector('form');
+                        if (newForm) setupAjaxForm(newForm, container);
+                        
+                        if (typeof showSakanToast === 'function') {
+                            showSakanToast("Veuillez corriger les erreurs dans le formulaire.", "warning");
+                        }
+                    } else {
+                        throw new Error("Format de réponse invalide");
+                    }
+                } catch (err) {
+                    console.error("AJAX Error:", err);
+                    const errorMsg = err.message.length < 100 ? err.message : "Erreur technique lors de l'enregistrement.";
+                    if (typeof showSakanToast === 'function') {
+                        showSakanToast(errorMsg, "danger");
+                    } else {
+                        alert(errorMsg);
+                    }
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            };
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('edit-modal');
+            if (event.target == modal) closeEditModal();
+        }
+    </script>
+{% endblock %}

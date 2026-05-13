@@ -1,0 +1,263 @@
+{% extends 'layouts/base_revenus_owner.html.twig' %}
+{% block revenus_content %}
+
+<!-- Filtres - Formulaire GET serveur -->
+<form method="get" action="{{ path('owner_revenus_journal') }}" style="background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow-card);">
+    <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 13px; font-weight: 600; color: #6b7280;">Année:</label>
+            <select name="year" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                {% for y in years %}
+                    <option value="{{ y }}" {{ y == year ? 'selected' : '' }}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        {% if biens|length > 0 %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 13px; font-weight: 600; color: #6b7280;">Bien:</label>
+            <select name="bien" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                <option value="" {{ filterBien == '' ? 'selected' }}>Tous les biens</option>
+                {% for bien in biens %}
+                    <option value="{{ bien }}" {{ filterBien == bien ? 'selected' }}>{{ bien }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 13px; font-weight: 600; color: #6b7280;">Statut:</label>
+            <select name="statut" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                <option value="" {{ filterStatut == '' ? 'selected' }}>Tous</option>
+                <option value="PAYE" {{ filterStatut == 'PAYE' ? 'selected' }}>Payé</option>
+                <option value="EN_ATTENTE" {{ filterStatut == 'EN_ATTENTE' ? 'selected' }}>En attente</option>
+                <option value="EN_RETARD" {{ filterStatut == 'EN_RETARD' ? 'selected' }}>En retard</option>
+                <option value="PARTIEL" {{ filterStatut == 'PARTIEL' ? 'selected' }}>Partiel</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 13px; font-weight: 600; color: #6b7280;">Lignes:</label>
+            <select name="limit" onchange="this.form.submit()" style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                <option value="5" {{ limit == 5 ? 'selected' }}>5</option>
+                <option value="10" {{ limit == 10 ? 'selected' }}>10</option>
+                <option value="20" {{ limit == 20 ? 'selected' }}>20</option>
+                <option value="50" {{ limit == 50 ? 'selected' }}>50</option>
+            </select>
+        </div>
+        
+        <a href="{{ path('owner_revenus_journal', {year: year}) }}" style="padding: 8px 16px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; margin-left: auto;">
+            <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+        </a>
+    </div>
+    
+    <!-- Tags de filtres actifs -->
+    {% if filterBien or filterStatut %}
+    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <span style="font-size: 12px; color: #6b7280; margin-right: 8px;">Filtres actifs:</span>
+        <span style="display: inline-flex; gap: 8px; flex-wrap: wrap;">
+            {% if filterBien %}
+                <a href="{{ path('owner_revenus_journal', app.request.query.all|merge({bien: null})) }}" style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Bien: {{ filterBien }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+            {% if filterStatut %}
+                <a href="{{ path('owner_revenus_journal', app.request.query.all|merge({statut: null})) }}" style="padding: 4px 10px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                    Statut: {{ filterStatut }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+                </a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</form>
+
+<!-- État Vide -->
+{% if loyers is empty %}
+<div style="background: white; border-radius: 16px; padding: 48px; text-align: center; box-shadow: var(--shadow-card);">
+    <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <i class="fa-solid fa-book-open" style="font-size: 32px; color: #9ca3af;"></i>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 12px;">Aucun historique pour {{ year }}</h3>
+    <p style="font-size: 15px; color: #6b7280; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Il n'y a pas encore de paiements enregistrés pour cette année. Les paiements apparaîtront ici une fois que vos locataires auront payé leurs loyers.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ path('owner_revenus_paiements') }}" style="padding: 12px 24px; background: var(--primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-clock"></i> Voir les paiements attendus
+        </a>
+        <button onclick="changeYear({{ year - 1 }})" style="padding: 12px 24px; background: #f3f4f6; color: #374151; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
+            <i class="fa-solid fa-calendar"></i> Voir {{ year - 1 }}
+        </button>
+    </div>
+</div>
+{% else %}
+
+<!-- Journal Groupé par Bien -->
+<div id="journalContainer">
+    {% for nomBien, loyersBien in groupedLoyers %}
+    <div class="bien-section" data-bien="{{ nomBien }}" style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-card);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-building" style="color: white; font-size: 20px;"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 16px; font-weight: 700; color: #1f2937; margin: 0;">{{ nomBien }}</h4>
+                    <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0 0;">{{ loyersBien|length }} paiement(s)</p>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                {% set totalBien = 0 %}
+                {% for l in loyersBien %}
+                    {% if l.statut == 'PAYE' %}
+                        {% set totalBien = totalBien + l.montant %}
+                    {% endif %}
+                {% endfor %}
+                <div style="font-size: 13px; color: #6b7280;">Total encaissé</div>
+                <div style="font-size: 18px; font-weight: 700; color: #16a34a;">{{ totalBien|number_format(3, ',', ' ') }} TND</div>
+            </div>
+        </div>
+        
+        <table class="table-paiements" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <th style="text-align: left; padding: 10px; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Période</th>
+                    <th style="text-align: left; padding: 10px; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Locataire</th>
+                    <th style="text-align: right; padding: 10px; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Montant</th>
+                    <th style="text-align: center; padding: 10px; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Paiement</th>
+                    <th style="text-align: center; padding: 10px; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Statut</th>
+                    <th style="text-align: center; padding: 10px; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600;">Quittance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loyer in loyersBien %}
+                <tr class="loyer-row" data-statut="{{ loyer.statut }}" style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 12px 10px;">
+                        <div style="font-weight: 500; color: #374151;">{{ loyer.periode_label }}</div>
+                    </td>
+                    <td style="padding: 12px 10px;">
+                        <div style="font-weight: 500; color: #1f2937;">{{ loyer.nom_locataire }}</div>
+                    </td>
+                    <td style="padding: 12px 10px; text-align: right;">
+                        <div style="font-weight: 600; color: #1f2937;">{{ loyer.montant|number_format(3, ',', ' ') }} TND</div>
+                        {% if loyer.penalite > 0 %}
+                            <div style="font-size: 11px; color: #dc2626;">+ {{ loyer.penalite|number_format(3, ',', ' ') }} TND pénalité</div>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                        {% if loyer.date_paiement %}
+                            <div style="font-size: 13px; color: #374151;">{{ loyer.date_paiement|date('d/m/Y') }}</div>
+                        {% else %}
+                            <span style="font-size: 12px; color: #9ca3af;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                        {% if loyer.statut == 'PAYE' %}
+                            <span style="padding: 4px 10px; background: #dcfce7; color: #166534; border-radius: 20px; font-size: 11px; font-weight: 600;">Payé</span>
+                        {% elseif loyer.statut == 'EN_ATTENTE' %}
+                            <span style="padding: 4px 10px; background: #fef9c3; color: #a16207; border-radius: 20px; font-size: 11px; font-weight: 600;">En attente</span>
+                        {% elseif loyer.statut == 'EN_RETARD' %}
+                            <span style="padding: 4px 10px; background: #fee2e2; color: #dc2626; border-radius: 20px; font-size: 11px; font-weight: 600;">En retard</span>
+                        {% elseif loyer.statut == 'PARTIEL' %}
+                            <span style="padding: 4px 10px; background: #ffedd5; color: #ea580c; border-radius: 20px; font-size: 11px; font-weight: 600;">Partiel</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                        {% if loyer.quittance_url %}
+                            <a href="{{ loyer.quittance_url }}" target="_blank" style="padding: 6px 12px; background: #eff6ff; color: #1d4ed8; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-eye"></i> Voir
+                            </a>
+                        {% else %}
+                            <span style="font-size: 12px; color: #9ca3af;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    <!-- État vide dynamique (caché par défaut) -->
+    <div id="noResultsFilters" style="display: none; background: white; border-radius: 16px; padding: 48px; text-align: center; box-shadow: var(--shadow-card); margin-top: 20px;">
+        <i class="fa-solid fa-filter-circle-xmark" style="font-size: 32px; color: #9ca3af; margin-bottom: 12px; display: block;"></i>
+        <h3 style="font-size: 18px; font-weight: 700; color: #374151; margin-bottom: 8px;">Aucun résultat trouvé</h3>
+        <p style="font-size: 14px; color: #6b7280; margin: 0;">Aucun paiement ne correspond aux filtres actifs.</p>
+        <a href="{{ path('owner_revenus_journal', {year: year}) }}" style="margin-top: 16px; padding: 8px 16px; background: #e0e7ff; color: #4f46e5; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-block; text-decoration: none;">Réinitialiser les filtres</a>
+    </div>
+
+    {# Pagination Pagerfanta #}
+    {% if pager.nbPages > 1 %}
+    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; flex-wrap: wrap;">
+        {% if pager.currentPage > 1 %}
+            <a href="{{ path('owner_revenus_journal', app.request.query.all|merge({page: pager.currentPage - 1})) }}"
+               style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+        {% else %}
+            <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </span>
+        {% endif %}
+
+        {% for page in 1..pager.nbPages %}
+            {% if page == pager.currentPage %}
+                <span style="padding: 8px 14px; background: #6366f1; color: white; border-radius: 6px; font-weight: 600; font-size: 13px;">
+                    {{ page }}
+                </span>
+            {% elseif page >= pager.currentPage - 2 and page <= pager.currentPage + 2 %}
+                <a href="{{ path('owner_revenus_journal', app.request.query.all|merge({page: page})) }}"
+                   style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    {{ page }}
+                </a>
+            {% elseif page == 1 or page == pager.nbPages %}
+                <a href="{{ path('owner_revenus_journal', app.request.query.all|merge({page: page})) }}"
+                   style="padding: 8px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                    {{ page }}
+                </a>
+            {% elseif page == pager.currentPage - 3 or page == pager.currentPage + 3 %}
+                <span style="padding: 8px; color: #94a3b8; font-size: 13px;">...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if pager.currentPage < pager.nbPages %}
+            <a href="{{ path('owner_revenus_journal', app.request.query.all|merge({page: pager.currentPage + 1})) }}"
+               style="padding: 8px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #374151; font-size: 13px;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        {% else %}
+            <span style="padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #94a3b8; font-size: 13px;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+        {% endif %}
+
+        <span style="font-size: 12px; color: #64748b; margin-left: 12px;">
+            Page {{ pager.currentPage }} / {{ pager.nbPages }} ({{ pager.nbResults }} résultats)
+        </span>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endif %}
+
+<!-- Toast Notification -->
+<div id="toast" style="display: none; position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; background: #1f2937; color: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 1000; font-weight: 500;"></div>
+
+<script>
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        t.style.background = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#1f2937';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function changeYear(year) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('year', year);
+        url.searchParams.delete('page'); // Reset page when changing year
+        window.location.href = url.toString();
+    }
+</script>
+
+{% endblock %}

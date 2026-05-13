@@ -1,0 +1,51 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Audit admin - Sakan{% endblock %}
+{% block page_title %}Audit admin{% endblock %}
+
+{% block content %}
+  <section class="card admin-soft-card" style="margin-bottom:20px;">
+    <form method="get" action="{{ path('admin_audit') }}" class="admin-inline-filters">
+      <input class="form-input" type="text" name="q" value="{{ filters.q }}" placeholder="Rechercher admin, utilisateur, action">
+      <button class="btn-secondary" type="submit"><i class="fa-solid fa-filter"></i> Filtrer</button>
+      <a class="btn-secondary" href="{{ path('admin_audit') }}">Reinitialiser</a>
+    </form>
+  </section>
+
+  <section class="card admin-soft-card">
+    <div class="admin-table-wrap">
+      <table class="sakan-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Admin</th>
+            <th>Action</th>
+            <th>Utilisateur cible</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if audit_rows is empty %}
+            <tr><td class="admin-empty" colspan="5">Aucune action admin journalisee pour le moment.</td></tr>
+          {% else %}
+            {% for row in audit_rows %}
+              <tr>
+                <td>{{ row.created_at|date('d/m/Y H:i') }}</td>
+                <td>
+                  <strong>{{ row.admin_name ?: 'Admin inconnu' }}</strong><br>
+                  <small >{{ row.admin_email ?: '-' }}</small>
+                </td>
+                <td><span class="badge badge-blue">{{ row.action }}</span></td>
+                <td>
+                  <strong>{{ row.target_name ?: 'Utilisateur inconnu' }}</strong><br>
+                  <small >{{ row.target_email ?: '-' }}</small>
+                </td>
+                <td>{{ row.summary ?: '-' }}</td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

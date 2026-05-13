@@ -1,0 +1,277 @@
+{% extends 'layouts/base_revenus_owner.html.twig' %}
+{% block revenus_content %}
+
+<!-- Header -->
+<div style="margin-bottom: 24px;">
+    <h2 style="font-size: 24px; font-weight: 700; color: #1f2937; margin: 0;">Tableau de Bord</h2>
+    <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Vue d'ensemble de votre patrimoine immobilier</p>
+</div>
+
+<!-- État Vide -->
+{% if nbAlertes == 0 and revenuEncaisse == 0 and revenuPrevu == 0 and contrats|length == 0 %}
+<div style="background: white; border-radius: 16px; padding: 48px; text-align: center; box-shadow: var(--shadow-card); margin-bottom: 24px;">
+    <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <i class="fa-solid fa-chart-line" style="font-size: 32px; color: #9ca3af;"></i>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 12px;">Aucune donnée de revenus</h3>
+    <p style="font-size: 15px; color: #6b7280; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Vous n'avez pas encore de paiements enregistrés. Commencez par ajouter des biens et créer des contrats avec vos locataires.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ path('owner_ajouter_bien') }}" style="padding: 12px 24px; background: var(--primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-plus"></i> Ajouter un bien
+        </a>
+        <a href="{{ path('owner_biens') }}" style="padding: 12px 24px; background: #f3f4f6; color: #374151; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fa-solid fa-building"></i> Voir mes biens
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- ═══ 4 KPI CARDS ════════════════════════════════════════════════ -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    
+    <!-- KPI 1: Revenus ce mois -->
+    <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; padding: 24px; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; opacity: 0.9;">REVENUS CE MOIS</span>
+            <span style="padding: 4px 10px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 12px; font-weight: 600;">
+                {{ tendancePct >= 0 ? '+' : '' }}{{ tendancePct }}%
+            </span>
+        </div>
+        <div style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">{{ revenuEncaisse|number_format(3, ',', ' ') }} TND</div>
+        <div style="font-size: 13px; opacity: 0.9;">Prévu : {{ revenuPrevu|number_format(3, ',', ' ') }} TND</div>
+    </div>
+    
+    <!-- KPI 2: Taux de recouvrement -->
+    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: var(--shadow-card);">
+        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 16px;">RECOUVREMENT</div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="position: relative; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 36 36" style="width: 70px; height: 70px; transform: rotate(-90deg);">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" stroke-width="3"/>
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="{{ tauxRecouvrement }}, 100"/>
+                </svg>
+                <span style="position: absolute; font-size: 16px; font-weight: 700; color: #1f2937;">{{ tauxRecouvrement }}%</span>
+            </div>
+            <div>
+                <div style="font-size: 14px; color: #374151; font-weight: 600;">{{ nbPayes }}/{{ nbTotal }} payés</div>
+                <div style="font-size: 13px; color: #dc2626;">{{ nbRetards }} en retard</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- KPI 3: Alertes urgentes -->
+    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: var(--shadow-card); border: 2px solid {{ nbAlertes > 0 ? '#fee2e2' : '#dcfce7' }};">
+        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 12px;">ALERTES URGENTES</div>
+        <div style="font-size: 36px; font-weight: 700; color: {{ nbAlertes > 0 ? '#dc2626' : '#16a34a' }}; margin-bottom: 4px;">{{ nbAlertes }}</div>
+        <div style="font-size: 13px; color: #6b7280;">
+            {{ nbAlertes > 0 ? nbAlertes ~ ' loyer(s) en retard' : 'Aucune alerte' }}
+        </div>
+    </div>
+    
+    <!-- KPI 4: Tendance -->
+    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: var(--shadow-card);">
+        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 12px;">TENDANCE</div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 28px; font-weight: 700; color: {{ tendancePct >= 0 ? '#16a34a' : '#dc2626' }};">
+                {{ tendancePct >= 0 ? '▲' : '▼' }} {{ tendancePct|abs }}%
+            </span>
+        </div>
+        <div style="font-size: 13px; color: #6b7280;">
+            {{ tendanceActuel|number_format(0, ',', ' ') }} vs {{ tendancePrecedent|number_format(0, ',', ' ') }} TND
+        </div>
+    </div>
+</div>
+
+<!-- ═══ MAIN CONTENT: CHART + SIDE CARDS ═════════════════════════════ -->
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start;">
+    
+    <!-- LEFT: Graphique -->
+    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: var(--shadow-card);">
+        <h3 style="font-size: 16px; font-weight: 700; color: #1f2937; margin-bottom: 20px;">
+            <i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 8px;"></i> Évolution des flux
+        </h3>
+        <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="evolutionChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- RIGHT: Actions + Contrats -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- Actions Prioritaires -->
+        <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-card);">
+            <h3 style="font-size: 15px; font-weight: 700; color: #1f2937; margin-bottom: 16px;">
+                <i class="fa-solid fa-bell" style="color: #f59e0b; margin-right: 8px;"></i> Actions Prioritaires
+            </h3>
+            <div style="max-height: 280px; overflow-y: auto;">
+                {% if alertes is empty and cautions is empty %}
+                    <div style="padding: 16px; text-align: center; color: #6b7280; font-size: 13px;">
+                        <i class="fa-solid fa-check-circle" style="color: #16a34a; font-size: 24px; margin-bottom: 8px;"></i>
+                        <p>Aucune action requise</p>
+                    </div>
+                {% endif %}
+                
+                <!-- Alertes Loyers -->
+                {% for alerte in alertes %}
+                <div style="padding: 12px; background: #fef2f2; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid #dc2626;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="width: 20px; height: 20px; background: #dc2626; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">!</span>
+                        <span style="font-weight: 600; color: #1f2937; font-size: 13px;">{{ alerte.nom_locataire }}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                        {{ alerte.nom_bien }} | Retard {{ alerte.jours_retard }}j → 
+                        <strong style="color: #dc2626;">{{ (alerte.montant + alerte.penalite|default(0))|number_format(3, ',', ' ') }} TND</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="tel:{{ alerte.telephone }}" style="padding: 6px 12px; background: #dbeafe; color: #1d4ed8; border-radius: 6px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                            <i class="fa-solid fa-phone"></i> Appeler
+                        </a>
+                        <button onclick="marquerPaye({{ alerte.paiement_id }})" style="padding: 6px 12px; background: #16a34a; color: white; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-check"></i> Payé
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Cautions à rembourser -->
+                {% for caution in cautions %}
+                <div style="padding: 12px; background: #fffbeb; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid #f59e0b;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="width: 20px; height: 20px; background: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">•</span>
+                        <span style="font-weight: 600; color: #1f2937; font-size: 13px;">IMPORTANT: {{ caution.nom_locataire }}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                        {{ caution.nom_bien }} | Caution <strong>{{ caution.a_rembourser|number_format(3, ',', ' ') }} TND</strong>
+                        <br>
+                        <span style="color: {{ caution.jours_restants <= 0 ? '#dc2626' : '#f59e0b' }}; font-weight: 600;">
+                            {{ caution.jours_restants <= 0 ? 'DÉPASSÉ' : caution.jours_restants ~ 'j restants' }}
+                        </span>
+                    </div>
+                    <a href="#" style="padding: 6px 12px; background: #fef3c7; color: #92400e; border-radius: 6px; font-size: 11px; font-weight: 600; text-decoration: none; display: inline-block;">
+                        <i class="fa-solid fa-money-bill-transfer"></i> Traiter
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Contrats Récents -->
+        <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-card);">
+            <h3 style="font-size: 15px; font-weight: 700; color: #1f2937; margin-bottom: 16px;">
+                <i class="fa-solid fa-file-contract" style="color: var(--primary); margin-right: 8px;"></i> Contrats Récents
+            </h3>
+            <div style="max-height: 240px; overflow-y: auto; margin-bottom: 16px;">
+                {% for contrat in contrats|slice(0, 5) %}
+                <div style="padding: 12px; border-bottom: 1px solid #f3f4f6; {% if contrat.loyers_en_retard > 0 %}background: #fef2f2; border-radius: 8px; margin-bottom: 8px;{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 600; color: #1f2937; font-size: 13px;">{{ contrat.nom_bien }}</span>
+                        <div style="display: flex; gap: 4px;">
+                            {% if contrat.loyers_en_retard > 0 %}
+                                <span style="padding: 2px 8px; background: #dc2626; color: white; border-radius: 10px; font-size: 10px; font-weight: 600;">{{ contrat.loyers_en_retard }} retard(s)</span>
+                            {% endif %}
+                            <span style="padding: 2px 8px; background: #dcfce7; color: #166534; border-radius: 10px; font-size: 10px; font-weight: 600;">{{ contrat.statut|upper }}</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 2px;">{{ contrat.nom_locataire }} | {{ contrat.telephone }}</div>
+                    <div style="font-size: 11px; color: #9ca3af;">
+                        {{ contrat.loyer_mensuel|number_format(0, ',', ' ') }} TND/mois | {{ contrat.loyers_payes }} payés
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ path('owner_contrats') }}" style="display: block; text-align: center; padding: 10px; background: #f3f4f6; color: #374151; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                VOIR TOUS LES CONTRATS <i class="fa-solid fa-arrow-right" style="margin-left: 4px;"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('evolutionChart').getContext('2d');
+        
+        const labels = {{ evolution|map(e => e.mois_label)|json_encode|raw }};
+        const loyers = {{ evolution|map(e => e.loyers)|json_encode|raw }};
+        const penalites = {{ evolution|map(e => e.penalites)|json_encode|raw }};
+        const charges = {{ evolution|map(e => e.charges)|json_encode|raw }};
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Loyers',
+                        data: loyers,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Pénalités',
+                        data: penalites,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'transparent',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Charges',
+                        data: charges,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+    
+    function marquerPaye(id) {
+        if (!confirm('Confirmer le paiement ?')) return;
+        
+        fetch('/api/loyers/' + id + '/payer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ methode: 'MANUEL', reference: 'DASHBOARD-' + Date.now() })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur: ' + (data.error || 'Impossible de marquer comme payé'));
+            }
+        })
+        .catch(e => alert('Erreur: ' + e.message));
+    }
+</script>
+
+{% endif %}
+
+{% endblock %}

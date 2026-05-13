@@ -1,0 +1,74 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Réservations - Admin{% endblock %}
+{% block page_title %}Gestion des réservations{% endblock %}
+
+{% block content %}
+  <section class="admin-kpi-grid admin-kpi-grid-users">
+    <article class="admin-mini-kpi"><span>Total</span><strong>{{ stats.total }}</strong></article>
+    <article class="admin-mini-kpi"><span>En attente</span><strong>{{ stats.pending }}</strong></article>
+    <article class="admin-mini-kpi"><span>Confirmees</span><strong>{{ stats.confirmed }}</strong></article>
+    <article class="admin-mini-kpi"><span>Annulees</span><strong>{{ stats.cancelled }}</strong></article>
+  </section>
+
+  <section class="card admin-soft-card">
+    <form method="get" action="{{ path('admin_reservations') }}" class="admin-inline-filters">
+      <input class="form-input" type="text" name="q" value="{{ filters.q }}" placeholder="Rechercher une réservation ou un client">
+      <select class="form-input" name="status">
+        {% for option in status_options %}
+          <option value="{{ option }}" {{ filters.status == option ? 'selected' : '' }}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-secondary" type="submit"><i class="fa-solid fa-filter"></i> Filtrer</button>
+      <a class="btn-secondary" href="{{ path('admin_reservations') }}">Réinitialiser</a>
+    </form>
+
+    <div class="admin-table-wrap">
+      <table class="sakan-table">
+        <thead>
+          <tr>
+            <th>Reservation</th>
+            <th>Client</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if reservations is empty %}
+            <tr><td class="admin-empty" colspan="4">Aucune réservation trouvée.</td></tr>
+          {% else %}
+            {% for item in reservations %}
+              <tr>
+                <td>{{ item.label }}</td>
+                <td>{{ item.client_name }}</td>
+                <td><span class="badge badge-blue">{{ item.statut }}</span></td>
+                <td>
+                  <div class="admin-row-actions">
+                    <form method="post" action="{{ path('admin_reservations') }}" class="admin-inline-form">
+                      <input type="hidden" name="action" value="update_reservation_status">
+                      <input type="hidden" name="reservation_id" value="{{ item.id }}">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_reservation_' ~ item.id) }}">
+                      <select class="form-input form-input-sm" name="statut">
+                        <option value="EN ATTENTE" {{ item.statut starts with 'EN ATTENTE' ? 'selected' : '' }}>EN ATTENTE</option>
+                        <option value="CONFIRMEE" {{ item.statut starts with 'CONFIRM' ? 'selected' : '' }}>CONFIRMEE</option>
+                        <option value="ANNULEE" {{ item.statut starts with 'ANNUL' ? 'selected' : '' }}>ANNULEE</option>
+                      </select>
+                      <button class="btn-secondary btn-sm" type="submit"><i class="fa-solid fa-floppy-disk"></i></button>
+                    </form>
+
+                    <form method="post" action="{{ path('admin_reservations') }}" onsubmit="return confirm('Supprimer cette réservation ?');">
+                      <input type="hidden" name="action" value="delete_reservation">
+                      <input type="hidden" name="reservation_id" value="{{ item.id }}">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_reservation_' ~ item.id) }}">
+                      <button class="btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,407 @@
+{% extends 'layouts/base_finances_locataire.html.twig' %}
+{% block title %}Historique des Paiements — Sakan{% endblock %}
+{% block finances_content %}
+
+<!-- Flash Messages -->
+{% for message in app.flashes('success') %}
+    <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #166534;">
+        <i class="fa-solid fa-check-circle"></i> {{ message }}
+    </div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+    <div style="background: #fef2f2; border: 1px solid #dc2626; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #991b1b;">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+    </div>
+{% endfor %}
+
+<!-- ═══ Hero Header: Historique ════════════════════════════════════ -->
+<div style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap;">
+        
+        <!-- Left: Titre & Stats -->
+        <div style="flex: 1; min-width: 280px;">
+            <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Historique des Paiements
+            </h1>
+            <p style="color: var(--text-muted); margin: 8px 0 16px 0;">
+                Loyers: <strong>{{ stats.totalLoyers|number_format(3, ',', ' ') }} TND</strong> | 
+                Charges: <strong>{{ stats.totalCharges|number_format(3, ',', ' ') }} TND</strong> | 
+                Pénalités: <strong>{{ stats.totalPenalites|number_format(3, ',', ' ') }} TND</strong> | 
+                <strong>{{ stats.nombrePaiements }}</strong> paiement(s) au total
+            </p>
+            
+            <!-- Housing Switcher -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="{{ path('tenant_finances_historique') }}" 
+                   style="padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: 600;
+                          background: {{ selectedContratId is null ? 'var(--primary)' : '#f3f4f6' }};
+                          color: {{ selectedContratId is null ? 'white' : '#374151' }};">
+                    Vue Globale
+                </a>
+                {% for log in logements %}
+                    <a href="{{ path('tenant_finances_historique', {logement: log.contrat_id}) }}"
+                       style="padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: 600;
+                              background: {{ selectedContratId == log.contrat_id ? 'var(--primary)' : '#f3f4f6' }};
+                              color: {{ selectedContratId == log.contrat_id ? 'white' : '#374151' }};"
+                       title="{{ log.description }}">
+                        {{ log.titre }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right: Quick Stats Cards -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="background: #f0fdf4; border-radius: 12px; padding: 16px; min-width: 120px; text-align: center;">
+                <div style="font-size: 11px; color: #16a34a; font-weight: 600; text-transform: uppercase;">Loyers Payés</div>
+                <div style="font-size: 20px; font-weight: 700; color: #16a34a;">{{ allHistory|filter(h => h.type == 'LOYER')|length }}</div>
+            </div>
+            <div style="background: #eff6ff; border-radius: 12px; padding: 16px; min-width: 120px; text-align: center;">
+                <div style="font-size: 11px; color: #3b82f6; font-weight: 600; text-transform: uppercase;">Charges Payées</div>
+                <div style="font-size: 20px; font-weight: 700; color: #3b82f6;">{{ allHistory|filter(h => h.type == 'CHARGE')|length }}</div>
+            </div>
+            <div style="background: #fef2f2; border-radius: 12px; padding: 16px; min-width: 120px; text-align: center;">
+                <div style="font-size: 11px; color: #dc2626; font-weight: 600; text-transform: uppercase;">Pénalités</div>
+                <div style="font-size: 20px; font-weight: 700; color: #dc2626;">{{ stats.totalPenalites|number_format(3, ',', ' ') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Barre de Filtres ═════════════════════════════════════════════ -->
+<div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 12px;">
+        <i class="fa-solid fa-filter"></i> Filtrage Avancé
+    </div>
+    
+    <form id="js-filter-form" onsubmit="event.preventDefault(); applyJSFilters();" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+        {% if selectedContratId %}
+            <input type="hidden" name="logement" value="{{ selectedContratId }}">
+        {% endif %}
+        
+        <!-- Recherche par référence -->
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Référence</label>
+            <input type="text" name="ref" value="{{ searchRef }}" placeholder="Rechercher..."
+                   style="width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+        </div>
+        
+        <!-- Filtre Type -->
+        <div style="min-width: 140px;">
+            <label style="display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Type</label>
+            <select name="type" style="width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="TOUS" {{ typeFilter == 'TOUS' ? 'selected' }}>Tous les types</option>
+                <option value="LOYER" {{ typeFilter == 'LOYER' ? 'selected' }}>Loyers</option>
+                <option value="CHARGE" {{ typeFilter == 'CHARGE' ? 'selected' }}>Charges</option>
+            </select>
+        </div>
+        
+        <!-- Filtre Statut -->
+        <div style="min-width: 140px;">
+            <label style="display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Statut</label>
+            <select name="statut" style="width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="TOUS" {{ statutFilter == 'TOUS' ? 'selected' }}>Tous statuts</option>
+                <option value="PAYE" {{ statutFilter == 'PAYE' ? 'selected' }}>Payé</option>
+                <option value="EN_RETARD" {{ statutFilter == 'EN_RETARD' ? 'selected' }}>En retard</option>
+                <option value="EN_ATTENTE" {{ statutFilter == 'EN_ATTENTE' ? 'selected' }}>En attente</option>
+            </select>
+        </div>
+        
+        <!-- Filtre Montant Min -->
+        <div style="min-width: 100px;">
+            <label style="display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Min (TND)</label>
+            <input type="number" name="min" value="{{ min }}" step="0.001" placeholder="0.000"
+                   style="width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+        </div>
+        
+        <!-- Filtre Montant Max -->
+        <div style="min-width: 100px;">
+            <label style="display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Max (TND)</label>
+            <input type="number" name="max" value="{{ max }}" step="0.001" placeholder="∞"
+                   style="width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+        </div>
+        
+        <!-- Lignes par page -->
+        <div style="min-width: 80px;">
+            <label style="display: block; font-size: 11px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Lignes</label>
+            <select name="limit" style="width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="5" {{ limit == 5 ? 'selected' }}>5</option>
+                <option value="10" {{ limit == 10 ? 'selected' }}>10</option>
+                <option value="20" {{ limit == 20 ? 'selected' }}>20</option>
+                <option value="50" {{ limit == 50 ? 'selected' }}>50</option>
+                <option value="100" {{ limit == 100 ? 'selected' }}>100</option>
+            </select>
+        </div>
+        
+        <!-- Boutons -->
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" style="padding: 10px 20px; background: linear-gradient(135deg,var(--primary),#7c3aed); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-filter"></i> Filtrer
+            </button>
+            <button type="button" onclick="document.getElementById('js-filter-form').reset(); applyJSFilters();" 
+               style="padding: 10px 16px; background: rgba(107,114,128,0.1); color: #374151; border: none; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; cursor:pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button type="button" onclick="exportToCSV()" 
+               style="padding: 10px 16px; background: #16a34a; color: white; border: none; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap:6px; cursor:pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-file-excel"></i> Export Excel
+            </button>
+        </div>
+    </form>
+    
+    <!-- Tags de filtres actifs -->
+    {% set hasFilters = typeFilter != 'TOUS' or statutFilter != 'TOUS' or searchRef or min or max %}
+    {% if hasFilters %}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <span style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; padding: 4px 0;">Filtres actifs:</span>
+        
+        {% if typeFilter != 'TOUS' %}
+            <a href="{{ path('tenant_finances_historique', app.request.query.all|merge({type: 'TOUS'})) }}"
+               style="padding: 4px 12px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid rgba(99,102,241,0.3);">
+                Type: {{ typeFilter }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+            </a>
+        {% endif %}
+        
+        {% if statutFilter != 'TOUS' %}
+            <a href="{{ path('tenant_finances_historique', app.request.query.all|merge({statut: 'TOUS'})) }}"
+               style="padding: 4px 12px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid rgba(99,102,241,0.3);">
+                Statut: {{ statutFilter }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+            </a>
+        {% endif %}
+        
+        {% if searchRef %}
+            <a href="{{ path('tenant_finances_historique', app.request.query.all|merge({ref: null})) }}"
+               style="padding: 4px 12px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid rgba(99,102,241,0.3);">
+                Ref: {{ searchRef }} <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+            </a>
+        {% endif %}
+        
+        {% if min %}
+            <a href="{{ path('tenant_finances_historique', app.request.query.all|merge({min: null})) }}"
+               style="padding: 4px 12px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid rgba(99,102,241,0.3);">
+                Min: {{ min }} TND <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+            </a>
+        {% endif %}
+        
+        {% if max %}
+            <a href="{{ path('tenant_finances_historique', app.request.query.all|merge({max: null})) }}"
+               style="padding: 4px 12px; background: rgba(99,102,241,0.1); color: #6366f1; border-radius: 12px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid rgba(99,102,241,0.3);">
+                Max: {{ max }} TND <i class="fa-solid fa-xmark" style="margin-left: 4px;"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═══ Tableau Historique ═══════════════════════════════════════════ -->
+<div class="gc">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div class="sec-label primary" style="margin-bottom:0;">
+            <i class="fa-solid fa-list"></i> Liste des Transactions
+        </div>
+        <div style="font-size: 13px; font-weight: 600; color: #4b5563; background: rgba(79,70,229,0.08); padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(79,70,229,0.15);">
+            Total: <span id="display-total" style="color: var(--primary); font-size: 15px; font-weight: 800;">0.000 TND</span> <span style="color:#d1d5db; margin:0 6px;">|</span> <span id="display-count">0</span> paiement(s)
+        </div>
+    </div>
+
+    <table class="table-paiements" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Date</th>
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Type</th>
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Période</th>
+                <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Montant</th>
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Méthode</th>
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Référence</th>
+                <th style="padding: 12px 8px; text-align: center; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Statut</th>
+                <th style="padding: 12px 8px; text-align: center; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in history %}
+            <tr class="history-row" style="border-bottom: 1px solid #f3f4f6;" 
+                data-ref="{{ record.reference|default('')|lower }}" 
+                data-type="{{ record.type|upper }}" 
+                data-statut="{{ record.statut|upper }}" 
+                data-montant="{{ record.montantTotal }}">
+                <td style="padding: 12px 8px; font-size: 13px; color: #374151;">
+                    {{ record.datePaiement ? record.datePaiement|date('d/m/Y H:i') : '-' }}
+                </td>
+                <td style="padding: 12px 8px; font-size: 13px; color: #374151;">
+                    {% if record.type == 'LOYER' %}
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-house" style="color: #6366f1;"></i> Loyer
+                        </span>
+                    {% else %}
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Charge
+                        </span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px 8px; font-size: 13px; color: #374151;">
+                    {{ record.periode ? record.periode|date('M Y') : '-' }}
+                </td>
+                <td style="padding: 12px 8px; font-size: 13px; color: #374151; text-align: right; font-weight: 600;">
+                    {{ record.montantTotal|number_format(3, ',', ' ') }} TND
+                </td>
+                <td style="padding: 12px 8px; font-size: 13px; color: #374151;">
+                    <span style="padding: 2px 8px; background: #f3f4f6; border-radius: 4px; font-size: 11px; text-transform: uppercase;">
+                        {{ record.methode ? record.methode|upper : 'N/A' }}
+                    </span>
+                </td>
+                <td style="padding: 12px 8px; font-size: 13px; color: #374151; font-family: monospace;">
+                    {{ record.reference ?: '-' }}
+                </td>
+                <td style="padding: 12px 8px; text-align: center;">
+                    {% if record.statut == 'PAYE' %}
+                        <span style="padding: 4px 12px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            <i class="fa-solid fa-check-circle"></i> PAYÉ
+                        </span>
+                    {% elseif record.statut == 'EN_RETARD' %}
+                        <span style="padding: 4px 12px; background: #fef2f2; color: #dc2626; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            <i class="fa-solid fa-circle-exclamation"></i> RETARD
+                        </span>
+                    {% elseif record.statut == 'EN_ATTENTE' %}
+                        <span style="padding: 4px 12px; background: #fef3c7; color: #d97706; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            <i class="fa-solid fa-clock"></i> ATTENTE
+                        </span>
+                    {% else %}
+                        <span style="padding: 4px 12px; background: #f3f4f6; color: #6b7280; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            {{ record.statut }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px 8px; text-align: center;">
+                    {% if record.type == 'LOYER' and record.statut == 'PAYE' %}
+                        <a href="{{ path('tenant_finances_historique_quittance', {id: record.paiementId}) }}" 
+                           style="padding: 6px 12px; background: transparent; color: var(--primary); border: none; cursor: pointer; text-decoration: none;"
+                           title="Télécharger la quittance">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                    {% elseif record.type == 'LOYER' and record.statut != 'PAYE' %}
+                        <a href="{{ path('tenant_finances_loyers') }}" 
+                           style="padding: 6px 12px; background: var(--primary); color: white; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                            Payer
+                        </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="padding: 40px; text-align: center; color: #9ca3af;">
+                    <i class="fa-solid fa-inbox" style="font-size: 32px; margin-bottom: 12px; display: block;"></i>
+                    Aucun paiement trouvé
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+        </tbody>
+    </table>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="display:none; position:fixed; bottom:20px; right:20px; background:#333; color:white; padding:12px 20px; border-radius:8px; z-index:9999;"></div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    // ─── Frontend Filtering ───
+    function applyJSFilters() {
+        const form = document.getElementById('js-filter-form');
+        const searchRef = form.querySelector('[name=ref]').value.toLowerCase();
+        const typeFilter = form.querySelector('[name=type]').value;
+        const statutFilter = form.querySelector('[name=statut]').value;
+        const minVal = parseFloat(form.querySelector('[name=min]').value) || 0;
+        const maxVal = parseFloat(form.querySelector('[name=max]').value) || Infinity;
+        const limitVal = parseInt(form.querySelector('[name=limit]').value) || Infinity;
+
+        const rows = document.querySelectorAll('.history-row');
+        let totalTND = 0;
+        let count = 0;
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const ref = row.getAttribute('data-ref');
+            const type = row.getAttribute('data-type');
+            const statut = row.getAttribute('data-statut');
+            const montant = parseFloat(row.getAttribute('data-montant'));
+
+            let show = true;
+            if (searchRef && !ref.includes(searchRef)) show = false;
+            if (typeFilter !== 'TOUS' && type !== typeFilter) show = false;
+            if (statutFilter !== 'TOUS' && statut !== statutFilter) show = false;
+            if (montant < minVal || montant > maxVal) show = false;
+
+            if (show) {
+                if (visibleCount < limitVal) {
+                    row.style.display = 'table-row';
+                    totalTND += montant;
+                    count++;
+                } else {
+                    row.style.display = 'none'; // hidden by limit
+                }
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        document.getElementById('display-count').textContent = count;
+        // Format Total (like Twig)
+        document.getElementById('display-total').textContent = totalTND.toFixed(3).replace('.', ',') + ' TND';
+    }
+
+    // Initialize display values on load
+    document.addEventListener('DOMContentLoaded', () => {
+        applyJSFilters();
+    });
+
+    // ─── Export to CSV/Excel ───
+    function exportToCSV() {
+        let csvContent = "Date,Type,Période,Montant,Méthode,Référence,Statut\n";
+        const rows = document.querySelectorAll('.history-row');
+        let count = 0;
+
+        rows.forEach(row => {
+            if (row.style.display !== 'none') {
+                const cols = row.querySelectorAll('td');
+                // Extract text from columns (excluding actions col)
+                let rowData = [];
+                for(let i=0; i<7; i++) {
+                    let text = cols[i].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
+                    text = '"' + text.replace(/"/g, '""') + '"'; // wrap in quotes & escape
+                    rowData.push(text);
+                }
+                csvContent += rowData.join(",") + "\n";
+                count++;
+            }
+        });
+
+        if(count === 0) {
+            showToast("Aucune donnée à exporter.");
+            return;
+        }
+
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "historique_export_sakan.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Export Excel (CSV) généré avec succès !");
+    }
+</script>
+{% endblock %}

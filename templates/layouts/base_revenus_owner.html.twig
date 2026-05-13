@@ -1,0 +1,68 @@
+{% extends 'layouts/base_owner.html.twig' %}
+{% block page_title %}Revenus{% endblock %}
+{% block page_subtitle %}Suivi de vos encaissements{% endblock %}
+
+{% block content %}
+<div style="
+    display:flex; gap:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:6px;
+    margin-bottom:28px;
+    width:fit-content;">
+    <a href="{{ path('owner_revenus') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') == 'owner_revenus' %}
+            background:var(--primary);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-chart-bar" style="margin-right:6px"></i>
+        Résumé
+    </a>
+    <a href="{{ path('owner_revenus_paiements') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') == 'owner_revenus_paiements' %}
+            background:var(--primary);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-clock" style="margin-right:6px"></i>
+        Paiements attendus
+    </a>
+    <a href="{{ path('owner_revenus_retards') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') == 'owner_revenus_retards' %}
+            background:var(--danger);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:6px"></i>
+        Retards de paiement
+    </a>
+    <a href="{{ path('owner_revenus_journal') }}" style="
+        padding:8px 20px; border-radius:8px;
+        font-size:14px; font-weight:500;
+        text-decoration:none; transition:all 0.2s;
+        {% if app.request.get('_route') == 'owner_revenus_journal' %}
+            background:var(--primary);color:white;
+        {% else %}
+            color:var(--text-muted);background:transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-book" style="margin-right:6px"></i>
+        Journal des loyers
+    </a>
+</div>
+{% block revenus_content %}{% endblock %}
+{% endblock %}

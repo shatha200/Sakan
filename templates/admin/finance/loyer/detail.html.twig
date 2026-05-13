@@ -1,0 +1,128 @@
+{% extends 'layouts/base_admin.html.twig' %}
+{% block title %}Loyer #{{ loyer.id }} — Admin Sakan{% endblock %}
+{% block page_title %}<i class="fa-solid fa-house" ></i> Loyer #{{ loyer.id }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ path('admin_finance_loyers') }}" style="display:flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none;">
+    <i class="fa-solid fa-arrow-left"></i> Retour
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+.fin-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+@media(max-width:900px){ .fin-detail-grid { grid-template-columns:1fr; } }
+.fin-detail-card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.fin-detail-label { font-size:11px; color:#9ca3af; text-transform:uppercase; font-weight:700; margin-bottom:4px; }
+.fin-detail-value { font-size:15px; font-weight:600; color:#111827; }
+.fin-row { display:flex; justify-content:space-between; align-items:baseline; padding:10px 0; border-bottom:1px solid #f3f4f6; }
+.fin-row:last-child { border-bottom:none; }
+.fin-action-sidebar { background:white; border-radius:16px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.fin-action-btn-full { display:block; width:100%; padding:11px; border-radius:10px; font-size:13px; font-weight:600; text-align:center; cursor:pointer; border:none; margin-bottom:10px; transition:all 0.2s; text-decoration:none; }
+.fin-action-btn-full.purple { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:white; }
+.fin-action-btn-full.purple:hover { box-shadow:0 4px 15px rgba(124,58,237,0.3); }
+.fin-action-btn-full.gray { background:#f3f4f6; color:#374151; }
+.fin-action-btn-full.gray:hover { background:#e5e7eb; }
+</style>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 300px; gap:20px; align-items:start; flex-wrap:wrap;">
+
+  {# Col 1: Infos générales #}
+  <div class="fin-detail-card">
+    <div style="font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:16px;">
+      <i class="fa-solid fa-info-circle"></i> Informations
+    </div>
+    <div class="fin-row"><span class="fin-detail-label">Locataire</span><span class="fin-detail-value">{{ loyer.nom_locataire }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Email</span><span style="font-size:13px;">{{ loyer.email_locataire }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Téléphone</span><span style="font-size:13px;">{{ loyer.tel_locataire ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Propriétaire</span><span class="fin-detail-value">{{ loyer.nom_proprietaire ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Bien loué</span><span class="fin-detail-value">{{ loyer.bien_titre ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Période</span><span class="fin-detail-value">{{ loyer.periode }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Montant</span><span style="font-size:20px; font-weight:800;">{{ loyer.montant|number_format(3,',', ' ') }} TND</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Pénalité</span>
+      <span style="color:{{ loyer.penalite > 0 ? '#dc2626' : '#16a34a' }}; font-weight:700;">
+        {{ loyer.penalite > 0 ? '+' ~ loyer.penalite|number_format(3,',', ' ') ~ ' TND' : 'Aucune' }}
+      </span>
+    </div>
+  </div>
+
+  {# Col 2: Paiement #}
+  <div class="fin-detail-card">
+    <div style="font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:16px;">
+      <i class="fa-solid fa-credit-card"></i> Paiement
+    </div>
+    <div class="fin-row">
+      <span class="fin-detail-label">Statut</span>
+      <span>
+        {% if loyer.statut == 'PAYE' %}<span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">✓ PAYÉ</span>
+        {% elseif loyer.statut == 'EN_ATTENTE' %}<span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">⏰ EN ATTENTE</span>
+        {% elseif loyer.statut == 'EN_RETARD' %}<span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">⚠ EN RETARD ({{ loyer.jours_retard }}j)</span>
+        {% else %}<span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">{{ loyer.statut }}</span>{% endif %}
+      </span>
+    </div>
+    <div class="fin-row"><span class="fin-detail-label">Échéance</span><span class="fin-detail-value">{{ loyer.date_echeance ? loyer.date_echeance|date('d/m/Y') : '-' }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Date de paiement</span><span class="fin-detail-value">{{ loyer.date_paiement ? loyer.date_paiement|date('d/m/Y') : 'Non payé' }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Méthode</span><span class="fin-detail-value">{{ loyer.methode_paiement ?? '—' }}</span></div>
+    <div class="fin-row"><span class="fin-detail-label">Référence</span><span style="font-size:12px; font-family:monospace;">{{ loyer.reference_transaction ?? '—' }}</span></div>
+  </div>
+
+  {# Col 3: Actions #}
+  <div class="fin-action-sidebar">
+    <div style="font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:16px;">
+      <i class="fa-solid fa-bolt"></i> Actions
+    </div>
+
+    {% if loyer.statut != 'PAYE' %}
+    <button onclick="document.getElementById('modal-force').style.display='flex'"
+            class="fin-action-btn-full purple">
+      <i class="fa-solid fa-check-circle"></i> Forcer le Paiement
+    </button>
+    {% endif %}
+
+    <a href="mailto:{{ loyer.email_locataire }}" class="fin-action-btn-full gray">
+      <i class="fa-solid fa-envelope"></i> Envoyer email rappel
+    </a>
+    <a href="{{ path('admin_finance_loyers') }}" class="fin-action-btn-full gray">
+      <i class="fa-solid fa-list"></i> Tous les loyers
+    </a>
+  </div>
+</div>
+
+{# Modal Forcer Paiement #}
+<div id="modal-force" style="display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center;">
+  <div style="border-radius:20px; padding:32px; max-width:480px; width:90%;">
+    <div style="font-size:18px; font-weight:800; margin-bottom:4px;">💰 Forcer le Paiement</div>
+    <div style="font-size:13px; margin-bottom:24px;">Loyer #{{ loyer.id }} — {{ loyer.nom_locataire }} — {{ loyer.montant|number_format(3,',', ' ') }} TND</div>
+
+    <form action="{{ path('admin_finance_loyer_forcer', {id: loyer.id}) }}" method="POST">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_loyer_force_' ~ loyer.id) }}">
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Méthode de paiement</label>
+        <select name="methode" style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px;">
+          <option value="ESPECES">💵 Espèces</option>
+          <option value="VIREMENT">🏦 Virement bancaire</option>
+          <option value="CHEQUE">📃 Chèque</option>
+          <option value="MANUEL">✅ Marquer comme payé (autre)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Référence / Note</label>
+        <input type="text" name="reference" placeholder="Référence transaction, numéro chèque..." style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Date de paiement</label>
+        <input type="date" name="date_paiement" value="{{ 'now'|date('Y-m-d') }}" style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px;">
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button type="button" onclick="document.getElementById('modal-force').style.display='none'"
+          style="flex:1; padding:12px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">
+          ❌ Annuler
+        </button>
+        <button type="submit" style="flex:1; padding:12px; color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">
+          ✅ Confirmer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

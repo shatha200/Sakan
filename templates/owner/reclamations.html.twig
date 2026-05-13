@@ -1,0 +1,218 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Litiges & Réclamations — Sakan{% endblock %}
+{% block page_title %}Litiges & Réclamations{% endblock %}
+{% block page_subtitle %}Suivez les tickets de vos locataires et gérez les interventions{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+
+  <!-- FLASH MESSAGES -->
+  {% for message in app.flashes('success') %}
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:12px 20px;border-radius:10px;margin-bottom:16px;font-weight:600;">
+      <i class="fa-solid fa-circle-check"></i> {{ message }}
+    </div>
+  {% endfor %}
+  {% for message in app.flashes('error') %}
+    <div style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:12px 20px;border-radius:10px;margin-bottom:16px;font-weight:600;">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+    </div>
+  {% endfor %}
+
+  <!-- STATS -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+    <div class="kpi-card" style="border-left:4px solid #4f46e5;">
+      <div class="kpi-icon"><i class="fa-solid fa-ticket" style="color:#4f46e5;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Total</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.total }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #dc2626;">
+      <div class="kpi-icon"><i class="fa-solid fa-circle-exclamation" style="color:#dc2626;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">En cours</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.en_cours }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #f59e0b;">
+      <div class="kpi-icon"><i class="fa-solid fa-hourglass-half" style="color:#f59e0b;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Ouverts</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.ouvert }}</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #16a34a;">
+      <div class="kpi-icon"><i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:32px;"></i></div>
+      <div class="kpi-body" style="margin-top:16px;">
+        <div class="kpi-label">Résolus</div>
+        <div class="kpi-montant" style="font-size:28px;">{{ stats.resolu }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLETS FILTRE -->
+  <div class="section-tabs">
+    <button class="tab-btn active" onclick="filterTickets('all', this)">Tous ({{ stats.total }})</button>
+    <button class="tab-btn" onclick="filterTickets('en-cours', this)">En cours ({{ stats.en_cours }})</button>
+    <button class="tab-btn" onclick="filterTickets('ouvert', this)">Ouverts ({{ stats.ouvert }})</button>
+    <button class="tab-btn" onclick="filterTickets('resolu', this)">Résolus ({{ stats.resolu }})</button>
+  </div>
+
+  <!-- LISTE DES TICKETS -->
+  <div class="tickets-list">
+    {% if reclamations is empty %}
+      <div class="card" style="padding:60px;text-align:center;color:var(--text-muted);">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:48px;margin-bottom:16px;opacity:0.3;"></i>
+        <h3 style="margin-bottom:8px;">Aucune réclamation en cours</h3>
+        <p>Vos locataires n'ont signalé aucun problème pour l'instant.</p>
+      </div>
+    {% else %}
+      {% for rcl in reclamations %}
+        {% set isResolu = rcl.statut == 'RESOLU' %}
+        {% set isEnCours = rcl.statut == 'EN_COURS' %}
+
+        <div class="reclamation-card"
+             data-statut="{{ rcl.statutCssClass }}"
+             style="border-left:4px solid {{ rcl.prioriteCssColor }};{{ isResolu ? 'opacity:0.85;' : '' }}">
+
+          <!-- HEADER -->
+          <div class="ticket-header">
+            <div>
+              <span class="ticket-id">#RCL-{{ '%04d'|format(rcl.id) }}</span>
+              <span class="ticket-type"><i class="fa-solid fa-tag"></i> {{ rcl.typeLabel }}</span>
+              {% if rcl.contrat %}
+                <span class="ticket-bien">— {{ rcl.contrat.annonce.titre ?? 'Bien #' ~ rcl.contrat.annonce.id }}</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              {# Priorité #}
+              {% if rcl.priorite == 'HAUTE' %}
+                <span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🔴 HAUTE</span>
+              {% elseif rcl.priorite == 'URGENTE' %}
+                <span style="background:#7c2d12;color:white;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🚨 URGENTE</span>
+              {% elseif rcl.priorite == 'BASSE' %}
+                <span style="background:#dbeafe;color:#2563eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🔵 BASSE</span>
+              {% else %}
+                <span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">🟡 MOYENNE</span>
+              {% endif %}
+              {# Statut #}
+              {% if isResolu %}
+                <span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">RÉSOLU ✓</span>
+              {% elseif isEnCours %}
+                <span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">EN COURS</span>
+              {% else %}
+                <span style="background:#f3f4f6;color:#374151;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">OUVERT</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- CORPS -->
+          <div class="ticket-body">
+            {# Infos locataire — guard contre FK invalide #}
+            {% if rcl.locataire is not null %}
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <i class="fa-solid fa-user-circle" style="color:#6b7280;font-size:20px;"></i>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#374151;">{{ rcl.locataire.nom ?? rcl.locataire.email }}</div>
+                <div style="font-size:12px;color:#6b7280;">{{ rcl.locataire.email }}</div>
+              </div>
+            </div>
+            {% else %}
+            <div style="font-size:13px;color:#dc2626;margin-bottom:10px;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Locataire introuvable (donnée incohérente)
+            </div>
+            {% endif %}
+            <p class="ticket-desc">"{{ rcl.description|slice(0,200) }}{{ rcl.description|length > 200 ? '...' : '' }}"</p>
+            <div class="ticket-meta">
+              <span><i class="fa-solid fa-calendar"></i> {{ rcl.dateCreation|date('d/m/Y H:i') }}</span>
+              {% if isResolu and rcl.dateResolution %}
+                <span><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Résolu le {{ rcl.dateResolution|date('d/m/Y') }}</span>
+              {% endif %}
+            </div>
+            {% if rcl.commentaireAdmin %}
+              <div style="margin-top:12px;padding:10px 14px;background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:8px;font-size:13px;">
+                <i class="fa-solid fa-reply" style="color:#0ea5e9;"></i>
+                <strong> Votre réponse :</strong> {{ rcl.commentaireAdmin }}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- PHOTO -->
+          {% if rcl.photoPath %}
+          <div style="padding:0 24px 12px;">
+            <a href="{{ asset('uploads/reclamations/' ~ rcl.photoPath) }}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#4f46e5;">
+              <i class="fa-solid fa-image"></i> Voir la photo jointe
+            </a>
+          </div>
+          {% endif %}
+
+          <!-- ACTIONS PROPRIÉTAIRE -->
+          {% if not isResolu %}
+          <div class="ticket-actions" style="border-top:1px solid #f3f4f6;padding:16px 24px;display:flex;gap:12px;flex-wrap:wrap;">
+            {# Bouton passer EN_COURS #}
+            {% if rcl.statut == 'OUVERT' %}
+            <form method="post" action="{{ path('reclamation_traiter', {id: rcl.id}) }}" style="margin:0;">
+              <input type="hidden" name="_token" value="{{ csrf_token('traiter_reclamation_' ~ rcl.id) }}">
+              <input type="hidden" name="statut" value="EN_COURS">
+              <button type="submit" class="btn-primary btn-sm" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                <i class="fa-solid fa-play"></i> Prendre en charge
+              </button>
+            </form>
+            {% endif %}
+
+            {# Formulaire résolution avec commentaire #}
+            <button class="btn-outline btn-sm" onclick="toggleReponse({{ rcl.id }})">
+              <i class="fa-solid fa-check-circle"></i> Marquer résolu
+            </button>
+
+            <div id="form-reponse-{{ rcl.id }}" style="display:none;width:100%;margin-top:12px;">
+              <form method="post" action="{{ path('reclamation_traiter', {id: rcl.id}) }}" style="margin:0;">
+                <input type="hidden" name="_token" value="{{ csrf_token('traiter_reclamation_' ~ rcl.id) }}">
+                <input type="hidden" name="statut" value="RESOLU">
+                <textarea name="commentaire" class="sakan-input" rows="2" style="width:100%;margin-bottom:8px;"
+                  placeholder="Commentaire de résolution (optionnel)..."></textarea>
+                <button type="submit" class="btn-primary btn-sm" style="background:linear-gradient(135deg,#16a34a,#059669);">
+                  <i class="fa-solid fa-circle-check"></i> Confirmer la résolution
+                </button>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <div class="ticket-actions" style="padding:12px 24px;">
+            <span style="font-size:13px;color:#16a34a;font-weight:600;"><i class="fa-solid fa-circle-check"></i> Ticket clôturé</span>
+          </div>
+          {% endif %}
+
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+  function filterTickets(statut, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.reclamation-card').forEach(card => {
+      card.style.display = (statut === 'all' || card.dataset.statut === statut) ? '' : 'none';
+    });
+  }
+  function toggleReponse(id) {
+    const el = document.getElementById('form-reponse-' + id);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'layouts/base_admin.html.twig' %}
+
+{% block title %}Paramètres Admin{% endblock %}
+{% block page_title %}Paramètres{% endblock %}
+
+{% block content %}
+  <section class="admin-card-grid admin-card-grid-2">
+    <article class="card admin-soft-card">
+      <h3 style="margin-bottom:8px;">Notifications</h3>
+      <p class="admin-muted">Configure les alertes email et les messages de supervision.</p>
+
+      <form method="post" action="{{ path('admin_settings') }}" class="admin-grid-form" style="margin-top:16px;">
+        <input type="hidden" name="action" value="save_settings">
+        <input type="hidden" name="settings_section" value="notifications">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}">
+
+        <label>Email de notification
+          <input class="form-input" type="email" name="notif_email" value="{{ settings.notif_email }}" required>
+        </label>
+
+        <label class="admin-check"><input type="checkbox" name="notif_reservation" value="1" {{ settings.notif_reservation == '1' ? 'checked' : '' }}> Nouvelle réservation</label>
+        <label class="admin-check"><input type="checkbox" name="notif_reclamation" value="1" {{ settings.notif_reclamation == '1' ? 'checked' : '' }}> Nouvelle réclamation</label>
+        <label class="admin-check"><input type="checkbox" name="notif_retard" value="1" {{ settings.notif_retard == '1' ? 'checked' : '' }}> Paiement en retard</label>
+
+        <div class="admin-form-actions">
+          <button type="submit" class="btn-primary">Enregistrer notifications</button>
+        </div>
+      </form>
+    </article>
+
+    <article class="card admin-soft-card">
+      <h3 style="margin-bottom:8px;">Sécurité et apparence</h3>
+      <p class="admin-muted">Réglages globaux pour le back-office admin.</p>
+
+      <form method="post" action="{{ path('admin_settings') }}" class="admin-grid-form" style="margin-top:16px;">
+        <input type="hidden" name="action" value="save_settings">
+        <input type="hidden" name="settings_section" value="preferences">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}">
+
+        <label class="admin-check"><input type="checkbox" name="sec_2fa" value="1" {{ settings.sec_2fa == '1' ? 'checked' : '' }}> Exiger la vérification 2FA admin</label>
+        <label class="admin-check"><input type="checkbox" name="sec_lock" value="1" {{ settings.sec_lock == '1' ? 'checked' : '' }}> Verrouiller après des tentatives en échec</label>
+        <label class="admin-check"><input type="checkbox" name="sec_audit" value="1" {{ settings.sec_audit == '1' ? 'checked' : '' }}> Journaliser les actions</label>
+        <label class="admin-check"><input type="checkbox" name="ui_animations" value="1" {{ settings.ui_animations == '1' ? 'checked' : '' }}> Animations douces</label>
+        <label class="admin-check"><input type="checkbox" name="ui_compact" value="1" {{ settings.ui_compact == '1' ? 'checked' : '' }}> Mode compact</label>
+
+        <div class="admin-form-actions">
+          <button type="submit" class="btn-primary">Enregistrer les préférences</button>
+        </div>
+      </form>
+    </article>
+  </section>
+
+  <section class="card admin-soft-card" style="margin-top:20px;">
+    <h3 style="margin-bottom:8px;">Maintenance</h3>
+    <p class="admin-muted">Opérations rapides pour le support et le contrôle système.</p>
+
+    <div class="admin-row-actions" style="margin-top:14px;">
+      <form method="post" action="{{ path('admin_settings') }}">
+        <input type="hidden" name="action" value="check_db">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}">
+        <button type="submit" class="btn-secondary"><i class="fa-solid fa-database"></i> Vérifier la connexion BD</button>
+      </form>
+      <form method="post" action="{{ path('admin_settings') }}">
+        <input type="hidden" name="action" value="export_sql">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}">
+        <button type="submit" class="btn-secondary"><i class="fa-solid fa-file-export"></i> Export SQL</button>
+      </form>
+      <form method="post" action="{{ path('admin_settings') }}">
+        <input type="hidden" name="action" value="export_csv">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}">
+        <button type="submit" class="btn-secondary"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+      </form>
+      <form method="post" action="{{ path('admin_settings') }}">
+        <input type="hidden" name="action" value="clear_logs_demo">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}">
+        <button type="submit" class="btn-secondary"><i class="fa-solid fa-broom"></i> Nettoyer logs (demo)</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

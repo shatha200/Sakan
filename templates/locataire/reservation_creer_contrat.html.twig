@@ -1,0 +1,177 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block title %}Finaliser le contrat — Sakan{% endblock %}
+{% block page_title %}Finaliser le contrat{% endblock %}
+{% block page_subtitle %}Contrat pour la réservation #{{ reservation.id }}{% endblock %}
+
+{% block content %}
+<div class="sakan-content">
+    <div class="glass-card" style="max-width: 800px; margin: 0 auto; background: white; padding: 32px; border-radius: 24px;">
+        
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px; margin-bottom: 24px;">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div style="width: 80px; height: 80px; border-radius: 12px; background: url('{{ annonce.photoPrincipale ? asset(annonce.photoPrincipale) : asset('images/default-bien.jpg') }}') center/cover;"></div>
+                <div>
+                    <h3 style="margin: 0 0 4px 0;">{{ annonce.titre }}</h3>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Propriétaire: {{ annonce.proprietaire.nom ?? annonce.proprietaire.email }}</p>
+                    <p style="margin: 4px 0 0 0; font-weight: 700; color: var(--blue);">{{ annonce.prix|number_format(0, ',', ' ') }} TND / mois</p>
+                </div>
+            </div>
+        </div>
+
+        <form action="{{ path('contrat_proposer') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="annonce_id" value="{{ annonce.id }}">
+            <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div>
+                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Date de début prévue *</label>
+                    <input type="datetime-local" name="date_debut" class="sakan-input" required 
+                           value="{{ reservation.dateDebut ? reservation.dateDebut|date('Y-m-d\\TH:i') : '' }}"
+                           style="width: 100%; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Date de fin prévue *</label>
+                    <input type="datetime-local" name="date_fin" class="sakan-input" required 
+                           value="{{ reservation.dateFin ? reservation.dateFin|date('Y-m-d\\TH:i') : '' }}"
+                           style="width: 100%; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Montant du loyer proposé (TND) *</label>
+                <input type="number" step="0.01" name="montant" class="sakan-input" required 
+                       value="{{ annonce.prix }}"
+                       style="width: 100%; box-sizing: border-box;">
+            </div>
+
+            <hr style="border-top: 1px solid var(--border); margin: 32px 0;">
+            <h3 style="margin-bottom: 16px;"><i class="fa-solid fa-id-card"></i> Vérification d'Identité (CIN)</h3>
+            
+            {# Champ CIN saisi #}
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Votre CIN (8 chiffres) *</label>
+                <input type="text" name="cin" id="cin-input" class="sakan-input" placeholder="Ex: 14362933" 
+                       maxlength="8" pattern="\d{8}" required 
+                       style="width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border); border-radius: 8px;">
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Entrez votre numéro de CIN tunisien (8 chiffres).</p>
+            </div>
+
+            {# Upload CIN avec vérification OCR #}
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <div style="font-size: 14px; font-weight: 600; color: #92400e; margin-bottom: 12px;">
+                    <i class="fa-solid fa-camera"></i> Upload CIN / Passeport *
+                </div>
+                <p style="font-size: 13px; color: #a16207; margin-bottom: 16px;">
+                    Téléchargez une photo ou scan de votre CIN tunisien.<br>
+                    Les 8 chiffres seront extraits automatiquement et comparés avec le CIN saisi.
+                </p>
+                <div style="border: 2px dashed #f59e0b; border-radius: 8px; padding: 16px; text-align: center; background: white; cursor: pointer;" 
+                     onclick="document.getElementById('cin-file').click()" id="ocr-zone">
+                    <i class="fa-solid fa-upload" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
+                    <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px;" id="ocr-filename">Cliquez pour choisir un fichier</div>
+                    <input type="file" id="cin-file" name="cin_file" accept="image/*" required
+                           style="display: none;" onchange="sakanHandleCINUpload(this)">
+                </div>
+                <div id="ocr-result" style="margin-top: 12px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 8px;" id="ocr-message-box">
+                        <i id="ocr-icon" class="fa-solid fa-circle-notch fa-spin" style="font-size: 18px;"></i>
+                        <div>
+                            <div id="ocr-message" style="font-weight: 600; font-size: 13px;">Analyse en cours...</div>
+                            <div id="ocr-cin-detected" style="font-size: 12px; color: #6b7280;"></div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="cin-verified" name="cin_verified" value="0">
+            </div>
+
+            <hr style="border-top: 1px solid var(--border); margin: 32px 0;">
+            <h3 style="margin-bottom: 16px;"><i class="fa-solid fa-signature"></i> Votre Signature</h3>
+            
+            <div style="border: 2px dashed var(--border); border-radius: 12px; padding: 16px; background: #fafafa; margin-bottom: 24px;">
+                <canvas id="signature-pad" style="width: 100%; height: 200px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; position: relative; touch-action: none;"></canvas>
+                <input type="hidden" name="signature_data" id="signature_data" required>
+                <div style="text-align: right; margin-top: 12px;">
+                    <button type="button" class="btn-secondary" onclick="clearSignature()" style="font-size: 12px; padding: 6px 12px;">Effacer</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; margin-top: 32px;">
+                <a href="{{ path('tenant_reservations') }}" class="btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">Annuler</a>
+                <button type="submit" class="btn-primary" style="flex: 2; justify-content: center; background: linear-gradient(90deg, #5E17EB, #10b981);">
+                    <i class="fa-solid fa-paper-plane"></i> Soumettre le contrat au propriétaire
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+{% include 'contrat/_js_web_speech_ocr.html.twig' with {
+    cin_input_id: 'cin-input',
+    cin_verified_id: 'cin-verified',
+    verified_ok_value: '1'
+} %}
+<script>
+    let signaturePad;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('signature-pad');
+        
+        // Ajuster la taille du canvas
+        function resizeCanvas() {
+            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            if (signaturePad) signaturePad.clear();
+        }
+        
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        signaturePad = new SignaturePad(canvas, {
+            penColor: "rgb(0, 0, 0)",
+            backgroundColor: "rgb(255, 255, 255)"
+        });
+
+        // Intercepter la soumission
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('Veuillez apposer votre signature.');
+                return;
+            }
+            document.getElementById('signature_data').value = signaturePad.toDataURL();
+        });
+    });
+
+    function clearSignature() {
+        if (signaturePad) {
+            signaturePad.clear();
+        }
+    }
+
+    // Validation formulaire - vérifier CIN avant soumission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const cinVerified = document.getElementById('cin-verified');
+        const cinInput = document.getElementById('cin-input');
+        
+        if (!cinInput.value || cinInput.value.length !== 8) {
+            e.preventDefault();
+            alert('⚠️ Veuillez saisir votre numéro CIN (8 chiffres).');
+            cinInput.focus();
+            return false;
+        }
+        
+        if (cinVerified.value !== '1') {
+            e.preventDefault();
+            alert('⚠️ Veuillez uploader votre CIN et attendre la vérification OCR.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

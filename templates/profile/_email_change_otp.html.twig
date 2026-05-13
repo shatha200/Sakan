@@ -1,0 +1,75 @@
+{% set pending = app.session.get('profile_email_change_pending') %}
+{% if pending and app.user and pending.user_id|default(0) == app.user.id %}
+  {% set otpKey = 'profile-email-change' %}
+  {% set secondsRemaining = pending.seconds_remaining|default(0) %}
+  {% set resendCount = pending.resend_count|default(0) %}
+  {% set maxResends = pending.max_resends|default(5) %}
+  <section class="profil-section-card" style="margin-bottom: 24px;">
+    <div class="profil-section-header">
+      <h3><i class="fa-solid fa-envelope-circle-check"></i> Vérification du changement d'email</h3>
+    </div>
+
+    <p class="profil-muted-text" style="margin-bottom: 14px;">
+      Un code OTP a été envoyé à votre ancienne adresse email
+      <strong>{{ pending.old_email|default('') }}</strong>.
+      Saisissez-le pour confirmer le passage vers
+      <strong>{{ pending.email|default('') }}</strong>.
+    </p>
+
+    <form class="profil-form" method="post" action="{{ path(route_name) }}">
+      <input type="hidden" name="action" value="verify_email_change_otp">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('email_change_otp_' ~ app.user.id) }}">
+
+      <div class="profil-fields" style="margin-bottom: 16px;">
+        <div class="profil-field">
+          <label>Code OTP</label>
+          <input type="text" name="otp_code" class="sakan-input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6 chiffres" required>
+        </div>
+      </div>
+
+      <div class="profil-danger-actions">
+        <button type="submit" class="btn-primary btn-sm">
+          <i class="fa-solid fa-check"></i> Valider le code
+        </button>
+      </div>
+    </form>
+
+    <div class="profil-danger-actions" style="margin-top: 12px;">
+      <form method="post" action="{{ path(route_name) }}" class="profil-inline-form">
+        <input type="hidden" name="action" value="resend_email_change_otp">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('email_change_otp_' ~ app.user.id) }}">
+        <button
+          type="submit"
+          class="btn-outline btn-sm"
+          data-otp-resend-button="{{ otpKey }}"
+          data-otp-maxed="{{ resendCount >= maxResends and secondsRemaining > 0 ? '1' : '0' }}"
+          {{ resendCount >= maxResends and secondsRemaining > 0 ? 'disabled' : '' }}
+        >Renvoyer le code</button>
+      </form>
+
+      <form method="post" action="{{ path(route_name) }}" class="profil-inline-form">
+        <input type="hidden" name="action" value="cancel_email_change_otp">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('email_change_otp_' ~ app.user.id) }}">
+        <button type="submit" class="btn-secondary btn-sm">Annuler</button>
+      </form>
+    </div>
+
+    <p class="profil-muted-text" style="margin-top: 12px; margin-bottom: 0;">
+      <strong
+        data-otp-countdown
+        data-otp-timer-key="{{ otpKey }}"
+        data-otp-expires-at="{{ pending.expires_at|default('') }}"
+        data-otp-seconds-remaining="{{ secondsRemaining }}"
+      >{{ '%02d:%02d'|format((secondsRemaining / 60)|round(0, 'floor'), secondsRemaining % 60) }}</strong>
+    </p>
+    <p class="profil-muted-text" data-otp-resend-status="{{ otpKey }}" style="margin-top: 6px; margin-bottom: 0;">
+      {% if resendCount >= maxResends and secondsRemaining > 0 %}
+        Limite de renvoi atteinte.
+      {% elseif secondsRemaining > 0 %}
+        Vous pouvez renvoyer le code jusqu'à 5 fois pendant 5 min.
+      {% else %}
+        Le prochain renvoi relancera le minuteur à 05:00.
+      {% endif %}
+    </p>
+  </section>
+{% endif %}

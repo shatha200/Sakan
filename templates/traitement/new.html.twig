@@ -1,0 +1,310 @@
+{% extends 'layouts/base_owner.html.twig' %}
+
+{% block title %}Traiter Réclamation #{{ reclamation.id }}{% endblock %}
+{% block page_title %}Intervention Spécialisée{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/sakan-reclamation.css') }}">
+    <style>
+        .invalid-feedback {
+            display: block;
+            color: #dc2626; /* Intense red */
+            font-size: 0.875rem;
+            margin-top: 5px;
+            font-weight: 700;
+        }
+        .is-invalid {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.25) !important;
+        }
+        .ai-badge-sm {
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+        .badge-fake-sm { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .badge-real-sm { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .badge-relevant-sm { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .badge-not-relevant-sm { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .relevance-reason-sm {
+            font-size: 0.6rem;
+            color: #6b7280;
+            margin-top: 2px;
+            font-style: italic;
+            line-height: 1.1;
+        }
+        .btn-ai-action {
+            width: 100%;
+            padding: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #64748b;
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+        .btn-ai-action:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="mb-4 d-flex align-items-center">
+        <a href="{{ path('owner_reclamations') }}" class="btn btn-light rounded-circle p-2 me-3 shadow-sm text-decoration-none">
+            <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+        <h1 class="dashboard-title h2 mb-0">Modifier le traitement</h1>
+    </div>
+
+    <div class="row g-4">
+        <!-- Reclamation Context -->
+        <div class="col-lg-5">
+            <div class="glass-card h-100 p-4" style="background: rgba(255, 255, 255, 0.85); max-width: 100%;">
+                <div class="d-flex align-items-center mb-4">
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-bold me-3">DÉTAILS DU PROBLÈME</span>
+                    <span class="text-muted small">{{ reclamation.date|ago }}</span>
+                </div>
+                
+                <h4 class="fw-bold mb-3 text-dark">{{ reclamation.typeId.libelle ?? reclamation.type }}</h4>
+                <div class="bg-light p-4 rounded-4 mb-4" style="line-height: 1.6; max-height: 300px; overflow-y: auto;">
+                    {{ reclamation.description|nl2br }}
+                </div>
+
+                {% if reclamation.images|length > 0 %}
+                <div class="mb-3">
+                    <p class="small fw-bold text-muted mb-2"><i class="bi bi-images me-1"></i>Photos jointes</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for image in reclamation.images %}
+                            <div style="width: 110px; flex-shrink: 0;">
+                                <div style="width: 110px; height: 110px; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0; position: relative;">
+                                    {% if image.imageDataUri %}
+                                        <img src="{{ image.imageDataUri }}"
+                                             style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                             alt="{{ image.fileName }}">
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Fake Detection -->
+                                <div id="fake-container-{{ image.id }}">
+                                    {% if image.fakeDetectionResult == 'FAKE' %}
+                                        <span class="ai-badge-sm badge-fake-sm"><i class="bi bi-shield-x"></i> Faux</span>
+                                    {% elseif image.fakeDetectionResult == 'REAL' %}
+                                        <span class="ai-badge-sm badge-real-sm"><i class="bi bi-shield-check"></i> Réel</span>
+                                    {% else %}
+                                        <button type="button" class="btn-ai-action" onclick="verifyFake({{ image.id }})">
+                                            <i class="bi bi-robot"></i> Vérifier IA
+                                        </button>
+                                    {% endif %}
+                                </div>
+
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Response Form -->
+        <div class="col-lg-7">
+            <div class="glass-card h-100 p-5" style="background: rgba(255, 255, 255, 0.85); max-width: 100%;">
+                <h3 class="fw-bold mb-4 d-flex align-items-center" style="color: var(--text-dark);">
+                    <i class="bi bi-reply-fill me-2" style="color: var(--primary);"></i>Détails du traitement
+                </h3>
+
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible fade show mb-3" role="alert" style="border-radius: 10px;">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+
+                {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'traitementForm', 'novalidate': 'novalidate'}}) }}
+                    <div class="mb-4">
+                        {{ form_label(form.reponse, null, {'label_attr': {'class': 'label-custom mb-2'}}) }}
+                        <div style="position: relative;">
+                            <div id="response-ghost-overlay" class="form-control input-custom" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; color: #9ca3af; pointer-events: none; z-index: 3; background: transparent; border: 1px solid transparent; white-space: pre-wrap; word-wrap: break-word; overflow: hidden; display: none; padding: 12px 16px; font-size: 1rem; line-height: 1.5;"></div>
+                            {{ form_widget(form.reponse, {
+                                'attr': {
+                                    'class': 'form-control input-custom ' ~ (form.reponse.vars.errors|length > 0 ? 'is-invalid' : ''),
+                                    'style': 'resize: none; background-color: transparent !important; position: relative; z-index: 2; padding: 12px 16px; font-size: 1rem; line-height: 1.5;',
+                                    'rows': 5,
+                                    'id': 'reclamation-reponse',
+                                    'placeholder': 'Décrivez la solution apportée au problème de manière claire et détaillée...'
+                                }
+                            }) }}
+                        </div>
+                        {% for error in form.reponse.vars.errors %}
+                            <div class="invalid-feedback d-block mt-2">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ error.message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-5">
+                        {{ form_label(form.dateTraitement, null, {'label_attr': {'class': 'label-custom mb-2'}}) }}
+                        {{ form_widget(form.dateTraitement, {
+                            'attr': {'class': 'form-control input-custom ' ~ (form.dateTraitement.vars.errors|length > 0 ? 'is-invalid' : '')}
+                        }) }}
+                        {% for error in form.dateTraitement.vars.errors %}
+                            <div class="invalid-feedback d-block mt-2">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ error.message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-5 d-flex gap-3 justify-content-end">
+                        <button type="submit" class="btn btn-premium px-5 py-3">
+                            <i class="bi bi-save me-2"></i>Enregistrer le traitement
+                        </button>
+                        <a href="{{ path('owner_reclamations') }}" class="btn btn-cancel px-5 py-3">
+                            Annuler
+                        </a>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .object-fit-cover { object-fit: cover; }
+    .nav-tabs .nav-link { font-weight: 500; color: var(--text-muted); }
+    .nav-tabs .nav-link.active { color: var(--primary); border-color: var(--border) var(--border) #fff; }
+</style>
+
+<!-- Hidden inputs for AI context -->
+<input type="hidden" id="ai-context-type" value="{{ reclamation.typeId.libelle ?? reclamation.type }}">
+<input type="hidden" id="ai-context-desc" value="{{ reclamation.description }}">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("AI Response Autocomplete (Owner) Initializing...");
+    
+    // Find the response field by ID or by name (more robust)
+    let responseField = document.getElementById('reclamation-reponse') || 
+                        document.querySelector('textarea[name*="[reponse]"]');
+    
+    const ghostOverlay = document.getElementById('response-ghost-overlay');
+
+    if (!responseField) {
+        console.error("AI Error: Could not find response field.");
+        return;
+    }
+
+    console.log("AI Response Autocomplete Active on:", responseField.id);
+
+    let aiSuggestion = '';
+    let fetchTimeout = null;
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function renderGhost() {
+        if (!aiSuggestion) {
+            ghostOverlay.style.display = 'none';
+            return;
+        }
+        
+        // Sync dimensions and style
+        const style = window.getComputedStyle(responseField);
+        ghostOverlay.style.width = responseField.clientWidth + 'px';
+        ghostOverlay.style.height = responseField.clientHeight + 'px';
+        ghostOverlay.style.padding = style.padding;
+        ghostOverlay.style.fontSize = style.fontSize;
+        ghostOverlay.style.lineHeight = style.lineHeight;
+        ghostOverlay.style.fontFamily = style.fontFamily;
+        
+        ghostOverlay.style.display = 'block';
+        ghostOverlay.scrollTop = responseField.scrollTop;
+        ghostOverlay.innerHTML = '<span style="color: transparent;">' + escapeHtml(responseField.value) + '</span>' + escapeHtml(aiSuggestion);
+    }
+
+    if (responseField && ghostOverlay) {
+        responseField.addEventListener('input', function() {
+            const currentText = responseField.value;
+            aiSuggestion = ''; 
+            renderGhost();
+
+            if (currentText.trim().length < 5) return;
+
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(() => {
+                const type = document.getElementById('ai-context-type').value;
+                const desc = document.getElementById('ai-context-desc').value;
+
+                console.log("AI Fetching suggestion for context:", type);
+
+                fetch('/api/ai/generate-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: type, description: desc, currentText: currentText })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text && responseField.value === currentText) {
+                        aiSuggestion = data.text;
+                        console.log("AI Suggestion received:", aiSuggestion);
+                        renderGhost();
+                    }
+                })
+                .catch(err => console.error("AI Error:", err));
+            }, 2000); 
+        });
+
+        responseField.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' && aiSuggestion) {
+                e.preventDefault();
+                const lastChar = responseField.value.slice(-1);
+                // Smart spacing: add space if not already there
+                const prefix = (lastChar !== ' ' && aiSuggestion[0] !== ' ' && lastChar !== '\n' && responseField.value !== '') ? ' ' : '';
+                responseField.value += prefix + aiSuggestion;
+                aiSuggestion = '';
+                renderGhost();
+                responseField.dispatchEvent(new Event('input'));
+            }
+        });
+        
+        responseField.addEventListener('scroll', function() {
+            ghostOverlay.scrollTop = responseField.scrollTop;
+        });
+    }
+});
+
+function verifyFake(imageId) {
+    const container = document.getElementById('fake-container-' + imageId);
+    container.innerHTML = '<div class="spinner-border spinner-border-sm text-danger" role="status"></div>';
+
+    fetch('/proprietaire/reclamations/verify-image/' + imageId, { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'FAKE') {
+            container.innerHTML = '<span class="ai-badge-sm badge-fake-sm"><i class="bi bi-shield-x"></i> Faux</span>';
+        } else {
+            container.innerHTML = '<span class="ai-badge-sm badge-real-sm"><i class="bi bi-shield-check"></i> Réel</span>';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        container.innerHTML = '<button type="button" class="btn-ai-action" onclick="verifyFake('+imageId+')">Retry</button>';
+    });
+}
+
+
+</script>
+
+{% endblock %}

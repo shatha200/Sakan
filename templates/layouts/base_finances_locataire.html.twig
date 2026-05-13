@@ -1,0 +1,112 @@
+{% extends 'layouts/base_locataire.html.twig' %}
+
+{% block page_title %}Espace Financier{% endblock %}
+{% block page_subtitle %}Gérez vos paiements et finances{% endblock %}
+
+{% block content %}
+
+<div style="
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 28px;
+    width: fit-content;
+">
+    <a href="{{ path('tenant_finances') }}" style="
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        {% if app.request.get('_route') == 'tenant_finances' %}
+            background: var(--primary);
+            color: white;
+        {% else %}
+            color: var(--text-muted);
+            background: transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-chart-pie" style="margin-right:6px"></i>
+        Tableau de bord
+    </a>
+    <a href="{{ path('tenant_finances_loyers') }}" style="
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        {% if app.request.get('_route') == 'tenant_finances_loyers' %}
+            background: var(--primary);
+            color: white;
+        {% else %}
+            color: var(--text-muted);
+            background: transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-house" style="margin-right:6px"></i>
+        Mes Loyers
+    </a>
+    <a href="{{ path('tenant_finances_charges') }}" style="
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        {% if app.request.get('_route') == 'tenant_finances_charges' %}
+            background: var(--primary);
+            color: white;
+        {% else %}
+            color: var(--text-muted);
+            background: transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-bolt" style="margin-right:6px"></i>
+        Mes Charges
+    </a>
+    <a href="{{ path('tenant_finances_caution') }}" style="
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        {% if app.request.get('_route') == 'tenant_finances_caution' %}
+            background: var(--primary);
+            color: white;
+        {% else %}
+            color: var(--text-muted);
+            background: transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-shield" style="margin-right:6px"></i>
+        Ma Caution
+    </a>
+    <a href="{{ path('tenant_finances_historique') }}" style="
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        {% if app.request.get('_route') == 'tenant_finances_historique' %}
+            background: var(--primary);
+            color: white;
+        {% else %}
+            color: var(--text-muted);
+            background: transparent;
+        {% endif %}
+    ">
+        <i class="fa-solid fa-clock-rotate-left" style="margin-right:6px"></i>
+        Historique
+    </a>
+</div>
+
+{% block finances_content %}{% endblock %}
+
+{% endblock %}

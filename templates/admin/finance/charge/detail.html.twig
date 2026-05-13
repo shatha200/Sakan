@@ -1,0 +1,124 @@
+{% extends 'layouts/base_admin.html.twig' %}
+{% block title %}Charge #{{ charge.id }} — Admin Sakan{% endblock %}
+{% block page_title %}<i class="fa-solid fa-bolt" ></i> Charge #{{ charge.id }}{% endblock %}
+{% block page_actions %}
+  <a href="{{ path('admin_finance_charges') }}" style="display:flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none;">
+    <i class="fa-solid fa-arrow-left"></i> Retour
+  </a>
+{% endblock %}
+
+{% block content %}
+<style>
+.fin-detail-card { background:white;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:20px; }
+.fin-row { display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #f3f4f6; }
+.fin-row:last-child { border-bottom:none; }
+.fin-label { font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700; }
+.fin-value { font-size:15px;font-weight:600;color:#111827; }
+.fin-btn-full { display:block;width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;border:none;margin-bottom:10px;transition:all 0.2s;text-decoration:none; }
+.fin-btn-full.amber { background:linear-gradient(135deg,#f59e0b,#d97706);color:white; }
+.fin-btn-full.amber:hover { box-shadow:0 4px 15px rgba(245,158,11,0.3); }
+.fin-btn-full.gray { background:#f3f4f6;color:#374151; }
+.fin-btn-full.gray:hover { background:#e5e7eb; }
+</style>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 280px; gap:20px; align-items:start;">
+
+  <div class="fin-detail-card">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px;"><i class="fa-solid fa-info-circle"></i> Informations</div>
+    <div class="fin-row"><span class="fin-label">Type</span><span style="padding:4px 12px; border-radius:8px; font-weight:700;">{{ charge.type_charge }}</span></div>
+    <div class="fin-row"><span class="fin-label">Période</span><span class="fin-value">{{ charge.periode }}</span></div>
+    <div class="fin-row"><span class="fin-label">Locataire</span><span class="fin-value">{{ charge.nom_locataire }}</span></div>
+    <div class="fin-row"><span class="fin-label">Email</span><span style="font-size:13px;">{{ charge.email_locataire }}</span></div>
+    <div class="fin-row"><span class="fin-label">Tél.</span><span style="font-size:13px;">{{ charge.tel_locataire ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Propriétaire</span><span class="fin-value">{{ charge.nom_proprietaire ?? '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Bien</span><span class="fin-value">{{ charge.bien_titre ?? '-' }}</span></div>
+    {% if charge.notes %}
+    <div class="fin-row" style="flex-direction:column; gap:6px;">
+      <span class="fin-label">Notes</span>
+      <span style="font-size:13px;">{{ charge.notes|nl2br }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="fin-detail-card">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px;"><i class="fa-solid fa-credit-card"></i> Paiement</div>
+    <div class="fin-row">
+      <span class="fin-label">Montant</span>
+      <span style="font-size:22px; font-weight:800;">{{ charge.montant_a_payer|number_format(3,',', ' ') }} TND</span>
+    </div>
+    <div class="fin-row">
+      <span class="fin-label">Statut</span>
+      <span>
+        {% if charge.statut_paiement == 'PAYE' %}
+          <span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">✓ PAYÉE</span>
+        {% else %}
+          <span style="padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;">✗ NON PAYÉE</span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="fin-row"><span class="fin-label">Créée le</span><span class="fin-value">{{ charge.date_creation ? charge.date_creation|date('d/m/Y') : '-' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Payée le</span><span class="fin-value">{{ charge.date_paiement ? charge.date_paiement|date('d/m/Y') : '—' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Méthode</span><span class="fin-value">{{ charge.methode_paiement ?? '—' }}</span></div>
+    <div class="fin-row"><span class="fin-label">Référence</span><span style="font-size:12px; font-family:monospace;">{{ charge.reference_paiement ?? '—' }}</span></div>
+    {% if charge.fichier_facture %}
+    <div class="fin-row">
+      <span class="fin-label">Facture</span>
+      <a href="/uploads/charges/{{ charge.fichier_facture }}" target="_blank" style="font-size:13px; font-weight:600;">
+        <i class="fa-solid fa-paperclip"></i> Voir la facture
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="fin-detail-card">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px;"><i class="fa-solid fa-bolt"></i> Actions</div>
+
+    {% if charge.statut_paiement != 'PAYE' %}
+    <button onclick="document.getElementById('modal-paye').style.display='flex'" class="fin-btn-full amber">
+      <i class="fa-solid fa-check"></i> Marquer comme payée
+    </button>
+    {% endif %}
+
+    <a href="mailto:{{ charge.email_locataire }}" class="fin-btn-full gray">
+      <i class="fa-solid fa-envelope"></i> Email locataire
+    </a>
+    <a href="{{ path('admin_finance_charges') }}" class="fin-btn-full gray">
+      <i class="fa-solid fa-list"></i> Toutes les charges
+    </a>
+  </div>
+</div>
+
+{# Modal Marquer Payée #}
+<div id="modal-paye" style="display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center;">
+  <div style="border-radius:20px; padding:32px; max-width:460px; width:90%;">
+    <div style="font-size:18px; font-weight:800; margin-bottom:4px;">💳 Marquer comme Payée</div>
+    <div style="font-size:13px; margin-bottom:24px;">Charge #{{ charge.id }} — {{ charge.type_charge }} — {{ charge.montant_a_payer|number_format(3,',', ' ') }} TND</div>
+
+    <form action="{{ path('admin_finance_charge_payer', {id: charge.id}) }}" method="POST">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_charge_paye_' ~ charge.id) }}">
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Méthode</label>
+        <select name="methode" style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px;">
+          <option value="ESPECES">💵 Espèces</option>
+          <option value="VIREMENT">🏦 Virement</option>
+          <option value="CHEQUE">📃 Chèque</option>
+          <option value="MANUEL">✅ Manuel</option>
+        </select>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Référence</label>
+        <input type="text" name="reference" placeholder="Référence paiement..." style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Date paiement</label>
+        <input type="date" name="date_paiement" value="{{ 'now'|date('Y-m-d') }}" style="width:100%; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px;">
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button type="button" onclick="document.getElementById('modal-paye').style.display='none'"
+          style="flex:1; padding:12px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">❌ Annuler</button>
+        <button type="submit" style="flex:1; padding:12px; color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">✅ Confirmer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

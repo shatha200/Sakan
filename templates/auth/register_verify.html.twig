@@ -1,0 +1,42 @@
+{% extends 'layouts/base_auth.html.twig' %}
+
+{% block title %}Verification inscription - Sakan{% endblock %}
+
+{% block auth_content %}
+    <div class="brand-title">
+        <img src="{{ asset('images/logo.png') }}" alt="Sakan" style="height: 40px; object-fit: contain;">
+    </div>
+
+    <h1 class="auth-title">Verifier votre inscription</h1>
+    <p class="muted">Un code OTP a 6 chiffres a ete envoye a {{ pending_email }}.</p>
+
+    {% for message in app.flashes('auth_error') %}
+        <p class="field-error">{{ message }}</p>
+    {% endfor %}
+    {% for message in app.flashes('auth_success') %}
+        <p style="color: #16a34a; font-size: 13px; margin-bottom: 8px;">{{ message }}</p>
+    {% endfor %}
+
+    <form class="auth-form-card" method="post" action="{{ path('app_register_verify') }}">
+        <input type="hidden" name="action" value="verify">
+        <div class="auth-input-wrapper">
+            <i class="fa-solid fa-shield-halved input-icon"></i>
+            <input type="text" name="otp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Code OTP (6 chiffres)" required>
+        </div>
+
+        <button type="submit" class="btn-sakan-primary">Activer mon compte &rarr;</button>
+    </form>
+
+    <form method="post" action="{{ path('app_register_verify') }}" style="margin-top: 14px;">
+        <input type="hidden" name="action" value="resend">
+        <button type="submit" class="btn-google" style="justify-content:center;">Renvoyer le code</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; font-weight: 500;">
+        <a href="{{ path('app_login') }}">Retour a la connexion</a>
+    </p>
+{% endblock %}
+
+{% block javascripts %}
+    {% include 'auth/_validation_js.html.twig' %}
+{% endblock %}
