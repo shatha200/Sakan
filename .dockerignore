@@ -13,8 +13,6 @@ k8s
 Dockerfile
 docker-compose.yml
 README.md
-composer.lock
-symfony.lock
 importmap.php
 phpstan.dist.neon
 phpunit.dist.xml
