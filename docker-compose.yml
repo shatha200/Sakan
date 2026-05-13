@@ -19,7 +19,7 @@ services:
     environment:
       - PHP_HOST=php
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - .:/var/www/html
     depends_on:
@@ -39,7 +39,7 @@ services:
     build:
       context: ./src/AI
     ports:
-      - "8081:8080"
+      - "8082:8080"
     volumes:
       - ./src/AI:/app
     environment:
