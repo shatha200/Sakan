@@ -1,0 +1,44 @@
+services:
+  php:
+    build:
+      context: .
+      target: php_fpm
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: mysql://user:password@db:3306/sakan
+      AI_API_URL: http://ai-service:8080/extract
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+
+  nginx:
+    build:
+      context: .
+      target: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - php
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sakan
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+
+  ai-service:
+    build:
+      context: ./src/AI
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./src/AI:/app
+    environment:
+      - PYTHONUNBUFFERED=1

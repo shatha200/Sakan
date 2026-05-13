@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sakan-app
+  labels:
+    app: sakan
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sakan
+  template:
+    metadata:
+      labels:
+        app: sakan
+    spec:
+      containers:
+      - name: php
+        image: <ACR_NAME>.azurecr.io/sakan-php:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+        envFrom:
+        - configMapRef:
+            name: sakan-config
+        - secretRef:
+            name: sakan-secrets
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+      - name: nginx
+        image: <ACR_NAME>.azurecr.io/sakan-nginx:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"

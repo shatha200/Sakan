@@ -1,0 +1,22 @@
+.git
+.gitignore
+.env.local
+.env.test
+.phpunit.cache
+.runtime
+vendor
+var
+public/bundles
+tests
+# docker
+k8s
+Dockerfile
+docker-compose.yml
+README.md
+composer.lock
+symfony.lock
+importmap.php
+phpstan.dist.neon
+phpunit.dist.xml
+*.txt
+*.log

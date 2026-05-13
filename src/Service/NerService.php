@@ -8,12 +8,13 @@ class NerService
 {
     private \Symfony\Contracts\HttpClient\HttpClientInterface $client;
     private \Psr\Log\LoggerInterface $logger;
-    private string $apiUrl = 'http://127.0.0.1:8081/extract';
+    private string $apiUrl;
 
-    public function __construct(HttpClientInterface $client, LoggerInterface $logger)
+    public function __construct(HttpClientInterface $client, LoggerInterface $logger, string $aiApiUrl = 'http://127.0.0.1:8081/extract')
     {
         $this->client = $client;
         $this->logger = $logger;
+        $this->apiUrl = $_ENV['AI_API_URL'] ?? $aiApiUrl;
     }
 
     /** @return array<string, mixed> */
