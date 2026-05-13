@@ -7,7 +7,7 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 # Install PHP extensions
 # We install them once in the base image to be shared across stages
 RUN chmod +x /usr/local/bin/install-php-extensions && \
-    install-php-extensions \
+    /usr/local/bin/install-php-extensions \
     intl \
     opcache \
     pdo_mysql \
