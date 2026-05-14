@@ -39,8 +39,9 @@ RUN php bin/console importmap:install && \
     php bin/console cache:clear && \
     php bin/console cache:warmup
 
-# Final permissions check
-RUN chown -R www-data:www-data var/ public/assets
+# Final permissions check (ensures .runtime, var, and public/assets are all writable)
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 /var/www/html
 
 # Nginx config
 RUN mkdir -p /etc/nginx/http.d
