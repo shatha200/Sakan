@@ -6,7 +6,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions intl opcache pdo_mysql zip gd mbstring
 
 # Install system dependencies
-RUN apk add --no-cache nginx supervisor bash git unzip curl
+RUN apk add --no-cache nginx supervisor bash git unzip curl icu-libs libzip libpng freetype libjpeg-turbo
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -17,17 +17,21 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy app (including pre-compiled assets)
+# Copy app
 COPY . .
 
 # Set prod environment
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
 
-# Create .env for build time only
+# Create .env for build time only (Render will override these at runtime)
 RUN echo "APP_ENV=prod" > .env && \
     echo "APP_SECRET=placeholder" >> .env && \
-    echo "DATABASE_URL=placeholder" >> .env
+    echo "DATABASE_URL=sqlite:///%kernel.project_dir%/var/data.db" >> .env
+
+# Asset Compilation
+RUN php bin/console importmap:install && \
+    php bin/console asset-map:compile
 
 # Permissions
 RUN mkdir -p var/cache var/log && \
