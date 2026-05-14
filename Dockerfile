@@ -6,7 +6,7 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions intl opcache pdo_mysql zip gd mbstring
 
 # Install system dependencies
-RUN apk add --no-cache nginx supervisor bash git unzip curl nodejs npm
+RUN apk add --no-cache nginx supervisor bash git unzip curl
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -17,7 +17,7 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy app
+# Copy app (including pre-compiled assets)
 COPY . .
 
 # Set prod environment
@@ -28,10 +28,6 @@ ENV APP_DEBUG=0
 RUN echo "APP_ENV=prod" > .env && \
     echo "APP_SECRET=placeholder" >> .env && \
     echo "DATABASE_URL=placeholder" >> .env
-
-# Build frontend assets
-RUN php bin/console importmap:install && \
-    php bin/console asset-map:compile
 
 # Permissions
 RUN mkdir -p var/cache var/log && \
