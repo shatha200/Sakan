@@ -29,14 +29,18 @@ RUN echo "APP_ENV=prod" > .env && \
     echo "APP_SECRET=placeholder" >> .env && \
     echo "DATABASE_URL=sqlite:///%kernel.project_dir%/var/data.db" >> .env
 
-# Asset Compilation
-RUN php bin/console importmap:install && \
-    php bin/console asset-map:compile
+# Set permissions and prepare directories
+RUN mkdir -p var/cache var/log public/assets && \
+    chown -R www-data:www-data /var/www/html
 
-# Permissions
-RUN mkdir -p var/cache var/log && \
-    chown -R www-data:www-data var/ && \
-    chmod -R 777 var/
+# Asset Compilation & Cache Warmup (Run as root to ensure all tools work)
+RUN php bin/console importmap:install && \
+    php bin/console asset-map:compile && \
+    php bin/console cache:clear && \
+    php bin/console cache:warmup
+
+# Final permissions check
+RUN chown -R www-data:www-data var/ public/assets
 
 # Nginx config
 RUN mkdir -p /etc/nginx/http.d
@@ -47,6 +51,4 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 
 EXPOSE 80
 
-CMD php bin/console cache:clear --no-warmup && \
-    php bin/console cache:warmup && \
-    /usr/bin/supervisord -c /etc/supervisord.conf
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
