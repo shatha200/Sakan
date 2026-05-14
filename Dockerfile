@@ -20,8 +20,20 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy app
 COPY . .
 
-# Permissions
+# Set prod environment BEFORE cache warmup
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+
+# Create temp .env for build time only
+RUN echo "APP_ENV=prod" > .env && \
+    echo "APP_SECRET=buildsecret" >> .env && \
+    echo "DATABASE_URL=mysql://user:pass@localhost/db" >> .env
+
+# Permissions + cache warmup
 RUN mkdir -p var/cache var/log && \
+    php bin/console cache:clear --no-warmup && \
+    php bin/console cache:warmup && \
+    rm .env && \
     chown -R www-data:www-data var/ && \
     chmod -R 777 var/
 
@@ -33,12 +45,5 @@ COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 
 EXPOSE 80
-
-# Clear and warm up cache for prod
-RUN APP_ENV=prod php bin/console cache:clear --no-warmup && \
-    APP_ENV=prod php bin/console cache:warmup
-
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
